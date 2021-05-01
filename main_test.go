@@ -20,19 +20,26 @@ type TSuite struct {
 	Mux http.Handler
 }
 
+type R struct {
+	Method string
+	Path string
+	Body string
+	Headers map[string][]string
+}
+
 func (s *TSuite) SetupTest() {
 	s.Mux = makeBunHandler()
 }
 
-func (s *TSuite) ExecRequest(method, path string, body *string, headers map[string][]string) (http.Response, []byte) {
+func (s *TSuite) ExecRequest(request R) (http.Response, []byte) {
 	var bodyReader io.Reader
-	if body != nil {
-		bodyReader = strings.NewReader(*body)
+	if request.Body != "" {
+		bodyReader = strings.NewReader(request.Body)
 	}
 
-	req := httptest.NewRequest(method, "http://example.com/" + path, bodyReader)
+	req := httptest.NewRequest(request.Method, "http://example.com/" + request.Path, bodyReader)
 
-	for name, values := range headers {
+	for name, values := range request.Headers {
 		for _, value := range values {
 			req.Header.Add(name, value)
 		}
@@ -48,13 +55,14 @@ func (s *TSuite) ExecRequest(method, path string, body *string, headers map[stri
 }
 
 func (s *TSuite) TestMethodGet() {
-	resp, body := s.ExecRequest("GET", "get", nil, nil)
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path: "get",
+	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
-		"method": "GET",
 		"args": make(map[string]interface{}),
-		"form": make(map[string]interface{}),
 		"headers": make(map[string]interface{}),
 		"origin": "example.com",
 		"url": "http://example.com/get",
@@ -62,16 +70,18 @@ func (s *TSuite) TestMethodGet() {
 }
 
 func (s *TSuite) TestMethodGetWithCustomHeaders() {
-	resp, body := s.ExecRequest("GET", "get", nil, map[string][]string{
-		"X-One": []string{"custom header value"},
-		"X-Two": []string{"another custom header"},
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path: "get",
+		Headers: map[string][]string{
+			"X-One": []string{"custom header value"},
+			"X-Two": []string{"another custom header"},
+		},
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
-		"method": "GET",
 		"args": make(map[string]interface{}),
-		"form": make(map[string]interface{}),
 		"headers": map[string]interface{}{
 			"X-One": "custom header value",
 			"X-Two": "another custom header",
@@ -82,15 +92,17 @@ func (s *TSuite) TestMethodGetWithCustomHeaders() {
 }
 
 func (s *TSuite) TestMethodGetWithMultipleHeaderValues() {
-	resp, body := s.ExecRequest("GET", "get", nil, map[string][]string{
-		"X-One": []string{"custom header value", "another custom header"},
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path: "get",
+		Headers: map[string][]string{
+			"X-One": []string{"custom header value", "another custom header"},
+		},
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
-		"method": "GET",
 		"args": make(map[string]interface{}),
-		"form": make(map[string]interface{}),
 		"headers": map[string]interface{}{
 			"X-One": "custom header value, another custom header",
 		},
@@ -100,14 +112,42 @@ func (s *TSuite) TestMethodGetWithMultipleHeaderValues() {
 }
 
 func (s *TSuite) TestMethodPost() {
-	resp, body := s.ExecRequest("POST", "post", nil, nil)
+	resp, body := s.ExecRequest(R{
+		Method: "POST",
+		Path: "post",
+	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
-		"method": "POST",
 		"args": make(map[string]interface{}),
 		"form": make(map[string]interface{}),
+		"data": "",
 		"headers": make(map[string]interface{}),
+		"origin": "example.com",
+		"url": "http://example.com/post",
+	}, parseJson(body))
+}
+
+func (s *TSuite) TestMethodPostWithPlainBody() {
+	resp, body := s.ExecRequest(R{
+		Method: "POST",
+		Path: "post",
+		Body: "answer=42",
+		Headers: map[string][]string{
+			"Content-Type": []string{"application/x-www-form-urlencoded"},
+		},
+	})
+	s.Equal(200, resp.StatusCode)
+	s.Equal("application/json", resp.Header.Get("Content-Type"))
+	s.Equal(map[string]interface{}{
+		"args": make(map[string]interface{}),
+		"form": map[string]interface{}{
+			"answer": "42",
+		},
+		"data": "",
+		"headers": map[string]interface{}{
+			"Content-Type": "application/x-www-form-urlencoded",
+		},
 		"origin": "example.com",
 		"url": "http://example.com/post",
 	}, parseJson(body))

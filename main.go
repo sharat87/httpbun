@@ -5,19 +5,22 @@ package main
 
 import (
 	"crypto/md5"
+	crypto_rand "crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	crypto_rand "crypto/rand"
 )
 
 func main() {
@@ -94,20 +97,35 @@ func makeBunHandler() http.Handler {
 	return mux
 }
 
+type InfoJsonOptions struct {
+	Method bool
+	Form bool
+	Data bool
+}
+
 func handleValidMethod(w http.ResponseWriter, req *http.Request) {
 	if !strings.EqualFold(req.Method, strings.TrimPrefix(req.URL.Path, "/")) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	sendInfoJson(w, req)
+	isNonGet := req.Method != http.MethodGet
+	sendInfoJson(w, req, InfoJsonOptions{
+		Method: false,
+		Form: isNonGet,
+		Data: isNonGet,
+	})
 }
 
 func handleAnything(w http.ResponseWriter, req *http.Request) {
-	sendInfoJson(w, req)
+	sendInfoJson(w, req, InfoJsonOptions{
+		Method: true,
+		Form: true,
+		Data: true,
+	})
 }
 
-func sendInfoJson(w http.ResponseWriter, req *http.Request) {
+func sendInfoJson(w http.ResponseWriter, req *http.Request, options InfoJsonOptions) {
 	args := make(map[string]interface{})
 	for name, values := range req.URL.Query() {
 		if len(values) > 1 {
@@ -122,28 +140,57 @@ func sendInfoJson(w http.ResponseWriter, req *http.Request) {
 		headers[name] = strings.Join(values, ", ")
 	}
 
-	actualMethod := req.Method
-	req.Method = http.MethodPost  // So that `ParseForm` works.
-	req.ParseForm()
-	req.ParseMultipartForm(1000)
-
-	form := make(map[string]interface{})
-	for name, values := range req.Form {
-		if len(values) > 1 {
-			form[name] = values
-		} else {
-			form[name] = values[0]
-		}
+	body := ""
+	if bodyBytes, err := ioutil.ReadAll(io.LimitReader(req.Body, 10000)); err != nil {
+		fmt.Println("Error reading request payload", err)
+		return
+	} else {
+		body = string(bodyBytes)
 	}
 
-	writeJson(w, map[string]interface{}{
-		"args": args,
-		"form": form,
+	contentType := headerValue(req, "Content-Type")
+
+	form := make(map[string]interface{})
+	data := ""
+
+	if contentType == "application/x-www-form-urlencoded" {
+		if parsed, err := url.ParseQuery(body); err != nil {
+			data = body
+		} else {
+			for name, values := range parsed {
+				if len(values) > 1 {
+					form[name] = values
+				} else {
+					form[name] = values[0]
+				}
+			}
+		}
+
+	} else {
+		data = body
+
+	}
+
+	result := map[string]interface{}{
+		"args":    args,
 		"headers": headers,
-		"method": actualMethod,
-		"origin": req.Host,
-		"url": req.URL.String(),
-	})
+		"origin":  req.Host,
+		"url":     req.URL.String(),
+	}
+
+	if options.Method {
+		result["method"] = req.Method
+	}
+
+	if options.Form {
+		result["form"] = form
+	}
+
+	if options.Data {
+		result["data"] = data
+	}
+
+	writeJson(w, result)
 }
 
 func handleStatus(w http.ResponseWriter, req *http.Request) {
@@ -188,7 +235,7 @@ func handleAuthBasic(w http.ResponseWriter, req *http.Request) {
 	} else {
 		writeJson(w, map[string]interface{}{
 			"authenticated": true,
-			"user": givenUsername,
+			"user":          givenUsername,
 		})
 	}
 }
@@ -210,7 +257,7 @@ func handleAuthBearer(w http.ResponseWriter, req *http.Request) {
 
 	writeJson(w, map[string]interface{}{
 		"authenticated": true,
-		"token": token,
+		"token":         token,
 	})
 }
 
@@ -225,8 +272,8 @@ func handleAuthDigest(w http.ResponseWriter, req *http.Request) {
 	expectedQop, expectedUsername, expectedPassword := match[1], match[2], match[3]
 	fmt.Println("expected", expectedQop, expectedUsername, expectedPassword)
 
-	newNonce := "dcd98b7102dd2f0e8b11d0f600bfb0c093"  // randomString()
-	opaque := "5ccc069c403ebaf9f0171e9517f40e41"  // randomString()
+	newNonce := "dcd98b7102dd2f0e8b11d0f600bfb0c093" // randomString()
+	opaque := "5ccc069c403ebaf9f0171e9517f40e41"     // randomString()
 	realm := "Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"" + newNonce +
 		"\", opaque=\"" + opaque + "\",algorithm=MD5, stale=FALSE"
 
@@ -314,7 +361,7 @@ func handleAuthDigest(w http.ResponseWriter, req *http.Request) {
 
 	writeJson(w, map[string]interface{}{
 		"authenticated": true,
-		"user": expectedUsername,
+		"user":          expectedUsername,
 	})
 }
 
@@ -341,10 +388,14 @@ func handleUserAgent(w http.ResponseWriter, req *http.Request) {
 func handleCache(w http.ResponseWriter, req *http.Request) {
 	shouldSendData :=
 		headerValue(req, "If-Modified-Since") == "" &&
-		headerValue(req, "If-None-Match") == ""
+			headerValue(req, "If-None-Match") == ""
 
 	if shouldSendData {
-		sendInfoJson(w, req)
+		isNonGet := req.Method != http.MethodGet
+		sendInfoJson(w, req, InfoJsonOptions{
+			Form: isNonGet,
+			Data: isNonGet,
+		})
 	} else {
 		w.WriteHeader(http.StatusNotModified)
 	}
@@ -358,8 +409,12 @@ func handleCacheControl(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	w.Header().Set("Cache-Control", "public, max-age=" + match[1])
-	sendInfoJson(w, req)
+	w.Header().Set("Cache-Control", "public, max-age="+match[1])
+	isNonGet := req.Method != http.MethodGet
+	sendInfoJson(w, req, InfoJsonOptions{
+		Form: isNonGet,
+		Data: isNonGet,
+	})
 }
 
 func handleEtag(w http.ResponseWriter, req *http.Request) {
@@ -369,7 +424,11 @@ func handleEtag(w http.ResponseWriter, req *http.Request) {
 	if etagInUrl == etagInHeader {
 		w.WriteHeader(http.StatusNotModified)
 	} else {
-		sendInfoJson(w, req)
+		isNonGet := req.Method != http.MethodGet
+		sendInfoJson(w, req, InfoJsonOptions{
+			Form: isNonGet,
+			Data: isNonGet,
+		})
 	}
 }
 
@@ -422,7 +481,7 @@ func handleSampleRobotsDeny(w http.ResponseWriter, req *http.Request) {
       :                :
       |                |
       :       __       :
-       \  .-"` + "`  `" + `"-.  /
+       \  .-"`+"`  `"+`"-.  /
         '.          .'
           '-......-'
      YOU SHOULDN'T BE HERE`)
@@ -621,7 +680,7 @@ func handleCookiesDelete(w http.ResponseWriter, req *http.Request) {
 			Value:   "",
 			Path:    "/",
 			Expires: time.Unix(0, 0),
-			MaxAge:  -1,  // This will produce `Max-Age: 0` in the cookie.
+			MaxAge:  -1, // This will produce `Max-Age: 0` in the cookie.
 		})
 	}
 
@@ -639,9 +698,9 @@ func handleCookiesSet(w http.ResponseWriter, req *http.Request) {
 	if match[1] == "" {
 		for name, values := range req.URL.Query() {
 			http.SetCookie(w, &http.Cookie{
-				Name:    name,
-				Value:   values[0],
-				Path:    "/",
+				Name:  name,
+				Value: values[0],
+				Path:  "/",
 			})
 		}
 
@@ -695,7 +754,7 @@ func handleAbsoluteRedirect(w http.ResponseWriter, req *http.Request) {
 	n, _ := strconv.Atoi(match[1])
 
 	if n > 1 {
-		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/" + fmt.Sprint(n - 1)))
+		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/"+fmt.Sprint(n-1)))
 	} else {
 		redirect(w, req, "/get")
 	}
@@ -712,7 +771,7 @@ func handleRelativeRedirect(w http.ResponseWriter, req *http.Request) {
 	n, _ := strconv.Atoi(match[1])
 
 	if n > 1 {
-		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/" + fmt.Sprint(n - 1)))
+		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/"+fmt.Sprint(n-1)))
 	} else {
 		redirect(w, req, "/get")
 	}
@@ -720,7 +779,7 @@ func handleRelativeRedirect(w http.ResponseWriter, req *http.Request) {
 
 func redirect(w http.ResponseWriter, req *http.Request, path string) {
 	if strings.HasPrefix(path, "/") {
-		path = strings.Repeat("../", strings.Count(req.URL.Path, "/") - 1) + strings.TrimPrefix(path, "/")
+		path = strings.Repeat("../", strings.Count(req.URL.Path, "/")-1) + strings.TrimPrefix(path, "/")
 	}
 
 	w.Header().Set("Location", path)
@@ -738,7 +797,7 @@ func headerValue(req *http.Request, name string) string {
 	}
 
 	if values := req.Header[name]; values != nil && len(values) > 0 {
-		return values[len(values) - 1]
+		return values[len(values)-1]
 	}
 
 	return ""
