@@ -52,7 +52,9 @@ func (s *TSuite) TestMethodGet() {
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
+		"method": "GET",
 		"args": make(map[string]interface{}),
+		"form": make(map[string]interface{}),
 		"headers": make(map[string]interface{}),
 		"origin": "example.com",
 		"url": "http://example.com/get",
@@ -67,7 +69,9 @@ func (s *TSuite) TestMethodGetWithCustomHeaders() {
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
+		"method": "GET",
 		"args": make(map[string]interface{}),
+		"form": make(map[string]interface{}),
 		"headers": map[string]interface{}{
 			"X-One": "custom header value",
 			"X-Two": "another custom header",
@@ -84,7 +88,9 @@ func (s *TSuite) TestMethodGetWithMultipleHeaderValues() {
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
+		"method": "GET",
 		"args": make(map[string]interface{}),
+		"form": make(map[string]interface{}),
 		"headers": map[string]interface{}{
 			"X-One": "custom header value, another custom header",
 		},
@@ -98,7 +104,9 @@ func (s *TSuite) TestMethodPost() {
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
+		"method": "POST",
 		"args": make(map[string]interface{}),
+		"form": make(map[string]interface{}),
 		"headers": make(map[string]interface{}),
 		"origin": "example.com",
 		"url": "http://example.com/post",

@@ -13,7 +13,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -127,9 +126,6 @@ func sendInfoJson(w http.ResponseWriter, req *http.Request) {
 	req.Method = http.MethodPost  // So that `ParseForm` works.
 	req.ParseForm()
 	req.ParseMultipartForm(1000)
-
-	fmt.Println(reflect.ValueOf(req.Form).IsZero())
-	fmt.Println(req.Form)
 
 	form := make(map[string]interface{})
 	for name, values := range req.Form {
