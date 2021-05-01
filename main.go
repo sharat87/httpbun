@@ -25,10 +25,6 @@ func main() {
 	rand.Seed(time.Now().Unix())
 
 	host := os.Getenv("HOST")
-	if host == "" {
-		host = "127.0.0.1"
-	}
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3090"
