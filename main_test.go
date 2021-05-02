@@ -154,6 +154,42 @@ func (s *TSuite) TestMethodPostWithPlainBody() {
 	}, parseJson(body))
 }
 
+func (s *TSuite) TestHeaders() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path:   "headers",
+		Headers: map[string][]string{
+			"X-One": []string{"custom header value"},
+			"X-Two": []string{"another custom header"},
+		},
+	})
+	s.Equal(200, resp.StatusCode)
+	s.Equal("application/json", resp.Header.Get("Content-Type"))
+	s.Equal(map[string]interface{}{
+		"headers": map[string]interface{}{
+			"X-One": "custom header value",
+			"X-Two": "another custom header",
+		},
+	}, parseJson(body))
+}
+
+func (s *TSuite) TestHeadersRepeat() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path:   "headers",
+		Headers: map[string][]string{
+			"X-One": []string{"custom header value", "another custom header"},
+		},
+	})
+	s.Equal(200, resp.StatusCode)
+	s.Equal("application/json", resp.Header.Get("Content-Type"))
+	s.Equal(map[string]interface{}{
+		"headers": map[string]interface{}{
+			"X-One": "custom header value, another custom header",
+		},
+	}, parseJson(body))
+}
+
 func (s *TSuite) TestBasicAuthWithoutCreds() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",

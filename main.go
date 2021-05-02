@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sharat87/httpbun/mux"
-	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -50,36 +49,63 @@ func main() {
 func makeBunHandler() http.Handler {
 	mux := mux.New()
 
-	tpl, err := template.ParseFS(statics, "static/*.html")
+	indexHtmlBytes, err := statics.ReadFile("static/index.html")
 	if err != nil {
 		panic(err)
 	}
+	indexHtml := string(indexHtmlBytes)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request, params map[string]string) {
 		w.Header().Set("Content-Type", "text/html")
-		tpl.ExecuteTemplate(w, "index.html", mux)
+		// TODO: Cache this rendered response. Don't have to render index.html everytime.
+		fmt.Fprint(w, indexHtml)
 	}, "")
 
 	mux.HandleFunc("/get", handleValidMethod, `
 	Accepts GET requests and responds with a JSON object with query params, headers and a few other information about
 	the request.
 	`)
-	mux.HandleFunc("/head", handleValidMethod, `
+	mux.HandleFunc("/post", handleValidMethod, `
 	Accepts POST requests and responds with a JSON object with form body, query params, headers and a few other
-	information about the request.
+	information about the request. There's also <code>/put</code>, <code>/patch</code> and <code>/delete</code>
+	endpoints that behave similarly.
 	`)
-	mux.HandleFunc("/post", handleValidMethod, "")
 	mux.HandleFunc("/put", handleValidMethod, "")
 	mux.HandleFunc("/patch", handleValidMethod, "")
 	mux.HandleFunc("/delete", handleValidMethod, "")
 
-	mux.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic, "")
-	mux.HandleFunc("/bearer", handleAuthBearer, "")
-	mux.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest, "")
+	mux.HandleFunc("/headers", handleHeaders, "")
 
-	mux.HandleFunc("/status/[\\d,]+", handleStatus, "")
-	mux.HandleFunc("/ip", handleIp, "")
-	mux.HandleFunc("/user-agent", handleUserAgent, "")
+	mux.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic, `
+	Requires basic authentication with <code>user</code> and <code>pass</code> as the credentials.
+	`)
+
+	mux.HandleFunc("/bearer", handleAuthBearer, `
+	Requires bearer authentication. Which needs an <code>Authorization</code> header in the request, that takes the form
+	<code>Bearer some-auth-token-here</code>. This endpoint accepts any token as valid.
+	`)
+
+	mux.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest, `
+	Digest authentication. The endpoint <code>/digest-auth/auth/scott/tiger</code> requires to be authenticated with the
+	credentials <code>scott</code> and <code>tiger</code> as username and password. The implementation is based on
+	<a href='https://en.wikipedia.org/wiki/Digest_access_authentication#Example_with_explanation' rel=_blank>this
+	example from Wikipedia</a>. The value of <code>qop</code> is usually <code>auth</code>.
+	`)
+
+	mux.HandleFunc("/status/(?P<codes>[\\d,]+)", handleStatus, `
+	Responds with the HTTP status as given by <code>codes</code>. It can be a comma-separated list of multiple status
+	codes, of which a random one is chosen for the response.
+	`)
+
+	mux.HandleFunc("/ip", handleIp, `
+	Responds with a JSON object with a single field, <code>origin</code>, with the client's IP Address for value.
+	`)
+
+	mux.HandleFunc("/user-agent", handleUserAgent, `
+	Responds with a JSON object with a single field, <code>user-agent</code>, with the client's user agent (as present
+	in the <code>User-Agent</code> header) for value.
+	)
+	`)
 
 	mux.HandleFunc("/cache", handleCache, "")
 	mux.HandleFunc("/cache/(?P<age>\\d+)", handleCacheControl, "")
@@ -137,6 +163,17 @@ func handleAnything(w http.ResponseWriter, req *http.Request, params map[string]
 		Method: true,
 		Form:   true,
 		Data:   true,
+	})
+}
+
+func handleHeaders(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	headers := make(map[string]string)
+	for name, values := range req.Header {
+		headers[name] = strings.Join(values, ", ")
+	}
+
+	writeJson(w, map[string]interface{}{
+		"headers": headers,
 	})
 }
 
@@ -387,6 +424,7 @@ func handleCacheControl(w http.ResponseWriter, req *http.Request, params map[str
 }
 
 func handleEtag(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	// TODO: Handle If-Match header in etag endpoint: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match>.
 	etagInUrl := params["etag"]
 	etagInHeader := headerValue(req, "If-None-Match")
 
