@@ -257,8 +257,6 @@ func handleAuthBearer(w http.ResponseWriter, req *http.Request, params map[strin
 
 func handleAuthDigest(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	expectedQop, expectedUsername, expectedPassword := params["qop"], params["user"], params["pass"]
-	fmt.Println("expected", expectedQop, expectedUsername, expectedPassword)
-
 	newNonce := randomString()
 	opaque := randomString()
 	realm := "Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"" + newNonce +
@@ -277,10 +275,7 @@ func handleAuthDigest(w http.ResponseWriter, req *http.Request, params map[strin
 		return
 	}
 
-	fmt.Println("Authorization header", authHeader)
-
 	matches := regexp.MustCompile("([a-z]+)=(?:\"([^\"]+)\"|([^,]+))").FindAllStringSubmatch(authHeader, -1)
-	fmt.Println("Auth header match", matches)
 	givenDetails := make(map[string]string)
 	for _, m := range matches {
 		key := m[1]
@@ -290,10 +285,8 @@ func handleAuthDigest(w http.ResponseWriter, req *http.Request, params map[strin
 		}
 		givenDetails[key] = val
 	}
-	fmt.Println("givenDetails", givenDetails)
 
 	givenNonce := givenDetails["nonce"]
-	fmt.Println("givenNonce", givenNonce)
 
 	expectedNonce, err := req.Cookie("nonce")
 	if err != nil {
@@ -306,8 +299,6 @@ func handleAuthDigest(w http.ResponseWriter, req *http.Request, params map[strin
 		fmt.Fprintf(w, "Error: %q\n", err.Error())
 		return
 	}
-
-	fmt.Println("Expected nonce", expectedNonce.Value)
 
 	if givenNonce != expectedNonce.Value {
 		w.Header().Set("WWW-Authenticate", realm)
@@ -330,10 +321,8 @@ func handleAuthDigest(w http.ResponseWriter, req *http.Request, params map[strin
 		req.Method,
 		req.URL.Path,
 	)
-	fmt.Println("expected ha3", expectedResponseCode)
 
 	givenResponseCode := givenDetails["response"]
-	fmt.Println("given ha3", givenResponseCode)
 
 	if expectedResponseCode != givenResponseCode {
 		w.Header().Set("WWW-Authenticate", realm)

@@ -222,30 +222,37 @@ func (s *TSuite) TestBearerAuthWithToken() {
 func (s *TSuite) TestDigestAuthWithoutCreds() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path:   "digest-auth/myqop/dave/diamond",
+		Path:   "digest-auth/auth/dave/diamond",
 	})
 	s.Equal(401, resp.StatusCode)
+	match := regexp.MustCompile("\\bnonce=(\\S+)").FindStringSubmatch(resp.Header.Get("Set-Cookie"))
+	if !s.NotEmpty(match) {
+		return
+	}
+	nonce := match[1]
 	m := regexp.MustCompile(
-		"Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"[a-z0-9]+\", opaque=\"[a-z0-9]+\", algorithm=MD5, stale=FALSE",
+		"Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"" + nonce + "\", opaque=\"[a-z0-9]+\", algorithm=MD5, stale=FALSE",
 	).FindString(resp.Header.Get("WWW-Authenticate"))
 	s.NotEmpty(m, "Unexpected value for WWW-Authenticate")
 	s.Equal(len(body), 0)
 }
 
-/*
 func (s *TSuite) TestDigestAuthWitCreds() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "digest-auth/myqop/dave/diamond",
+		Path: "digest-auth/auth/dave/diamond",
+		Headers: map[string][]string{
+			"Cookie": []string{"nonce=d9fc96d7fe39099441042eea21006d77"},
+			"Authorization": []string{"Digest username=\"dave\", realm=\"testrealm@host.com\", nonce=\"d9fc96d7fe39099441042eea21006d77\", uri=\"/digest-auth/auth/dave/diamond\", algorithm=MD5, response=\"10c1132a06ac0de7c39a07e8553f0f14\", opaque=\"362d9b0fe6787b534eb27677f4210b61\", qop=auth, nc=00000001, cnonce=\"bb2ec71d21a27e19\""},
+		},
 	})
-	s.Equal(401, resp.StatusCode)
-	m := regexp.MustCompile(
-		"Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"[a-z0-9]+\", opaque=\"[a-z0-9]+\", algorithm=MD5, stale=FALSE",
-	).FindString(resp.Header.Get("WWW-Authenticate"))
-	s.NotEmpty(m, "Unexpected value for WWW-Authenticate")
-	s.Equal(len(body), 0)
+	s.Equal(200, resp.StatusCode)
+	s.Empty(resp.Header.Get("Set-Cookie"))
+	s.Equal(map[string]interface{}{
+		"authenticated": true,
+		"user":         "dave",
+	}, parseJson(body))
 }
-//*/
 
 func parseJson(raw []byte) map[string]interface{} {
 	var data map[string]interface{}

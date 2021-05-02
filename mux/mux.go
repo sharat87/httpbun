@@ -33,7 +33,7 @@ func (mux *Mux) HandleFunc(spec string, fn func(w http.ResponseWriter, req *http
 }
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	log.Printf("Serving %q %q.", req.Method, req.URL.String())
+	log.Printf("Serving %s %s", req.Method, req.URL.String())
 
 	for _, route := range mux.Routes {
 		match := route.Pattern.FindStringSubmatch(req.URL.Path)
