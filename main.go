@@ -92,7 +92,7 @@ func makeBunHandler() http.Handler {
 	mux.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
 
 	mux.HandleFunc("/redirect-to", handleRedirectTo)
-	mux.HandleFunc("/(relative-)?redirect/(?<count>\\d+)", handleRelativeRedirect)
+	mux.HandleFunc("/(relative-)?redirect/(?P<count>\\d+)", handleRelativeRedirect)
 	mux.HandleFunc("/absolute-redirect/(?P<count>\\d+)", handleAbsoluteRedirect)
 
 	mux.HandleFunc("/anything\b.*", handleAnything)
@@ -228,14 +228,9 @@ func handleAuthBasic(w http.ResponseWriter, req *http.Request, params map[string
 }
 
 func handleAuthBearer(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	authHeaderValues := req.Header["Authorization"]
-	if authHeaderValues == nil || len(authHeaderValues) < 1 {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	authHeader := authHeaderValues[0]
+	authHeader := headerValue(req, "Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
+		w.Header().Set("WWW-Authenticate", "Bearer")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -252,10 +247,10 @@ func handleAuthDigest(w http.ResponseWriter, req *http.Request, params map[strin
 	expectedQop, expectedUsername, expectedPassword := params["qop"], params["user"], params["pass"]
 	fmt.Println("expected", expectedQop, expectedUsername, expectedPassword)
 
-	newNonce := "dcd98b7102dd2f0e8b11d0f600bfb0c093" // randomString()
-	opaque := "5ccc069c403ebaf9f0171e9517f40e41"     // randomString()
+	newNonce := randomString()
+	opaque := randomString()
 	realm := "Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"" + newNonce +
-		"\", opaque=\"" + opaque + "\",algorithm=MD5, stale=FALSE"
+		"\", opaque=\"" + opaque + "\", algorithm=MD5, stale=FALSE"
 
 	var authHeader string
 	if vals := req.Header["Authorization"]; vals != nil && len(vals) == 1 {

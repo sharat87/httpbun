@@ -1,7 +1,6 @@
 package mux
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 )
@@ -29,12 +28,9 @@ func (mux *Mux) HandleFunc(pattern string, fn func(w http.ResponseWriter, req *h
 }
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	isFound := false
-
 	for _, route := range mux.Routes {
-		match := route.Pattern.FindStringSubmatch(req.URL.String())
+		match := route.Pattern.FindStringSubmatch(req.URL.Path)
 		if match != nil {
-			fmt.Printf("match %q.\n", match)
 			details := make(map[string]string)
 			names := route.Pattern.SubexpNames()
 			for i, name := range names {
@@ -43,12 +39,9 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				}
 			}
 			route.Fn(w, req, details)
-			isFound = true
-			break
+			return
 		}
 	}
 
-	if !isFound {
-		http.NotFound(w, req)
-	}
+	http.NotFound(w, req)
 }

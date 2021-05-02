@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"regexp"
 	"net/http/httptest"
 	"io"
 	"testing"
@@ -152,6 +153,99 @@ func (s *TSuite) TestMethodPostWithPlainBody() {
 		"url": "http://example.com/post",
 	}, parseJson(body))
 }
+
+func (s *TSuite) TestBasicAuthWithoutCreds() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path: "basic-auth/scott/tiger",
+	})
+	s.Equal(401, resp.StatusCode)
+	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get("WWW-Authenticate"))
+	s.Equal(len(body), 0)
+}
+
+func (s *TSuite) TestBasicAuthWithValidCreds() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path: "basic-auth/scott/tiger",
+		Headers: map[string][]string{
+			"Authorization": []string{"Basic c2NvdHQ6dGlnZXI="},
+		},
+	})
+	s.Equal(200, resp.StatusCode)
+	s.Equal("", resp.Header.Get("WWW-Authenticate"))
+	s.Equal(map[string]interface{}{
+		"authenticated": true,
+		"user":          "scott",
+	}, parseJson(body))
+}
+
+func (s *TSuite) TestBasicAuthWithInvalidCreds() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path: "basic-auth/scott/tiger",
+		Headers: map[string][]string{
+			"Authorization": []string{"Basic x2NvdHQ6dGlnZXI="},
+		},
+	})
+	s.Equal(401, resp.StatusCode)
+	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get("WWW-Authenticate"))
+	s.Equal(len(body), 0)
+}
+
+func (s *TSuite) TestBearerAuthWithoutToken() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path: "bearer",
+	})
+	s.Equal(401, resp.StatusCode)
+	s.Equal("Bearer", resp.Header.Get("WWW-Authenticate"))
+	s.Equal(len(body), 0)
+}
+
+func (s *TSuite) TestBearerAuthWithToken() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path: "bearer",
+		Headers: map[string][]string{
+			"Authorization": []string{"Bearer my-auth-token"},
+		},
+	})
+	s.Equal(200, resp.StatusCode)
+	s.Equal("", resp.Header.Get("WWW-Authenticate"))
+	s.Equal(map[string]interface{}{
+		"authenticated": true,
+		"token":          "my-auth-token",
+	}, parseJson(body))
+}
+
+func (s *TSuite) TestDigestAuthWithoutCreds() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path: "digest-auth/myqop/dave/diamond",
+	})
+	s.Equal(401, resp.StatusCode)
+	m := regexp.MustCompile(
+		"Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"[a-z0-9]+\", opaque=\"[a-z0-9]+\", algorithm=MD5, stale=FALSE",
+	).FindString(resp.Header.Get("WWW-Authenticate"))
+	s.NotEmpty(m, "Unexpected value for WWW-Authenticate")
+	s.Equal(len(body), 0)
+}
+
+/*
+func (s *TSuite) TestDigestAuthWitCreds() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path: "digest-auth/myqop/dave/diamond",
+	})
+	s.Equal(401, resp.StatusCode)
+	m := regexp.MustCompile(
+		"Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"[a-z0-9]+\", opaque=\"[a-z0-9]+\", algorithm=MD5, stale=FALSE",
+	).FindString(resp.Header.Get("WWW-Authenticate"))
+	s.NotEmpty(m, "Unexpected value for WWW-Authenticate")
+	s.Equal(len(body), 0)
+}
+//*/
 
 func parseJson(raw []byte) map[string]interface{} {
 	var data map[string]interface{}
