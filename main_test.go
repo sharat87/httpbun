@@ -1,15 +1,15 @@
 package main
 
 import (
-	"strings"
-	"regexp"
-	"net/http/httptest"
-	"io"
-	"testing"
-	"github.com/stretchr/testify/suite"
-	"github.com/stretchr/testify/assert"
-	"net/http"
 	"encoding/json"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"regexp"
+	"strings"
+	"testing"
 )
 
 func TestRunSuite(t *testing.T) {
@@ -22,9 +22,9 @@ type TSuite struct {
 }
 
 type R struct {
-	Method string
-	Path string
-	Body string
+	Method  string
+	Path    string
+	Body    string
 	Headers map[string][]string
 }
 
@@ -38,7 +38,7 @@ func (s *TSuite) ExecRequest(request R) (http.Response, []byte) {
 		bodyReader = strings.NewReader(request.Body)
 	}
 
-	req := httptest.NewRequest(request.Method, "http://example.com/" + request.Path, bodyReader)
+	req := httptest.NewRequest(request.Method, "http://example.com/"+request.Path, bodyReader)
 
 	for name, values := range request.Headers {
 		for _, value := range values {
@@ -58,22 +58,22 @@ func (s *TSuite) ExecRequest(request R) (http.Response, []byte) {
 func (s *TSuite) TestMethodGet() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "get",
+		Path:   "get",
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
-		"args": make(map[string]interface{}),
+		"args":    make(map[string]interface{}),
 		"headers": make(map[string]interface{}),
-		"origin": "example.com",
-		"url": "http://example.com/get",
+		"origin":  "example.com",
+		"url":     "http://example.com/get",
 	}, parseJson(body))
 }
 
 func (s *TSuite) TestMethodGetWithCustomHeaders() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "get",
+		Path:   "get",
 		Headers: map[string][]string{
 			"X-One": []string{"custom header value"},
 			"X-Two": []string{"another custom header"},
@@ -88,14 +88,14 @@ func (s *TSuite) TestMethodGetWithCustomHeaders() {
 			"X-Two": "another custom header",
 		},
 		"origin": "example.com",
-		"url": "http://example.com/get",
+		"url":    "http://example.com/get",
 	}, parseJson(body))
 }
 
 func (s *TSuite) TestMethodGetWithMultipleHeaderValues() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "get",
+		Path:   "get",
 		Headers: map[string][]string{
 			"X-One": []string{"custom header value", "another custom header"},
 		},
@@ -108,32 +108,32 @@ func (s *TSuite) TestMethodGetWithMultipleHeaderValues() {
 			"X-One": "custom header value, another custom header",
 		},
 		"origin": "example.com",
-		"url": "http://example.com/get",
+		"url":    "http://example.com/get",
 	}, parseJson(body))
 }
 
 func (s *TSuite) TestMethodPost() {
 	resp, body := s.ExecRequest(R{
 		Method: "POST",
-		Path: "post",
+		Path:   "post",
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
-		"args": make(map[string]interface{}),
-		"form": make(map[string]interface{}),
-		"data": "",
+		"args":    make(map[string]interface{}),
+		"form":    make(map[string]interface{}),
+		"data":    "",
 		"headers": make(map[string]interface{}),
-		"origin": "example.com",
-		"url": "http://example.com/post",
+		"origin":  "example.com",
+		"url":     "http://example.com/post",
 	}, parseJson(body))
 }
 
 func (s *TSuite) TestMethodPostWithPlainBody() {
 	resp, body := s.ExecRequest(R{
 		Method: "POST",
-		Path: "post",
-		Body: "answer=42",
+		Path:   "post",
+		Body:   "answer=42",
 		Headers: map[string][]string{
 			"Content-Type": []string{"application/x-www-form-urlencoded"},
 		},
@@ -150,14 +150,14 @@ func (s *TSuite) TestMethodPostWithPlainBody() {
 			"Content-Type": "application/x-www-form-urlencoded",
 		},
 		"origin": "example.com",
-		"url": "http://example.com/post",
+		"url":    "http://example.com/post",
 	}, parseJson(body))
 }
 
 func (s *TSuite) TestBasicAuthWithoutCreds() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "basic-auth/scott/tiger",
+		Path:   "basic-auth/scott/tiger",
 	})
 	s.Equal(401, resp.StatusCode)
 	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get("WWW-Authenticate"))
@@ -167,7 +167,7 @@ func (s *TSuite) TestBasicAuthWithoutCreds() {
 func (s *TSuite) TestBasicAuthWithValidCreds() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "basic-auth/scott/tiger",
+		Path:   "basic-auth/scott/tiger",
 		Headers: map[string][]string{
 			"Authorization": []string{"Basic c2NvdHQ6dGlnZXI="},
 		},
@@ -183,7 +183,7 @@ func (s *TSuite) TestBasicAuthWithValidCreds() {
 func (s *TSuite) TestBasicAuthWithInvalidCreds() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "basic-auth/scott/tiger",
+		Path:   "basic-auth/scott/tiger",
 		Headers: map[string][]string{
 			"Authorization": []string{"Basic x2NvdHQ6dGlnZXI="},
 		},
@@ -196,7 +196,7 @@ func (s *TSuite) TestBasicAuthWithInvalidCreds() {
 func (s *TSuite) TestBearerAuthWithoutToken() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "bearer",
+		Path:   "bearer",
 	})
 	s.Equal(401, resp.StatusCode)
 	s.Equal("Bearer", resp.Header.Get("WWW-Authenticate"))
@@ -206,7 +206,7 @@ func (s *TSuite) TestBearerAuthWithoutToken() {
 func (s *TSuite) TestBearerAuthWithToken() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "bearer",
+		Path:   "bearer",
 		Headers: map[string][]string{
 			"Authorization": []string{"Bearer my-auth-token"},
 		},
@@ -215,14 +215,14 @@ func (s *TSuite) TestBearerAuthWithToken() {
 	s.Equal("", resp.Header.Get("WWW-Authenticate"))
 	s.Equal(map[string]interface{}{
 		"authenticated": true,
-		"token":          "my-auth-token",
+		"token":         "my-auth-token",
 	}, parseJson(body))
 }
 
 func (s *TSuite) TestDigestAuthWithoutCreds() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "digest-auth/myqop/dave/diamond",
+		Path:   "digest-auth/myqop/dave/diamond",
 	})
 	s.Equal(401, resp.StatusCode)
 	m := regexp.MustCompile(

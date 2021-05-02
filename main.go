@@ -4,15 +4,15 @@ package main
 // Endpoints that respond with data from SherlockHolmes or Shakespeare stories?
 
 import (
-	"html/template"
-	"github.com/sharat87/httpbun/mux"
-	"embed"
 	"crypto/md5"
 	crypto_rand "crypto/rand"
+	"embed"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/sharat87/httpbun/mux"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -111,8 +111,8 @@ func makeBunHandler() http.Handler {
 
 type InfoJsonOptions struct {
 	Method bool
-	Form bool
-	Data bool
+	Form   bool
+	Data   bool
 }
 
 func handleValidMethod(w http.ResponseWriter, req *http.Request, params map[string]string) {
@@ -124,16 +124,16 @@ func handleValidMethod(w http.ResponseWriter, req *http.Request, params map[stri
 	isNonGet := req.Method != http.MethodGet
 	sendInfoJson(w, req, InfoJsonOptions{
 		Method: false,
-		Form: isNonGet,
-		Data: isNonGet,
+		Form:   isNonGet,
+		Data:   isNonGet,
 	})
 }
 
 func handleAnything(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	sendInfoJson(w, req, InfoJsonOptions{
 		Method: true,
-		Form: true,
-		Data: true,
+		Form:   true,
+		Data:   true,
 	})
 }
 
@@ -386,7 +386,7 @@ func handleCache(w http.ResponseWriter, req *http.Request, params map[string]str
 }
 
 func handleCacheControl(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	w.Header().Set("Cache-Control", "public, max-age=" + params["age"])
+	w.Header().Set("Cache-Control", "public, max-age="+params["age"])
 	isNonGet := req.Method != http.MethodGet
 	sendInfoJson(w, req, InfoJsonOptions{
 		Form: isNonGet,
@@ -690,7 +690,7 @@ func handleAbsoluteRedirect(w http.ResponseWriter, req *http.Request, params map
 	n, _ := strconv.Atoi(params["count"])
 
 	if n > 1 {
-		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/" + fmt.Sprint(n - 1)))
+		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/"+fmt.Sprint(n-1)))
 	} else {
 		redirect(w, req, "/get")
 	}
@@ -700,7 +700,7 @@ func handleRelativeRedirect(w http.ResponseWriter, req *http.Request, params map
 	n, _ := strconv.Atoi(params["count"])
 
 	if n > 1 {
-		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/" + fmt.Sprint(n - 1)))
+		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/"+fmt.Sprint(n-1)))
 	} else {
 		redirect(w, req, "/get")
 	}

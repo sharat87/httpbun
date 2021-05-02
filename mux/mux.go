@@ -1,6 +1,7 @@
 package mux
 
 import (
+	"log"
 	"net/http"
 	"regexp"
 )
@@ -10,10 +11,10 @@ type Mux struct {
 }
 
 type route struct {
-	Spec string
+	Spec    string
 	Pattern *regexp.Regexp
-	Fn func(w http.ResponseWriter, req *http.Request, params map[string]string)
-	Doc string
+	Fn      func(w http.ResponseWriter, req *http.Request, params map[string]string)
+	Doc     string
 }
 
 func New() *Mux {
@@ -24,14 +25,16 @@ func New() *Mux {
 
 func (mux *Mux) HandleFunc(spec string, fn func(w http.ResponseWriter, req *http.Request, params map[string]string), doc string) {
 	mux.Routes = append(mux.Routes, route{
-		Spec: spec,
+		Spec:    spec,
 		Pattern: regexp.MustCompile("^" + spec + "$"),
-		Fn: fn,
-		Doc: doc,
+		Fn:      fn,
+		Doc:     doc,
 	})
 }
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	log.Printf("Serving %q %q.", req.Method, req.URL.String())
+
 	for _, route := range mux.Routes {
 		match := route.Pattern.FindStringSubmatch(req.URL.Path)
 		if match != nil {
