@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>Httpbun</title>
+
+<style>
+
+body {
+	margin: 0 auto;
+	font: 16px monospace;
+	max-width: 960px;
+}
+
+dd + dt {
+	margin-top: 1rem;
+}
+
+footer {
+	margin: 3rem 0 1rem;
+	padding: 1rem 0 0;
+	border-top: 1px solid #ddd;
+	text-align: center;
+}
+
+</style>
+
+<h1>Httpbun</h1>
+
+<p>A reimplementation of the good old httpbin. The project is very much a work-in-progress and should be considered
+alpha.</p>
+
+<p>
+<a href='https://github.com/sharat87/httpbun' target=_blank>Source Code on GitHub</a>.
+</p>
+
+<p>
+The following URL specifications are regular expressions, that the path is support to match <i>entirely</i>.
+</p>
+
+<dl>
+{{range .Routes}}
+<dt><b>{{.Spec}}</b></dt>
+<dd>{{.Doc}}</dd>
+{{end}}
+</dl>
+
+<footer>
+	A project by <a href='https://sharats.me' target=_blank>Shri</a>. Heavily inspired by Kenneth Reitz's
+	<a href='http://httpbin.org' target=_blank>Httpbin</a> project.
+</footer>

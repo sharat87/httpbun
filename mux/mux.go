@@ -10,8 +10,10 @@ type Mux struct {
 }
 
 type route struct {
+	Spec string
 	Pattern *regexp.Regexp
 	Fn func(w http.ResponseWriter, req *http.Request, params map[string]string)
+	Doc string
 }
 
 func New() *Mux {
@@ -20,10 +22,12 @@ func New() *Mux {
 	}
 }
 
-func (mux *Mux) HandleFunc(pattern string, fn func(w http.ResponseWriter, req *http.Request, params map[string]string)) {
+func (mux *Mux) HandleFunc(spec string, fn func(w http.ResponseWriter, req *http.Request, params map[string]string), doc string) {
 	mux.Routes = append(mux.Routes, route{
-		Pattern: regexp.MustCompile("^" + pattern + "$"),
+		Spec: spec,
+		Pattern: regexp.MustCompile("^" + spec + "$"),
 		Fn: fn,
+		Doc: doc,
 	})
 }
 
@@ -45,3 +49,20 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	http.NotFound(w, req)
 }
+
+/*
+func specToPattern(spec string) string {
+	return string(regexp.MustCompile("\\b[a-zA-Z0-9_]+:(int|str)\\b").ReplaceAllFunc([]byte(spec), func(def []byte) []byte {
+		parts := strings.Split(string(def), ":")
+		name := parts[0]
+		kind := parts[1]
+		pat := ""
+		if kind == "int" {
+			pat = "\\d+"
+		} else {
+			pat = "[^/]+"
+		}
+		return []byte("(?P<" + name + ">" + pat + ")")
+	}))
+}
+//*/

@@ -4,8 +4,9 @@ package main
 // Endpoints that respond with data from SherlockHolmes or Shakespeare stories?
 
 import (
+	"html/template"
 	"github.com/sharat87/httpbun/mux"
-	_ "embed"
+	"embed"
 	"crypto/md5"
 	crypto_rand "crypto/rand"
 	"encoding/base64"
@@ -25,8 +26,8 @@ import (
 	"time"
 )
 
-//go:embed index.html
-var indexHtml string
+//go:embed static/*
+var statics embed.FS
 
 func main() {
 	rand.Seed(time.Now().Unix())
@@ -49,53 +50,61 @@ func main() {
 func makeBunHandler() http.Handler {
 	mux := mux.New()
 
+	tpl, err := template.ParseFS(statics, "static/*.html")
+	if err != nil {
+		panic(err)
+	}
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request, params map[string]string) {
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, indexHtml)
-	})
+		tpl.ExecuteTemplate(w, "index.html", mux)
+	}, "")
 
-	mux.HandleFunc("/get", handleValidMethod)
-	mux.HandleFunc("/head", handleValidMethod)
-	mux.HandleFunc("/post", handleValidMethod)
-	mux.HandleFunc("/put", handleValidMethod)
-	mux.HandleFunc("/patch", handleValidMethod)
-	mux.HandleFunc("/delete", handleValidMethod)
+	mux.HandleFunc("/get", handleValidMethod, `
+	Accepts GET requests and responds with a JSON object with query params, headers and a few other information about
+	the request.
+	`)
+	mux.HandleFunc("/head", handleValidMethod, "")
+	mux.HandleFunc("/post", handleValidMethod, "")
+	mux.HandleFunc("/put", handleValidMethod, "")
+	mux.HandleFunc("/patch", handleValidMethod, "")
+	mux.HandleFunc("/delete", handleValidMethod, "")
 
-	mux.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic)
-	mux.HandleFunc("/bearer", handleAuthBearer)
-	mux.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest)
+	mux.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic, "")
+	mux.HandleFunc("/bearer", handleAuthBearer, "")
+	mux.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest, "")
 
-	mux.HandleFunc("/status/[\\d,]+", handleStatus)
-	mux.HandleFunc("/ip", handleIp)
-	mux.HandleFunc("/user-agent", handleUserAgent)
+	mux.HandleFunc("/status/[\\d,]+", handleStatus, "")
+	mux.HandleFunc("/ip", handleIp, "")
+	mux.HandleFunc("/user-agent", handleUserAgent, "")
 
-	mux.HandleFunc("/cache", handleCache)
-	mux.HandleFunc("/cache/(?P<age>\\d+)", handleCacheControl)
-	mux.HandleFunc("/etag/(?P<etag>[^/]+)", handleEtag)
-	mux.HandleFunc("/response-headers", handleResponseHeaders)
+	mux.HandleFunc("/cache", handleCache, "")
+	mux.HandleFunc("/cache/(?P<age>\\d+)", handleCacheControl, "")
+	mux.HandleFunc("/etag/(?P<etag>[^/]+)", handleEtag, "")
+	mux.HandleFunc("/response-headers", handleResponseHeaders, "")
 
-	mux.HandleFunc("/deny", handleSampleRobotsDeny)
-	mux.HandleFunc("/html", handleSampleHtml)
-	mux.HandleFunc("/json", handleSampleJson)
-	mux.HandleFunc("/robots.txt", handleSampleRobotsTxt)
-	mux.HandleFunc("/xml", handleSampleXml)
+	mux.HandleFunc("/deny", handleSampleRobotsDeny, "")
+	mux.HandleFunc("/html", handleSampleHtml, "")
+	mux.HandleFunc("/json", handleSampleJson, "")
+	mux.HandleFunc("/robots.txt", handleSampleRobotsTxt, "")
+	mux.HandleFunc("/xml", handleSampleXml, "")
 
-	mux.HandleFunc("/base64(/(?P<encoded>.*))?", handleDecodeBase64)
-	mux.HandleFunc("/bytes/(?P<size>\\d+)", handleRandomBytes)
-	mux.HandleFunc("/delay/(?P<delay>\\d+)", handleDelayedResponse)
-	mux.HandleFunc("/drip", handleDrip)
-	mux.HandleFunc("/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?", handleLinks)
-	mux.HandleFunc("/range/(?P<count>\\d+)/?", handleRange)
+	mux.HandleFunc("/base64(/(?P<encoded>.*))?", handleDecodeBase64, "")
+	mux.HandleFunc("/bytes/(?P<size>\\d+)", handleRandomBytes, "")
+	mux.HandleFunc("/delay/(?P<delay>\\d+)", handleDelayedResponse, "")
+	mux.HandleFunc("/drip", handleDrip, "")
+	mux.HandleFunc("/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?", handleLinks, "")
+	mux.HandleFunc("/range/(?P<count>\\d+)/?", handleRange, "")
 
-	mux.HandleFunc("/cookies", handleCookies)
-	mux.HandleFunc("/cookies/delete", handleCookiesDelete)
-	mux.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
+	mux.HandleFunc("/cookies", handleCookies, "")
+	mux.HandleFunc("/cookies/delete", handleCookiesDelete, "")
+	mux.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet, "")
 
-	mux.HandleFunc("/redirect-to", handleRedirectTo)
-	mux.HandleFunc("/(relative-)?redirect/(?P<count>\\d+)", handleRelativeRedirect)
-	mux.HandleFunc("/absolute-redirect/(?P<count>\\d+)", handleAbsoluteRedirect)
+	mux.HandleFunc("/redirect-to", handleRedirectTo, "")
+	mux.HandleFunc("/(relative-)?redirect/(?P<count>\\d+)", handleRelativeRedirect, "")
+	mux.HandleFunc("/absolute-redirect/(?P<count>\\d+)", handleAbsoluteRedirect, "")
 
-	mux.HandleFunc("/anything\b.*", handleAnything)
+	mux.HandleFunc("/anything\\b.*", handleAnything, "")
 
 	return mux
 }
