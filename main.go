@@ -64,7 +64,10 @@ func makeBunHandler() http.Handler {
 	Accepts GET requests and responds with a JSON object with query params, headers and a few other information about
 	the request.
 	`)
-	mux.HandleFunc("/head", handleValidMethod, "")
+	mux.HandleFunc("/head", handleValidMethod, `
+	Accepts POST requests and responds with a JSON object with form body, query params, headers and a few other
+	information about the request.
+	`)
 	mux.HandleFunc("/post", handleValidMethod, "")
 	mux.HandleFunc("/put", handleValidMethod, "")
 	mux.HandleFunc("/patch", handleValidMethod, "")
