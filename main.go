@@ -4,6 +4,8 @@ package main
 // Endpoints that respond with data from SherlockHolmes or Shakespeare stories?
 
 import (
+	"github.com/sharat87/httpbun/mux"
+	_ "embed"
 	"crypto/md5"
 	crypto_rand "crypto/rand"
 	"encoding/base64"
@@ -22,6 +24,9 @@ import (
 	"strings"
 	"time"
 )
+
+//go:embed index.html
+var indexHtml string
 
 func main() {
 	rand.Seed(time.Now().Unix())
@@ -42,10 +47,12 @@ func main() {
 }
 
 func makeBunHandler() http.Handler {
-	// TODO: /post endpoint needs more data in the response
-	// TODO: tests for all endpoints
+	mux := mux.New()
 
-	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request, params map[string]string) {
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprint(w, indexHtml)
+	})
 
 	mux.HandleFunc("/get", handleValidMethod)
 	mux.HandleFunc("/head", handleValidMethod)
@@ -54,17 +61,17 @@ func makeBunHandler() http.Handler {
 	mux.HandleFunc("/patch", handleValidMethod)
 	mux.HandleFunc("/delete", handleValidMethod)
 
-	mux.HandleFunc("/basic-auth/", handleAuthBasic)
+	mux.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic)
 	mux.HandleFunc("/bearer", handleAuthBearer)
-	mux.HandleFunc("/digest-auth/", handleAuthDigest)
+	mux.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest)
 
-	mux.HandleFunc("/status/", handleStatus)
+	mux.HandleFunc("/status/[\\d,]+", handleStatus)
 	mux.HandleFunc("/ip", handleIp)
 	mux.HandleFunc("/user-agent", handleUserAgent)
 
 	mux.HandleFunc("/cache", handleCache)
-	mux.HandleFunc("/cache/", handleCacheControl)
-	mux.HandleFunc("/etag/", handleEtag)
+	mux.HandleFunc("/cache/(?P<age>\\d+)", handleCacheControl)
+	mux.HandleFunc("/etag/(?P<etag>[^/]+)", handleEtag)
 	mux.HandleFunc("/response-headers", handleResponseHeaders)
 
 	mux.HandleFunc("/deny", handleSampleRobotsDeny)
@@ -73,26 +80,22 @@ func makeBunHandler() http.Handler {
 	mux.HandleFunc("/robots.txt", handleSampleRobotsTxt)
 	mux.HandleFunc("/xml", handleSampleXml)
 
-	mux.HandleFunc("/base64", handleDecodeBase64)
-	mux.HandleFunc("/base64/", handleDecodeBase64)
-	mux.HandleFunc("/bytes/", handleRandomBytes)
-	mux.HandleFunc("/delay/", handleDelayedResponse)
+	mux.HandleFunc("/base64(/(?P<encoded>.*))?", handleDecodeBase64)
+	mux.HandleFunc("/bytes/(?P<size>\\d+)", handleRandomBytes)
+	mux.HandleFunc("/delay/(?P<delay>\\d+)", handleDelayedResponse)
 	mux.HandleFunc("/drip", handleDrip)
-	mux.HandleFunc("/links/", handleLinks)
-	mux.HandleFunc("/range/", handleRange)
+	mux.HandleFunc("/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?", handleLinks)
+	mux.HandleFunc("/range/(?P<count>\\d+)/?", handleRange)
 
 	mux.HandleFunc("/cookies", handleCookies)
 	mux.HandleFunc("/cookies/delete", handleCookiesDelete)
-	mux.HandleFunc("/cookies/set", handleCookiesSet)
-	mux.HandleFunc("/cookies/set/", handleCookiesSet)
+	mux.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
 
 	mux.HandleFunc("/redirect-to", handleRedirectTo)
-	mux.HandleFunc("/redirect/", handleRelativeRedirect)
-	mux.HandleFunc("/relative-redirect/", handleRelativeRedirect)
-	mux.HandleFunc("/absolute-redirect/", handleAbsoluteRedirect)
+	mux.HandleFunc("/(relative-)?redirect/(?<count>\\d+)", handleRelativeRedirect)
+	mux.HandleFunc("/absolute-redirect/(?P<count>\\d+)", handleAbsoluteRedirect)
 
-	mux.HandleFunc("/anything", handleAnything)
-	mux.HandleFunc("/anything/", handleAnything)
+	mux.HandleFunc("/anything\b.*", handleAnything)
 
 	return mux
 }
@@ -103,7 +106,7 @@ type InfoJsonOptions struct {
 	Data bool
 }
 
-func handleValidMethod(w http.ResponseWriter, req *http.Request) {
+func handleValidMethod(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	if !strings.EqualFold(req.Method, strings.TrimPrefix(req.URL.Path, "/")) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -117,7 +120,7 @@ func handleValidMethod(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
-func handleAnything(w http.ResponseWriter, req *http.Request) {
+func handleAnything(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	sendInfoJson(w, req, InfoJsonOptions{
 		Method: true,
 		Form: true,
@@ -193,54 +196,38 @@ func sendInfoJson(w http.ResponseWriter, req *http.Request, options InfoJsonOpti
 	writeJson(w, result)
 }
 
-func handleStatus(w http.ResponseWriter, req *http.Request) {
-	codes := regexp.MustCompile("\\d+").FindAllStringSubmatch(req.URL.String(), -1)
+func handleStatus(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	codes := regexp.MustCompile("\\d+").FindAllString(req.URL.String(), -1)
 
 	var code string
 	if len(codes) > 1 {
-		code = codes[rand.Intn(len(codes))][0]
+		code = codes[rand.Intn(len(codes))]
 	} else {
-		code = codes[0][0]
+		code = codes[0]
 	}
 
-	if codeNum, err := strconv.Atoi(code); err != nil {
-		fmt.Println(err)
-	} else {
-		w.WriteHeader(codeNum)
-	}
+	codeNum, _ := strconv.Atoi(code)
+	w.WriteHeader(codeNum)
+	fmt.Fprintf(w, "%d %s", codeNum, http.StatusText(codeNum))
 }
 
-func handleAuthBasic(w http.ResponseWriter, req *http.Request) {
-	const realm = "Basic realm=\"Fake Realm\""
-
+func handleAuthBasic(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	givenUsername, givenPassword, ok := req.BasicAuth()
-	if !ok {
-		w.Header().Set("www-authenticate", realm)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 
-	match := regexp.MustCompile("/basic-auth/([^/]+)/([^/]+)/?$").FindStringSubmatch(req.URL.Path)
-	if match == nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "404 Not Found")
-		return
-	}
-
-	expectedUsername, expectedPassword := match[1], match[2]
-
-	if givenUsername != expectedUsername || givenPassword != expectedPassword {
-		w.Header().Set("WWW-Authenticate", realm)
-		w.WriteHeader(http.StatusUnauthorized)
-	} else {
+	if ok && givenUsername == params["user"] && givenPassword == params["pass"] {
 		writeJson(w, map[string]interface{}{
 			"authenticated": true,
 			"user":          givenUsername,
 		})
+
+	} else {
+		w.Header().Set("WWW-Authenticate", "Basic realm=\"Fake Realm\"")
+		w.WriteHeader(http.StatusUnauthorized)
+
 	}
 }
 
-func handleAuthBearer(w http.ResponseWriter, req *http.Request) {
+func handleAuthBearer(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	authHeaderValues := req.Header["Authorization"]
 	if authHeaderValues == nil || len(authHeaderValues) < 1 {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -261,15 +248,8 @@ func handleAuthBearer(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
-func handleAuthDigest(w http.ResponseWriter, req *http.Request) {
-	match := regexp.MustCompile("/digest-auth/([^/]+)/([^/]+)/([^/]+)/?$").FindStringSubmatch(req.URL.Path)
-	if match == nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "404 Not Found")
-		return
-	}
-
-	expectedQop, expectedUsername, expectedPassword := match[1], match[2], match[3]
+func handleAuthDigest(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	expectedQop, expectedUsername, expectedPassword := params["qop"], params["user"], params["pass"]
 	fmt.Println("expected", expectedQop, expectedUsername, expectedPassword)
 
 	newNonce := "dcd98b7102dd2f0e8b11d0f600bfb0c093" // randomString()
@@ -373,19 +353,19 @@ func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce,
 	return md5sum(ha1 + ":" + serverNonce + ":" + nc + ":" + clientNonce + ":" + qop + ":" + ha2)
 }
 
-func handleIp(w http.ResponseWriter, req *http.Request) {
+func handleIp(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	writeJson(w, map[string]string{
 		"origin": strings.Split(req.RemoteAddr, ":")[0],
 	})
 }
 
-func handleUserAgent(w http.ResponseWriter, req *http.Request) {
+func handleUserAgent(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	writeJson(w, map[string]string{
 		"user-agent": headerValue(req, "User-Agent"),
 	})
 }
 
-func handleCache(w http.ResponseWriter, req *http.Request) {
+func handleCache(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	shouldSendData :=
 		headerValue(req, "If-Modified-Since") == "" &&
 			headerValue(req, "If-None-Match") == ""
@@ -401,15 +381,8 @@ func handleCache(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func handleCacheControl(w http.ResponseWriter, req *http.Request) {
-	match := regexp.MustCompile("^/cache/(\\d+)$").FindStringSubmatch(req.URL.Path)
-	if match == nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "404 Not Found")
-		return
-	}
-
-	w.Header().Set("Cache-Control", "public, max-age="+match[1])
+func handleCacheControl(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	w.Header().Set("Cache-Control", "public, max-age=" + params["age"])
 	isNonGet := req.Method != http.MethodGet
 	sendInfoJson(w, req, InfoJsonOptions{
 		Form: isNonGet,
@@ -417,8 +390,8 @@ func handleCacheControl(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
-func handleEtag(w http.ResponseWriter, req *http.Request) {
-	etagInUrl := strings.TrimPrefix(req.URL.Path, "/etag/")
+func handleEtag(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	etagInUrl := params["etag"]
 	etagInHeader := headerValue(req, "If-None-Match")
 
 	if etagInUrl == etagInHeader {
@@ -432,14 +405,14 @@ func handleEtag(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func handleResponseHeaders(w http.ResponseWriter, req *http.Request) {
+func handleResponseHeaders(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	for name, values := range req.URL.Query() {
 		w.Header().Set(name, values[0])
 	}
 	// TODO: JSON Body for /response-headers.
 }
 
-func handleSampleXml(w http.ResponseWriter, req *http.Request) {
+func handleSampleXml(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	w.Header().Set("Content-Type", "application/xml")
 	fmt.Fprintln(w, `<?xml version='1.0' encoding='us-ascii'?>
 
@@ -467,12 +440,12 @@ func handleSampleXml(w http.ResponseWriter, req *http.Request) {
 </slideshow>`)
 }
 
-func handleSampleRobotsTxt(w http.ResponseWriter, req *http.Request) {
+func handleSampleRobotsTxt(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprintln(w, "User-agent: *\nDisallow: /deny")
 }
 
-func handleSampleRobotsDeny(w http.ResponseWriter, req *http.Request) {
+func handleSampleRobotsDeny(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprintln(w, `
           .-''''''-.
@@ -487,7 +460,7 @@ func handleSampleRobotsDeny(w http.ResponseWriter, req *http.Request) {
      YOU SHOULDN'T BE HERE`)
 }
 
-func handleSampleHtml(w http.ResponseWriter, req *http.Request) {
+func handleSampleHtml(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprintln(w, `<!DOCTYPE html>
 <html>
@@ -505,7 +478,7 @@ func handleSampleHtml(w http.ResponseWriter, req *http.Request) {
 </html>`)
 }
 
-func handleSampleJson(w http.ResponseWriter, req *http.Request) {
+func handleSampleJson(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintln(w, `{
   "slideshow": {
@@ -530,43 +503,30 @@ func handleSampleJson(w http.ResponseWriter, req *http.Request) {
 }`)
 }
 
-func handleDecodeBase64(w http.ResponseWriter, req *http.Request) {
-	match := regexp.MustCompile("/base64(?:/(.*))?$").FindStringSubmatch(req.URL.Path)
-	encoded := match[1]
+func handleDecodeBase64(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	encoded := params["encoded"]
 	if encoded == "" {
 		encoded = "SFRUUEJVTiBpcyBhd2Vzb21lciE="
 	}
 	if decoded, err := base64.StdEncoding.DecodeString(encoded); err != nil {
-		fmt.Fprint(w, "Incorrect Base64 data try: SFRUUEJVTiBpcyBhd2Vzb21lciE=")
+		fmt.Fprint(w, "Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
 	} else {
 		fmt.Fprint(w, string(decoded))
 	}
 }
 
-func handleRandomBytes(w http.ResponseWriter, req *http.Request) {
-	match := regexp.MustCompile("/bytes/(\\d+)$").FindStringSubmatch(req.URL.Path)
-	if match == nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "404 Not Found")
-		return
-	}
+func handleRandomBytes(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	w.Header().Set("content-type", "application/octet-stream")
-	n, _ := strconv.Atoi(match[1])
+	n, _ := strconv.Atoi(params["size"])
 	w.Write(randomBytes(n))
 }
 
-func handleDelayedResponse(w http.ResponseWriter, req *http.Request) {
-	match := regexp.MustCompile("/delay/(\\d+)$").FindStringSubmatch(req.URL.Path)
-	if match == nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "404 Not Found")
-		return
-	}
-	n, _ := strconv.Atoi(match[1])
+func handleDelayedResponse(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	n, _ := strconv.Atoi(params["delay"])
 	time.Sleep(time.Duration(n) * time.Second)
 }
 
-func handleDrip(w http.ResponseWriter, req *http.Request) {
+func handleDrip(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	args := req.URL.Query()
 	var err error
 
@@ -622,16 +582,9 @@ func handleDrip(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func handleLinks(w http.ResponseWriter, req *http.Request) {
-	match := regexp.MustCompile("/links/(\\d+)(?:/(\\d+))?/?$").FindStringSubmatch(req.URL.Path)
-	if match == nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "404 Not Found")
-		return
-	}
-
-	count, _ := strconv.Atoi(match[1])
-	offset, _ := strconv.Atoi(match[2])
+func handleLinks(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	count, _ := strconv.Atoi(params["count"])
+	offset, _ := strconv.Atoi(params["offset"])
 
 	fmt.Fprint(w, "<html><head><title>Links</title></head><body>")
 	for i := 0; i < count; i++ {
@@ -640,21 +593,14 @@ func handleLinks(w http.ResponseWriter, req *http.Request) {
 		} else {
 			fmt.Fprintf(w, "<a href='/links/%d/%d'>%d</a>", count, i, i)
 		}
-		fmt.Fprintf(w, " ")
+		fmt.Fprint(w, " ")
 	}
 	fmt.Fprint(w, "</body></html>")
 }
 
-func handleRange(w http.ResponseWriter, req *http.Request) {
-	match := regexp.MustCompile("/range/(\\d+)/?$").FindStringSubmatch(req.URL.Path)
-	if match == nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "404 Not Found")
-		return
-	}
-
+func handleRange(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	// TODO: Cache range response, don't have to generate over and over again.
-	count, _ := strconv.Atoi(match[1])
+	count, _ := strconv.Atoi(params["count"])
 	r := rand.New(rand.NewSource(42))
 	b := make([]byte, count)
 	r.Read(b)
@@ -663,7 +609,7 @@ func handleRange(w http.ResponseWriter, req *http.Request) {
 	w.Write(b)
 }
 
-func handleCookies(w http.ResponseWriter, req *http.Request) {
+func handleCookies(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	items := make(map[string]string)
 	for _, cookie := range req.Cookies() {
 		items[cookie.Name] = cookie.Value
@@ -673,7 +619,7 @@ func handleCookies(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
-func handleCookiesDelete(w http.ResponseWriter, req *http.Request) {
+func handleCookiesDelete(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	for name, _ := range req.URL.Query() {
 		http.SetCookie(w, &http.Cookie{
 			Name:    name,
@@ -687,15 +633,8 @@ func handleCookiesDelete(w http.ResponseWriter, req *http.Request) {
 	redirect(w, req, "/cookies")
 }
 
-func handleCookiesSet(w http.ResponseWriter, req *http.Request) {
-	match := regexp.MustCompile("/cookies/set(/([^/]+)/([^/]+))?$").FindStringSubmatch(req.URL.Path)
-	if match == nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "404 Not Found")
-		return
-	}
-
-	if match[1] == "" {
+func handleCookiesSet(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	if params["name"] == "" {
 		for name, values := range req.URL.Query() {
 			http.SetCookie(w, &http.Cookie{
 				Name:  name,
@@ -706,8 +645,8 @@ func handleCookiesSet(w http.ResponseWriter, req *http.Request) {
 
 	} else {
 		http.SetCookie(w, &http.Cookie{
-			Name:  match[2],
-			Value: match[3],
+			Name:  params["name"],
+			Value: params["value"],
 			Path:  "/",
 		})
 
@@ -716,7 +655,7 @@ func handleCookiesSet(w http.ResponseWriter, req *http.Request) {
 	redirect(w, req, "/cookies")
 }
 
-func handleRedirectTo(w http.ResponseWriter, req *http.Request) {
+func handleRedirectTo(w http.ResponseWriter, req *http.Request, params map[string]string) {
 	urls := req.URL.Query()["url"]
 	if len(urls) < 1 || urls[0] == "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -743,35 +682,21 @@ func handleRedirectTo(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(statusCode)
 }
 
-func handleAbsoluteRedirect(w http.ResponseWriter, req *http.Request) {
-	match := regexp.MustCompile("/absolute-redirect/(\\d+)$").FindStringSubmatch(req.URL.Path)
-	if match == nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "404 Not Found")
-		return
-	}
-
-	n, _ := strconv.Atoi(match[1])
+func handleAbsoluteRedirect(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	n, _ := strconv.Atoi(params["count"])
 
 	if n > 1 {
-		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/"+fmt.Sprint(n-1)))
+		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/" + fmt.Sprint(n - 1)))
 	} else {
 		redirect(w, req, "/get")
 	}
 }
 
-func handleRelativeRedirect(w http.ResponseWriter, req *http.Request) {
-	match := regexp.MustCompile("/(?:relative-)?redirect/(\\d+)$").FindStringSubmatch(req.URL.Path)
-	if match == nil {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "404 Not Found")
-		return
-	}
-
-	n, _ := strconv.Atoi(match[1])
+func handleRelativeRedirect(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	n, _ := strconv.Atoi(params["count"])
 
 	if n > 1 {
-		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/"+fmt.Sprint(n-1)))
+		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/" + fmt.Sprint(n - 1)))
 	} else {
 		redirect(w, req, "/get")
 	}
