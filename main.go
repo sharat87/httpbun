@@ -3,7 +3,11 @@ package main
 // Also: <https://jsonplaceholder.typicode.com/>.
 // Endpoints that respond with data from SherlockHolmes or Shakespeare stories?
 
+// A hook+inbox system, like requestbin (requestbin.net), implemented in the style of mailinator inboxes.
+
 import (
+	"bytes"
+	"html/template"
 	"crypto/md5"
 	crypto_rand "crypto/rand"
 	"embed"
@@ -12,10 +16,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sharat87/httpbun/mux"
-	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,8 +29,14 @@ import (
 	"time"
 )
 
-//go:embed static/*
-var statics embed.FS
+var (
+	Version string
+	Commit string
+	Date string
+)
+
+//go:embed assets/*
+var assets embed.FS
 
 func main() {
 	rand.Seed(time.Now().Unix())
@@ -37,105 +47,89 @@ func main() {
 		port = "3090"
 	}
 
+	m := makeBunHandler()
+	m.BeforeRequest = func(w http.ResponseWriter, req *mux.Request) {
+		log.Printf("Handling %s %s", req.Method, req.URL.String())
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		// TODO: Include version number in the `X-Powered-By` header.
+		w.Header().Set("X-Powered-By", "httpbun")
+	}
+
 	s := &http.Server{
 		Addr:    host + ":" + port,
-		Handler: makeBunHandler(),
+		Handler: m,
 	}
 
 	fmt.Printf("Serving on %s:%s (set HOST / PORT environment variables to change)...\n", host, port)
+	fmt.Printf("Version: %q, Commit: %q, Date: %q.\n", Version, Commit, Date)
 	log.Fatal(s.ListenAndServe())
 }
 
-func makeBunHandler() http.Handler {
-	mux := mux.New()
+func makeBunHandler() mux.Mux {
+	m := mux.New()
 
-	indexHtmlBytes, err := statics.ReadFile("static/index.html")
+	tpl, err := template.ParseFS(assets, "assets/*.html")
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error parsing HTML assets %v.", err)
 	}
-	indexHtml := string(indexHtmlBytes)
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request, params map[string]string) {
+	var indexHtmlBytes bytes.Buffer
+	if err := tpl.ExecuteTemplate(&indexHtmlBytes, "index.html", nil); err != nil {
+		log.Fatalf("Error executing index.html template %v.", err)
+	}
+	indexHtml := indexHtmlBytes.String()
+
+	m.HandleFunc("/", func(w http.ResponseWriter, req *mux.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		// TODO: Cache this rendered response. Don't have to render index.html everytime.
 		fmt.Fprint(w, indexHtml)
-	}, "")
+	})
 
-	mux.HandleFunc("/get", handleValidMethod, `
-	Accepts GET requests and responds with a JSON object with query params, headers and a few other information about
-	the request.
-	`)
-	mux.HandleFunc("/post", handleValidMethod, `
-	Accepts POST requests and responds with a JSON object with form body, query params, headers and a few other
-	information about the request. There's also <code>/put</code>, <code>/patch</code> and <code>/delete</code>
-	endpoints that behave similarly.
-	`)
-	mux.HandleFunc("/put", handleValidMethod, "")
-	mux.HandleFunc("/patch", handleValidMethod, "")
-	mux.HandleFunc("/delete", handleValidMethod, "")
+	m.HandleFunc("/get", handleValidMethod)
+	m.HandleFunc("/post", handleValidMethod)
+	m.HandleFunc("/put", handleValidMethod)
+	m.HandleFunc("/patch", handleValidMethod)
+	m.HandleFunc("/delete", handleValidMethod)
 
-	mux.HandleFunc("/headers", handleHeaders, "")
+	m.HandleFunc("/headers", handleHeaders)
 
-	mux.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic, `
-	Requires basic authentication with <code>user</code> and <code>pass</code> as the credentials.
-	`)
+	m.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic)
+	m.HandleFunc("/bearer", handleAuthBearer)
+	m.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest)
 
-	mux.HandleFunc("/bearer", handleAuthBearer, `
-	Requires bearer authentication. Which needs an <code>Authorization</code> header in the request, that takes the form
-	<code>Bearer some-auth-token-here</code>. This endpoint accepts any token as valid.
-	`)
+	m.HandleFunc("/status/(?P<codes>[\\d,]+)", handleStatus)
+	m.HandleFunc("/ip", handleIp)
+	m.HandleFunc("/user-agent", handleUserAgent)
 
-	mux.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest, `
-	Digest authentication. The endpoint <code>/digest-auth/auth/scott/tiger</code> requires to be authenticated with the
-	credentials <code>scott</code> and <code>tiger</code> as username and password. The implementation is based on
-	<a href='https://en.wikipedia.org/wiki/Digest_access_authentication#Example_with_explanation' rel=_blank>this
-	example from Wikipedia</a>. The value of <code>qop</code> is usually <code>auth</code>.
-	`)
+	m.HandleFunc("/cache", handleCache)
+	m.HandleFunc("/cache/(?P<age>\\d+)", handleCacheControl)
+	m.HandleFunc("/etag/(?P<etag>[^/]+)", handleEtag)
+	m.HandleFunc("/response-headers", handleResponseHeaders)
 
-	mux.HandleFunc("/status/(?P<codes>[\\d,]+)", handleStatus, `
-	Responds with the HTTP status as given by <code>codes</code>. It can be a comma-separated list of multiple status
-	codes, of which a random one is chosen for the response.
-	`)
+	m.HandleFunc("/deny", handleSampleRobotsDeny)
+	m.HandleFunc("/html", handleSampleHtml)
+	m.HandleFunc("/json", handleSampleJson)
+	m.HandleFunc("/robots.txt", handleSampleRobotsTxt)
+	m.HandleFunc("/xml", handleSampleXml)
 
-	mux.HandleFunc("/ip", handleIp, `
-	Responds with a JSON object with a single field, <code>origin</code>, with the client's IP Address for value.
-	`)
+	m.HandleFunc("/base64(/(?P<encoded>.*))?", handleDecodeBase64)
+	m.HandleFunc("/bytes/(?P<size>\\d+)", handleRandomBytes)
+	m.HandleFunc("/delay/(?P<delay>\\d+)", handleDelayedResponse)
+	m.HandleFunc("/drip(-(?P<mode>lines))?", handleDrip)
+	m.HandleFunc("/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?", handleLinks)
+	m.HandleFunc("/range/(?P<count>\\d+)/?", handleRange)
 
-	mux.HandleFunc("/user-agent", handleUserAgent, `
-	Responds with a JSON object with a single field, <code>user-agent</code>, with the client's user agent (as present
-	in the <code>User-Agent</code> header) for value.
-	)
-	`)
+	m.HandleFunc("/cookies", handleCookies)
+	m.HandleFunc("/cookies/delete", handleCookiesDelete)
+	m.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
 
-	mux.HandleFunc("/cache", handleCache, "")
-	mux.HandleFunc("/cache/(?P<age>\\d+)", handleCacheControl, "")
-	mux.HandleFunc("/etag/(?P<etag>[^/]+)", handleEtag, "")
-	mux.HandleFunc("/response-headers", handleResponseHeaders, "")
+	m.HandleFunc("/redirect-to", handleRedirectTo)
+	m.HandleFunc("/(relative-)?redirect/(?P<count>\\d+)", handleRelativeRedirect)
+	m.HandleFunc("/absolute-redirect/(?P<count>\\d+)", handleAbsoluteRedirect)
 
-	mux.HandleFunc("/deny", handleSampleRobotsDeny, "")
-	mux.HandleFunc("/html", handleSampleHtml, "")
-	mux.HandleFunc("/json", handleSampleJson, "")
-	mux.HandleFunc("/robots.txt", handleSampleRobotsTxt, "")
-	mux.HandleFunc("/xml", handleSampleXml, "")
+	m.HandleFunc("/anything\\b.*", handleAnything)
 
-	mux.HandleFunc("/base64(/(?P<encoded>.*))?", handleDecodeBase64, "")
-	mux.HandleFunc("/bytes/(?P<size>\\d+)", handleRandomBytes, "")
-	mux.HandleFunc("/delay/(?P<delay>\\d+)", handleDelayedResponse, "")
-	mux.HandleFunc("/drip", handleDrip, "")
-	mux.HandleFunc("/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?", handleLinks, "")
-	mux.HandleFunc("/range/(?P<count>\\d+)/?", handleRange, "")
-
-	mux.HandleFunc("/cookies", handleCookies, "")
-	mux.HandleFunc("/cookies/delete", handleCookiesDelete, "")
-	mux.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet, "")
-
-	mux.HandleFunc("/redirect-to", handleRedirectTo, "")
-	mux.HandleFunc("/(relative-)?redirect/(?P<count>\\d+)", handleRelativeRedirect, "")
-	mux.HandleFunc("/absolute-redirect/(?P<count>\\d+)", handleAbsoluteRedirect, "")
-
-	mux.HandleFunc("/anything\\b.*", handleAnything, "")
-
-	return mux
+	return m
 }
 
 type InfoJsonOptions struct {
@@ -144,9 +138,11 @@ type InfoJsonOptions struct {
 	Data   bool
 }
 
-func handleValidMethod(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	if !strings.EqualFold(req.Method, strings.TrimPrefix(req.URL.Path, "/")) {
-		w.WriteHeader(http.StatusBadRequest)
+func handleValidMethod(w http.ResponseWriter, req *mux.Request) {
+	allowedMethod := strings.TrimPrefix(req.URL.Path, "/")
+	if !strings.EqualFold(req.Method, allowedMethod) {
+		w.Header().Set("Allow", allowedMethod)
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -158,7 +154,7 @@ func handleValidMethod(w http.ResponseWriter, req *http.Request, params map[stri
 	})
 }
 
-func handleAnything(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleAnything(w http.ResponseWriter, req *mux.Request) {
 	sendInfoJson(w, req, InfoJsonOptions{
 		Method: true,
 		Form:   true,
@@ -166,7 +162,7 @@ func handleAnything(w http.ResponseWriter, req *http.Request, params map[string]
 	})
 }
 
-func handleHeaders(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleHeaders(w http.ResponseWriter, req *mux.Request) {
 	headers := make(map[string]string)
 	for name, values := range req.Header {
 		headers[name] = strings.Join(values, ", ")
@@ -177,7 +173,7 @@ func handleHeaders(w http.ResponseWriter, req *http.Request, params map[string]s
 	})
 }
 
-func sendInfoJson(w http.ResponseWriter, req *http.Request, options InfoJsonOptions) {
+func sendInfoJson(w http.ResponseWriter, req *mux.Request, options InfoJsonOptions) {
 	args := make(map[string]interface{})
 	for name, values := range req.URL.Query() {
 		if len(values) > 1 {
@@ -193,7 +189,7 @@ func sendInfoJson(w http.ResponseWriter, req *http.Request, options InfoJsonOpti
 	}
 
 	body := ""
-	if bodyBytes, err := ioutil.ReadAll(io.LimitReader(req.Body, 10000)); err != nil {
+	if bodyBytes, err := ioutil.ReadAll(req.CappedBody); err != nil {
 		fmt.Println("Error reading request payload", err)
 		return
 	} else {
@@ -245,7 +241,7 @@ func sendInfoJson(w http.ResponseWriter, req *http.Request, options InfoJsonOpti
 	writeJson(w, result)
 }
 
-func handleStatus(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleStatus(w http.ResponseWriter, req *mux.Request) {
 	codes := regexp.MustCompile("\\d+").FindAllString(req.URL.String(), -1)
 
 	var code string
@@ -260,10 +256,10 @@ func handleStatus(w http.ResponseWriter, req *http.Request, params map[string]st
 	fmt.Fprintf(w, "%d %s", codeNum, http.StatusText(codeNum))
 }
 
-func handleAuthBasic(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleAuthBasic(w http.ResponseWriter, req *mux.Request) {
 	givenUsername, givenPassword, ok := req.BasicAuth()
 
-	if ok && givenUsername == params["user"] && givenPassword == params["pass"] {
+	if ok && givenUsername == req.Field("user") && givenPassword == req.Field("pass") {
 		writeJson(w, map[string]interface{}{
 			"authenticated": true,
 			"user":          givenUsername,
@@ -276,7 +272,7 @@ func handleAuthBasic(w http.ResponseWriter, req *http.Request, params map[string
 	}
 }
 
-func handleAuthBearer(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleAuthBearer(w http.ResponseWriter, req *mux.Request) {
 	authHeader := headerValue(req, "Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		w.Header().Set("WWW-Authenticate", "Bearer")
@@ -292,8 +288,8 @@ func handleAuthBearer(w http.ResponseWriter, req *http.Request, params map[strin
 	})
 }
 
-func handleAuthDigest(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	expectedQop, expectedUsername, expectedPassword := params["qop"], params["user"], params["pass"]
+func handleAuthDigest(w http.ResponseWriter, req *mux.Request) {
+	expectedQop, expectedUsername, expectedPassword := req.Field("qop"), req.Field("user"), req.Field("pass")
 	newNonce := randomString()
 	opaque := randomString()
 	realm := "Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"" + newNonce +
@@ -386,19 +382,31 @@ func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce,
 	return md5sum(ha1 + ":" + serverNonce + ":" + nc + ":" + clientNonce + ":" + qop + ":" + ha2)
 }
 
-func handleIp(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleIp(w http.ResponseWriter, req *mux.Request) {
+	ip, _, err := net.SplitHostPort(req.RemoteAddr)
+	if err != nil {
+		log.Printf("Unable to read IP from address %q.", req.RemoteAddr)
+		return
+	}
+
+	userIP := net.ParseIP(ip)
+	ipStr := ""
+	if userIP != nil {
+		ipStr = fmt.Sprint(w, userIP)
+	}
+
 	writeJson(w, map[string]string{
-		"origin": strings.Split(req.RemoteAddr, ":")[0],
+		"origin": ipStr,
 	})
 }
 
-func handleUserAgent(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleUserAgent(w http.ResponseWriter, req *mux.Request) {
 	writeJson(w, map[string]string{
 		"user-agent": headerValue(req, "User-Agent"),
 	})
 }
 
-func handleCache(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleCache(w http.ResponseWriter, req *mux.Request) {
 	shouldSendData :=
 		headerValue(req, "If-Modified-Since") == "" &&
 			headerValue(req, "If-None-Match") == ""
@@ -414,8 +422,8 @@ func handleCache(w http.ResponseWriter, req *http.Request, params map[string]str
 	}
 }
 
-func handleCacheControl(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	w.Header().Set("Cache-Control", "public, max-age="+params["age"])
+func handleCacheControl(w http.ResponseWriter, req *mux.Request) {
+	w.Header().Set("Cache-Control", "public, max-age="+req.Field("age"))
 	isNonGet := req.Method != http.MethodGet
 	sendInfoJson(w, req, InfoJsonOptions{
 		Form: isNonGet,
@@ -423,9 +431,9 @@ func handleCacheControl(w http.ResponseWriter, req *http.Request, params map[str
 	})
 }
 
-func handleEtag(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleEtag(w http.ResponseWriter, req *mux.Request) {
 	// TODO: Handle If-Match header in etag endpoint: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match>.
-	etagInUrl := params["etag"]
+	etagInUrl := req.Field("etag")
 	etagInHeader := headerValue(req, "If-None-Match")
 
 	if etagInUrl == etagInHeader {
@@ -439,14 +447,39 @@ func handleEtag(w http.ResponseWriter, req *http.Request, params map[string]stri
 	}
 }
 
-func handleResponseHeaders(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleResponseHeaders(w http.ResponseWriter, req *mux.Request) {
+	data := make(map[string]interface{})
+
 	for name, values := range req.URL.Query() {
-		w.Header().Set(name, values[0])
+		name = http.CanonicalHeaderKey(name)
+		for _, value := range values {
+			w.Header().Add(name, value)
+		}
+		if len(values) > 1 {
+			data[name] = values
+		} else {
+			data[name] = values[0]
+		}
 	}
-	// TODO: JSON Body for /response-headers.
+
+	w.Header().Set("Content-Type", "application/json")
+	data["Content-Type"] = "application/json"
+
+	jsonContent := ""
+
+	for {
+		jsonContent = toJsonMust(data)
+		newContentLength := fmt.Sprint(len(jsonContent))
+		if data["Content-Length"] == newContentLength {
+			break
+		}
+		data["Content-Length"] = newContentLength
+	}
+
+	fmt.Fprintln(w, jsonContent)
 }
 
-func handleSampleXml(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleSampleXml(w http.ResponseWriter, req *mux.Request) {
 	w.Header().Set("Content-Type", "application/xml")
 	fmt.Fprintln(w, `<?xml version='1.0' encoding='us-ascii'?>
 
@@ -474,12 +507,12 @@ func handleSampleXml(w http.ResponseWriter, req *http.Request, params map[string
 </slideshow>`)
 }
 
-func handleSampleRobotsTxt(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleSampleRobotsTxt(w http.ResponseWriter, req *mux.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprintln(w, "User-agent: *\nDisallow: /deny")
 }
 
-func handleSampleRobotsDeny(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleSampleRobotsDeny(w http.ResponseWriter, req *mux.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprintln(w, `
           .-''''''-.
@@ -494,7 +527,7 @@ func handleSampleRobotsDeny(w http.ResponseWriter, req *http.Request, params map
      YOU SHOULDN'T BE HERE`)
 }
 
-func handleSampleHtml(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleSampleHtml(w http.ResponseWriter, req *mux.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprintln(w, `<!DOCTYPE html>
 <html>
@@ -512,7 +545,7 @@ func handleSampleHtml(w http.ResponseWriter, req *http.Request, params map[strin
 </html>`)
 }
 
-func handleSampleJson(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleSampleJson(w http.ResponseWriter, req *mux.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintln(w, `{
   "slideshow": {
@@ -537,8 +570,8 @@ func handleSampleJson(w http.ResponseWriter, req *http.Request, params map[strin
 }`)
 }
 
-func handleDecodeBase64(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	encoded := params["encoded"]
+func handleDecodeBase64(w http.ResponseWriter, req *mux.Request) {
+	encoded := req.Field("encoded")
 	if encoded == "" {
 		encoded = "SFRUUEJVTiBpcyBhd2Vzb21lciE="
 	}
@@ -549,76 +582,73 @@ func handleDecodeBase64(w http.ResponseWriter, req *http.Request, params map[str
 	}
 }
 
-func handleRandomBytes(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleRandomBytes(w http.ResponseWriter, req *mux.Request) {
 	w.Header().Set("content-type", "application/octet-stream")
-	n, _ := strconv.Atoi(params["size"])
+	n, _ := strconv.Atoi(req.Field("size"))
 	w.Write(randomBytes(n))
 }
 
-func handleDelayedResponse(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	n, _ := strconv.Atoi(params["delay"])
+func handleDelayedResponse(w http.ResponseWriter, req *mux.Request) {
+	n, _ := strconv.Atoi(req.Field("delay"))
 	time.Sleep(time.Duration(n) * time.Second)
 }
 
-func handleDrip(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	args := req.URL.Query()
-	var err error
+func handleDrip(w http.ResponseWriter, req *mux.Request) {
+	// Test with `curl -N localhost:3090/drip`.
 
-	duration := 2
-	if len(args["duration"]) > 0 {
-		duration, err = strconv.Atoi(args["duration"][0])
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, "duration must be an integer")
-			return
-		}
+	writeNewLines := req.Field("mode") == "lines"
+
+	duration, err := queryParamInt(req, "duration", 2)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, err.Error())
+		return
 	}
 
-	numbytes := 10
-	if len(args["numbytes"]) > 0 {
-		numbytes, err = strconv.Atoi(args["numbytes"][0])
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, "numbytes must be an integer")
-			return
-		}
+	numbytes, err := queryParamInt(req, "numbytes", 10)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, err.Error())
+		return
 	}
 
-	code := 200
-	if len(args["code"]) > 0 {
-		code, err = strconv.Atoi(args["code"][0])
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, "code must be an integer")
-			return
-		}
+	code, err := queryParamInt(req, "code", 200)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, err.Error())
+		return
 	}
 
-	delay := 2
-	if len(args["delay"]) > 0 {
-		delay, err = strconv.Atoi(args["delay"][0])
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, "delay must be an integer")
-			return
-		}
+	delay, err := queryParamInt(req, "delay", 2)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, err.Error())
+		return
 	}
 
-	time.Sleep(time.Duration(delay) * time.Second)
+	if delay > 0 {
+		time.Sleep(time.Duration(delay) * time.Second)
+	}
 	w.WriteHeader(code)
 
 	interval := time.Duration(float32(time.Second) * float32(duration) / float32(numbytes))
 
 	for numbytes > 0 {
 		fmt.Fprint(w, "*")
+		if writeNewLines {
+			fmt.Fprint(w, "\n")
+		}
+		if !flush(w) {
+			log.Println("Flush not available. Dripping and streaming not supported on this platform.")
+		}
 		time.Sleep(interval)
 		numbytes--
 	}
 }
 
-func handleLinks(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	count, _ := strconv.Atoi(params["count"])
-	offset, _ := strconv.Atoi(params["offset"])
+func handleLinks(w http.ResponseWriter, req *mux.Request) {
+	count, _ := strconv.Atoi(req.Field("count"))
+	offset, _ := strconv.Atoi(req.Field("offset"))
 
 	fmt.Fprint(w, "<html><head><title>Links</title></head><body>")
 	for i := 0; i < count; i++ {
@@ -632,18 +662,27 @@ func handleLinks(w http.ResponseWriter, req *http.Request, params map[string]str
 	fmt.Fprint(w, "</body></html>")
 }
 
-func handleRange(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleRange(w http.ResponseWriter, req *mux.Request) {
 	// TODO: Cache range response, don't have to generate over and over again.
-	count, _ := strconv.Atoi(params["count"])
-	r := rand.New(rand.NewSource(42))
-	b := make([]byte, count)
-	r.Read(b)
+	count, _ := strconv.Atoi(req.Field("count"))
+
+	if count > 1000 {
+		count = 1000
+	} else if count < 0 {
+		count = 0
+	}
 
 	w.Header().Set("content-type", "application/octet-stream")
-	w.Write(b)
+
+	if count > 0 {
+		r := rand.New(rand.NewSource(42))
+		b := make([]byte, count)
+		r.Read(b)
+		w.Write(b)
+	}
 }
 
-func handleCookies(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleCookies(w http.ResponseWriter, req *mux.Request) {
 	items := make(map[string]string)
 	for _, cookie := range req.Cookies() {
 		items[cookie.Name] = cookie.Value
@@ -653,7 +692,7 @@ func handleCookies(w http.ResponseWriter, req *http.Request, params map[string]s
 	})
 }
 
-func handleCookiesDelete(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleCookiesDelete(w http.ResponseWriter, req *mux.Request) {
 	for name, _ := range req.URL.Query() {
 		http.SetCookie(w, &http.Cookie{
 			Name:    name,
@@ -667,8 +706,8 @@ func handleCookiesDelete(w http.ResponseWriter, req *http.Request, params map[st
 	redirect(w, req, "/cookies")
 }
 
-func handleCookiesSet(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	if params["name"] == "" {
+func handleCookiesSet(w http.ResponseWriter, req *mux.Request) {
+	if req.Field("name") == "" {
 		for name, values := range req.URL.Query() {
 			http.SetCookie(w, &http.Cookie{
 				Name:  name,
@@ -679,8 +718,8 @@ func handleCookiesSet(w http.ResponseWriter, req *http.Request, params map[strin
 
 	} else {
 		http.SetCookie(w, &http.Cookie{
-			Name:  params["name"],
-			Value: params["value"],
+			Name:  req.Field("name"),
+			Value: req.Field("value"),
 			Path:  "/",
 		})
 
@@ -689,7 +728,7 @@ func handleCookiesSet(w http.ResponseWriter, req *http.Request, params map[strin
 	redirect(w, req, "/cookies")
 }
 
-func handleRedirectTo(w http.ResponseWriter, req *http.Request, params map[string]string) {
+func handleRedirectTo(w http.ResponseWriter, req *mux.Request) {
 	urls := req.URL.Query()["url"]
 	if len(urls) < 1 || urls[0] == "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -716,8 +755,8 @@ func handleRedirectTo(w http.ResponseWriter, req *http.Request, params map[strin
 	w.WriteHeader(statusCode)
 }
 
-func handleAbsoluteRedirect(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	n, _ := strconv.Atoi(params["count"])
+func handleAbsoluteRedirect(w http.ResponseWriter, req *mux.Request) {
+	n, _ := strconv.Atoi(req.Field("count"))
 
 	if n > 1 {
 		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/"+fmt.Sprint(n-1)))
@@ -726,8 +765,8 @@ func handleAbsoluteRedirect(w http.ResponseWriter, req *http.Request, params map
 	}
 }
 
-func handleRelativeRedirect(w http.ResponseWriter, req *http.Request, params map[string]string) {
-	n, _ := strconv.Atoi(params["count"])
+func handleRelativeRedirect(w http.ResponseWriter, req *mux.Request) {
+	n, _ := strconv.Atoi(req.Field("count"))
 
 	if n > 1 {
 		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/"+fmt.Sprint(n-1)))
@@ -736,7 +775,7 @@ func handleRelativeRedirect(w http.ResponseWriter, req *http.Request, params map
 	}
 }
 
-func redirect(w http.ResponseWriter, req *http.Request, path string) {
+func redirect(w http.ResponseWriter, req *mux.Request, path string) {
 	if strings.HasPrefix(path, "/") {
 		path = strings.Repeat("../", strings.Count(req.URL.Path, "/")-1) + strings.TrimPrefix(path, "/")
 	}
@@ -750,7 +789,7 @@ func redirect(w http.ResponseWriter, req *http.Request, path string) {
 <p>You should be redirected automatically to target URL: <a href=%q>/cookies</a>.  If not click the link.</p>`, path)
 }
 
-func headerValue(req *http.Request, name string) string {
+func headerValue(req *mux.Request, name string) string {
 	if req == nil {
 		return ""
 	}
@@ -762,13 +801,31 @@ func headerValue(req *http.Request, name string) string {
 	return ""
 }
 
+func queryParamInt(req *mux.Request, name string, value int) (int, error) {
+	args := req.URL.Query()
+	var err error
+
+	if len(args[name]) > 0 {
+		value, err = strconv.Atoi(args[name][0])
+		if err != nil {
+			return 0, fmt.Errorf("%s must be an integer", name)
+		}
+	}
+
+	return value, nil
+}
+
 func writeJson(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	if b, err := json.Marshal(data); err != nil {
+	fmt.Fprintln(w, toJsonMust(data))
+}
+
+func toJsonMust(data interface{}) string {
+	b, err := json.MarshalIndent(data, "", "\t")
+	if err != nil {
 		log.Fatal(err)
-	} else {
-		fmt.Fprintln(w, string(b))
 	}
+	return string(b)
 }
 
 func randomBytes(n int) []byte {
@@ -790,4 +847,12 @@ func md5sum(text string) string {
 	// Source: <https://stackoverflow.com/a/25286918/151048>.
 	hash := md5.Sum([]byte(text))
 	return hex.EncodeToString(hash[:])
+}
+
+func flush(w http.ResponseWriter) bool {
+	f, ok := w.(http.Flusher)
+	if ok {
+		f.Flush()
+	}
+	return ok
 }

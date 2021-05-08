@@ -1,11 +1,25 @@
 # HttpBun
 
-This is a rewrite, not a port. So, there will be minor differences in how the server responds in some edge cases. If you
-notice any such case, please report in a GitHub issue.
+This is an HTTP service with endpoints that are useful when testing any HTTP client, like a browser, a library, or any
+API developer tool. It's heavily inspired by [httpbin](http://httpbin.org).
 
-I wrote this as an attempt to learn Golang, and because I needed something like this, with a few extra features.
-Besides, it looks like httpbin isn't being as actively developed as it once was, and it's become _very_ slow in recent
-years. I was a heavy user of httpbin, so I decided to build something similar.
+I wrote this as an attempt to learn Golang, and because I needed something like this, with a few extra features, from
+httpbin. Besides, it looks like httpbin isn't being as actively developed as it once was, and it's become _very_ slow
+for me in recent years. I was a heavy user of httpbin, so I decided to build something similar.
 
-**Why not fork and fix httpbin?**: No big reason really. I was also looking for something to play in Golang, so this was
-a good fit.
+**Why not fork/fix httpbin?**: No big reason really. I was also looking to develop something to learn Golang, so this
+was a good fit.
+
+A project by [Shri](https://sharats.me).
+
+## Contributing
+
+Contributions to httpbun are welcome, for the most part. However, I strongly urge you to open an issue to discuss
+whatever you're working to contribute *before* you start working on it. This will ensure we are on the same page and
+your work would be in the right place to be merged in. It'll also ensure we don't end up working on the same thing,
+duplicating efforts. Thanks!
+
+## License
+
+[Apache-2.0 License](https://github.com/sharat87/httpbun/blob/master/LICENSE). Project includes a
+[NOTICE](https://github.com/sharat87/httpbun/blob/master/NOTICE) file.

@@ -1,55 +1,73 @@
 package mux
 
 import (
-	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"regexp"
 )
 
+type HandlerFn func(w http.ResponseWriter, req *Request)
+
 type Mux struct {
-	Routes []route
+	BeforeRequest HandlerFn
+	Routes        []route
 }
 
 type route struct {
-	Spec    string
 	Pattern *regexp.Regexp
-	Fn      func(w http.ResponseWriter, req *http.Request, params map[string]string)
-	Doc     template.HTML
+	Fn      HandlerFn
 }
 
-func New() *Mux {
-	return &Mux{
+type Request struct {
+	http.Request
+	fields map[string]string
+	CappedBody io.Reader
+}
+
+func New() Mux {
+	return Mux{
 		Routes: []route{},
 	}
 }
 
-func (mux *Mux) HandleFunc(spec string, fn func(w http.ResponseWriter, req *http.Request, params map[string]string), doc string) {
+func (mux *Mux) HandleFunc(pattern string, fn HandlerFn) {
 	mux.Routes = append(mux.Routes, route{
-		Spec:    spec,
-		Pattern: regexp.MustCompile("^" + spec + "$"),
+		Pattern: regexp.MustCompile("^" + pattern + "$"),
 		Fn:      fn,
-		Doc:     template.HTML(doc),
 	})
 }
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	log.Printf("Serving %s %s", req.Method, req.URL.String())
-
 	for _, route := range mux.Routes {
 		match := route.Pattern.FindStringSubmatch(req.URL.Path)
 		if match != nil {
-			details := make(map[string]string)
+			req2 := &Request{
+				*req,
+				make(map[string]string),
+				io.LimitReader(req.Body, 10000),
+			}
+
 			names := route.Pattern.SubexpNames()
 			for i, name := range names {
 				if name != "" {
-					details[name] = match[i]
+					req2.fields[name] = match[i]
 				}
 			}
-			route.Fn(w, req, details)
+
+			if mux.BeforeRequest != nil {
+				mux.BeforeRequest(w, req2)
+			}
+
+			route.Fn(w, req2)
 			return
 		}
 	}
 
+	log.Printf("NotFound %s %s", req.Method, req.URL.String())
 	http.NotFound(w, req)
+}
+
+func (req Request) Field(name string) string {
+	return req.fields[name]
 }

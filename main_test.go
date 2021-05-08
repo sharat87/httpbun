@@ -28,7 +28,7 @@ type R struct {
 	Headers map[string][]string
 }
 
-func (s *TSuite) SetupTest() {
+func (s *TSuite) SetupSuite() {
 	s.Mux = makeBunHandler()
 }
 
@@ -276,9 +276,9 @@ func (s *TSuite) TestDigestAuthWithoutCreds() {
 func (s *TSuite) TestDigestAuthWitCreds() {
 	resp, body := s.ExecRequest(R{
 		Method: "GET",
-		Path: "digest-auth/auth/dave/diamond",
+		Path:   "digest-auth/auth/dave/diamond",
 		Headers: map[string][]string{
-			"Cookie": []string{"nonce=d9fc96d7fe39099441042eea21006d77"},
+			"Cookie":        []string{"nonce=d9fc96d7fe39099441042eea21006d77"},
 			"Authorization": []string{"Digest username=\"dave\", realm=\"testrealm@host.com\", nonce=\"d9fc96d7fe39099441042eea21006d77\", uri=\"/digest-auth/auth/dave/diamond\", algorithm=MD5, response=\"10c1132a06ac0de7c39a07e8553f0f14\", opaque=\"362d9b0fe6787b534eb27677f4210b61\", qop=auth, nc=00000001, cnonce=\"bb2ec71d21a27e19\""},
 		},
 	})
@@ -286,8 +286,74 @@ func (s *TSuite) TestDigestAuthWitCreds() {
 	s.Empty(resp.Header.Get("Set-Cookie"))
 	s.Equal(map[string]interface{}{
 		"authenticated": true,
-		"user":         "dave",
+		"user":          "dave",
 	}, parseJson(body))
+}
+
+func (s *TSuite) TestDigestAuthWitIncorrectUser() {
+	resp, _ := s.ExecRequest(R{
+		Method: "GET",
+		Path:   "digest-auth/auth/dave/diamond",
+		Headers: map[string][]string{
+			"Cookie":        []string{"nonce=0801ff8cf72e952e08643d2dc735231d"},
+			"Authorization": []string{"Authorization: Digest username=\"dave2\", realm=\"testrealm@host.com\", nonce=\"0801ff8cf72e952e08643d2dc735231d\", uri=\"/digest-auth/auth/dave/diamond\", algorithm=MD5, response=\"72cdee27bacbfa650470d0428fe7c4e8\", opaque=\"74061f9b6361455b1a7a74c5b075fd98\", qop=auth, nc=00000001, cnonce=\"810eae48ae823e66\""},
+		},
+	})
+	s.Equal(401, resp.StatusCode)
+	match := regexp.MustCompile("\\bnonce=(\\S+)").FindStringSubmatch(resp.Header.Get("Set-Cookie"))
+	if !s.NotEmpty(match) {
+		return
+	}
+	nonce := match[1]
+	m := regexp.MustCompile(
+		"Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"" + nonce + "\", opaque=\"[a-z0-9]+\", algorithm=MD5, stale=FALSE",
+	).FindString(resp.Header.Get("WWW-Authenticate"))
+	s.NotEmpty(m, "Unexpected value for WWW-Authenticate")
+	// s.Equal(string(body), "")
+}
+
+func (s *TSuite) TestResponseHeaders() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path:   "response-headers?one=two&three=four",
+	})
+	s.Equal(200, resp.StatusCode)
+	s.Equal("application/json", resp.Header.Get("Content-Type"))
+	s.Equal([]string{"two"}, resp.Header.Values("One"))
+	s.Equal([]string{"four"}, resp.Header.Values("Three"))
+	s.Equal(map[string]interface{}{
+		"Content-Length": "97",
+		"Content-Type":   "application/json",
+		"One":            "two",
+		"Three":          "four",
+	}, parseJson(body))
+}
+
+func (s *TSuite) TestResponseHeadersRepeated() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path:   "response-headers?one=two&one=four",
+	})
+	s.Equal(200, resp.StatusCode)
+	s.Equal("application/json", resp.Header.Get("Content-Type"))
+	s.Equal([]string{"two", "four"}, resp.Header.Values("One"))
+	s.Equal(map[string]interface{}{
+		"Content-Length": "96",
+		"Content-Type":   "application/json",
+		"One": []interface{}{
+			"two",
+			"four",
+		},
+	}, parseJson(body))
+}
+
+func (s *TSuite) TestDrip() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path:   "drip?duration=1&delay=0",
+	})
+	s.Equal(200, resp.StatusCode)
+	s.Equal(strings.Repeat("*", 10), string(body))
 }
 
 func parseJson(raw []byte) map[string]interface{} {
