@@ -87,6 +87,18 @@ func makeBunHandler() mux.Mux {
 		fmt.Fprint(w, indexHtml)
 	})
 
+	m.HandleFunc("/(?P<name>.+\\.(?P<ext>png|ico|webmanifest))", func(w http.ResponseWriter, req *mux.Request) {
+		name := req.Field("name")
+		// ext := req.Field("ext")
+		if content, err := assets.ReadFile("assets/" + name); err == nil {
+			w.Write(content)
+		} else if strings.HasSuffix(err.Error(), " file does not exist") {
+			http.NotFound(w, &req.Request)
+		} else {
+			log.Printf("Error %v", err)
+		}
+	})
+
 	m.HandleFunc("/get", handleValidMethod)
 	m.HandleFunc("/post", handleValidMethod)
 	m.HandleFunc("/put", handleValidMethod)
