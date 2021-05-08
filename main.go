@@ -7,7 +7,6 @@ package main
 
 import (
 	"bytes"
-	"html/template"
 	"crypto/md5"
 	crypto_rand "crypto/rand"
 	"embed"
@@ -16,15 +15,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sharat87/httpbun/mux"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
-	"runtime"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -32,8 +32,8 @@ import (
 
 var (
 	Version string
-	Commit string
-	Date string
+	Commit  string
+	Date    string
 )
 
 //go:embed assets/*

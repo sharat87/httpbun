@@ -21,7 +21,7 @@ type route struct {
 
 type Request struct {
 	http.Request
-	fields map[string]string
+	fields     map[string]string
 	CappedBody io.Reader
 }
 
