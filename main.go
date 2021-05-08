@@ -22,6 +22,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"runtime"
 	"os"
 	"regexp"
 	"strconv"
@@ -63,6 +64,7 @@ func main() {
 
 	fmt.Printf("Serving on %s:%s (set HOST / PORT environment variables to change)...\n", host, port)
 	fmt.Printf("Version: %q, Commit: %q, Date: %q.\n", Version, Commit, Date)
+	fmt.Printf("OS: %q, Arch: %q.\n", runtime.GOOS, runtime.GOARCH)
 	log.Fatal(s.ListenAndServe())
 }
 
