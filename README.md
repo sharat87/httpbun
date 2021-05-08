@@ -1,7 +1,9 @@
 # HttpBun
 
+Hosted version available at [httpbun.com](https://httpbun.com) and mirrored at [httpbun.org](https://httpbun.org).
+
 This is an HTTP service with endpoints that are useful when testing any HTTP client, like a browser, a library, or any
-API developer tool. It's heavily inspired by [httpbin](http://httpbin.org).
+API developer tool. It's heavily inspired by [httpbin](https://httpbin.org).
 
 I wrote this as an attempt to learn Golang, and because I needed something like this, with a few extra features, from
 httpbin. Besides, it looks like httpbin isn't being as actively developed as it once was, and it's become _very_ slow
