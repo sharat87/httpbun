@@ -1,13 +1,13 @@
 package mux
 
 import (
-	"strings"
-	"os"
-	"io"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
+	"strings"
 )
 
 type HandlerFn func(w http.ResponseWriter, req *Request)
@@ -48,6 +48,11 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "%d Host %q not allowed", http.StatusForbidden, req.Host)
 		return
 	}
+
+	// if req.URL.Path == "/" && util.HeaderValue(req, "X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "true" {
+	// 	util.Redirect(w, req, "https://" + req.Host + req.URL.String())
+	// 	return
+	// }
 
 	for _, route := range mux.Routes {
 		match := route.Pattern.FindStringSubmatch(req.URL.Path)
