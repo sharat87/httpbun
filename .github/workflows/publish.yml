@@ -29,5 +29,8 @@ jobs:
         run: |
           tag=${GITHUB_REF##*/}
           docker build -t ghcr.io/${{ github.actor }}/httpbun:$tag .
+          if [[ tag == master ]]; then
+            docker build -t ghcr.io/${{ github.actor }}/httpbun:latest .
+          fi
           docker login ghcr.io --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
-          docker push ghcr.io/${{ github.actor }}/httpbun:$tag
+          docker push --all-tags ghcr.io/${{ github.actor }}/httpbun
