@@ -1,6 +1,7 @@
-# HttpBun
+# Httpbun
 
-Hosted version available at [httpbun.com](https://httpbun.com) and mirrored at [httpbun.org](https://httpbun.org).
+Hosted version available at [httpbun.com](https://httpbun.com) and mirrored at [httpbun.org](https://httpbun.org). RUn
+with docker as `docker run -p 80:80 ghcr.io/sharat87/httpbun`.
 
 This is an HTTP service with endpoints that are useful when testing any HTTP client, like a browser, a library, or any
 API developer tool. It's heavily inspired by [httpbin](https://httpbin.org).
