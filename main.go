@@ -48,6 +48,11 @@ func main() {
 		port = "3090"
 	}
 
+	// Genreate a self-signed cert with following command:
+	// openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365 -subj "/O=httpbun/CN=httpbun.com"
+	sslCertFile := os.Getenv("HTTPBUN_SSL_CERT")
+	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
+
 	m := makeBunHandler()
 	m.BeforeRequest = func(w http.ResponseWriter, req *mux.Request) {
 		log.Printf("Handling %s %s", req.Method, req.URL.String())
@@ -62,10 +67,17 @@ func main() {
 		Handler: m,
 	}
 
-	fmt.Printf("Serving on %s:%s (set HOST / PORT environment variables to change)...\n", host, port)
-	fmt.Printf("Version: %q, Commit: %q, Date: %q.\n", Version, Commit, Date)
-	fmt.Printf("OS: %q, Arch: %q.\n", runtime.GOOS, runtime.GOARCH)
-	log.Fatal(s.ListenAndServe())
+	log.Printf("Serving on %s:%s (set HOST / PORT environment variables to change)...\n", host, port)
+	log.Printf("Version: %q, Commit: %q, Date: %q.\n", Version, Commit, Date)
+	log.Printf("OS: %q, Arch: %q.\n", runtime.GOOS, runtime.GOARCH)
+
+	if sslCertFile == "" {
+		log.Print("Not using TLS. Connect with `http://`.")
+		log.Fatal(s.ListenAndServe())
+	} else {
+		log.Print("Using TLS. Connect with `https://`.")
+		log.Fatal(s.ListenAndServeTLS(sslCertFile, sslKeyFile))
+	}
 }
 
 func makeBunHandler() mux.Mux {
