@@ -2,7 +2,7 @@ FROM scratch
 
 MAINTAINER shrikantsharat.k@gmail.com
 
-ADD httpbun-docker /
+ADD bin/httpbun-docker /
 
 EXPOSE 3090
 
