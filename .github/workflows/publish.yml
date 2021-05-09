@@ -26,6 +26,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ test ]
     steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
       - name: Build for Docker
         run: make build-for-docker
 
@@ -43,6 +50,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ test ]
     steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
       - name: Build for all platforms
         run: make build-all
 
