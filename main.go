@@ -7,14 +7,11 @@ package main
 
 import (
 	"bytes"
-	"crypto/md5"
-	crypto_rand "crypto/rand"
 	"embed"
 	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"github.com/sharat87/httpbun/mux"
+	"github.com/sharat87/httpbun/util"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -194,7 +191,7 @@ func handleHeaders(w http.ResponseWriter, req *mux.Request) {
 		headers[name] = strings.Join(values, ", ")
 	}
 
-	writeJson(w, map[string]interface{}{
+	util.WriteJson(w, map[string]interface{}{
 		"headers": headers,
 	})
 }
@@ -222,7 +219,7 @@ func sendInfoJson(w http.ResponseWriter, req *mux.Request, options InfoJsonOptio
 		body = string(bodyBytes)
 	}
 
-	contentType := headerValue(req, "Content-Type")
+	contentType := util.HeaderValue(req, "Content-Type")
 
 	form := make(map[string]interface{})
 	data := ""
@@ -264,7 +261,7 @@ func sendInfoJson(w http.ResponseWriter, req *mux.Request, options InfoJsonOptio
 		result["data"] = data
 	}
 
-	writeJson(w, result)
+	util.WriteJson(w, result)
 }
 
 func handleStatus(w http.ResponseWriter, req *mux.Request) {
@@ -286,7 +283,7 @@ func handleAuthBasic(w http.ResponseWriter, req *mux.Request) {
 	givenUsername, givenPassword, ok := req.BasicAuth()
 
 	if ok && givenUsername == req.Field("user") && givenPassword == req.Field("pass") {
-		writeJson(w, map[string]interface{}{
+		util.WriteJson(w, map[string]interface{}{
 			"authenticated": true,
 			"user":          givenUsername,
 		})
@@ -299,7 +296,7 @@ func handleAuthBasic(w http.ResponseWriter, req *mux.Request) {
 }
 
 func handleAuthBearer(w http.ResponseWriter, req *mux.Request) {
-	authHeader := headerValue(req, "Authorization")
+	authHeader := util.HeaderValue(req, "Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		w.Header().Set("WWW-Authenticate", "Bearer")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -308,7 +305,7 @@ func handleAuthBearer(w http.ResponseWriter, req *mux.Request) {
 
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 
-	writeJson(w, map[string]interface{}{
+	util.WriteJson(w, map[string]interface{}{
 		"authenticated": true,
 		"token":         token,
 	})
@@ -316,8 +313,8 @@ func handleAuthBearer(w http.ResponseWriter, req *mux.Request) {
 
 func handleAuthDigest(w http.ResponseWriter, req *mux.Request) {
 	expectedQop, expectedUsername, expectedPassword := req.Field("qop"), req.Field("user"), req.Field("pass")
-	newNonce := randomString()
-	opaque := randomString()
+	newNonce := util.RandomString()
+	opaque := util.RandomString()
 	realm := "Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"" + newNonce +
 		"\", opaque=\"" + opaque + "\", algorithm=MD5, stale=FALSE"
 
@@ -394,7 +391,7 @@ func handleAuthDigest(w http.ResponseWriter, req *mux.Request) {
 		return
 	}
 
-	writeJson(w, map[string]interface{}{
+	util.WriteJson(w, map[string]interface{}{
 		"authenticated": true,
 		"user":          expectedUsername,
 	})
@@ -403,9 +400,9 @@ func handleAuthDigest(w http.ResponseWriter, req *mux.Request) {
 // Digest auth response computer.
 func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce, qop, method, path string) string {
 	// Source: <https://en.wikipedia.org/wiki/Digest_access_authentication>.
-	ha1 := md5sum(username + ":" + "testrealm@host.com" + ":" + password)
-	ha2 := md5sum(method + ":" + path)
-	return md5sum(ha1 + ":" + serverNonce + ":" + nc + ":" + clientNonce + ":" + qop + ":" + ha2)
+	ha1 := util.Md5sum(username + ":" + "testrealm@host.com" + ":" + password)
+	ha2 := util.Md5sum(method + ":" + path)
+	return util.Md5sum(ha1 + ":" + serverNonce + ":" + nc + ":" + clientNonce + ":" + qop + ":" + ha2)
 }
 
 func handleIp(w http.ResponseWriter, req *mux.Request) {
@@ -421,21 +418,21 @@ func handleIp(w http.ResponseWriter, req *mux.Request) {
 		ipStr = fmt.Sprint(w, userIP)
 	}
 
-	writeJson(w, map[string]string{
+	util.WriteJson(w, map[string]string{
 		"origin": ipStr,
 	})
 }
 
 func handleUserAgent(w http.ResponseWriter, req *mux.Request) {
-	writeJson(w, map[string]string{
-		"user-agent": headerValue(req, "User-Agent"),
+	util.WriteJson(w, map[string]string{
+		"user-agent": util.HeaderValue(req, "User-Agent"),
 	})
 }
 
 func handleCache(w http.ResponseWriter, req *mux.Request) {
 	shouldSendData :=
-		headerValue(req, "If-Modified-Since") == "" &&
-			headerValue(req, "If-None-Match") == ""
+		util.HeaderValue(req, "If-Modified-Since") == "" &&
+			util.HeaderValue(req, "If-None-Match") == ""
 
 	if shouldSendData {
 		isNonGet := req.Method != http.MethodGet
@@ -460,7 +457,7 @@ func handleCacheControl(w http.ResponseWriter, req *mux.Request) {
 func handleEtag(w http.ResponseWriter, req *mux.Request) {
 	// TODO: Handle If-Match header in etag endpoint: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match>.
 	etagInUrl := req.Field("etag")
-	etagInHeader := headerValue(req, "If-None-Match")
+	etagInHeader := util.HeaderValue(req, "If-None-Match")
 
 	if etagInUrl == etagInHeader {
 		w.WriteHeader(http.StatusNotModified)
@@ -494,7 +491,7 @@ func handleResponseHeaders(w http.ResponseWriter, req *mux.Request) {
 	jsonContent := ""
 
 	for {
-		jsonContent = toJsonMust(data)
+		jsonContent = util.ToJsonMust(data)
 		newContentLength := fmt.Sprint(len(jsonContent))
 		if data["Content-Length"] == newContentLength {
 			break
@@ -611,7 +608,7 @@ func handleDecodeBase64(w http.ResponseWriter, req *mux.Request) {
 func handleRandomBytes(w http.ResponseWriter, req *mux.Request) {
 	w.Header().Set("content-type", "application/octet-stream")
 	n, _ := strconv.Atoi(req.Field("size"))
-	w.Write(randomBytes(n))
+	w.Write(util.RandomBytes(n))
 }
 
 func handleDelayedResponse(w http.ResponseWriter, req *mux.Request) {
@@ -624,28 +621,28 @@ func handleDrip(w http.ResponseWriter, req *mux.Request) {
 
 	writeNewLines := req.Field("mode") == "lines"
 
-	duration, err := queryParamInt(req, "duration", 2)
+	duration, err := util.QueryParamInt(req, "duration", 2)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, err.Error())
 		return
 	}
 
-	numbytes, err := queryParamInt(req, "numbytes", 10)
+	numbytes, err := util.QueryParamInt(req, "numbytes", 10)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, err.Error())
 		return
 	}
 
-	code, err := queryParamInt(req, "code", 200)
+	code, err := util.QueryParamInt(req, "code", 200)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, err.Error())
 		return
 	}
 
-	delay, err := queryParamInt(req, "delay", 2)
+	delay, err := util.QueryParamInt(req, "delay", 2)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, err.Error())
@@ -664,7 +661,7 @@ func handleDrip(w http.ResponseWriter, req *mux.Request) {
 		if writeNewLines {
 			fmt.Fprint(w, "\n")
 		}
-		if !flush(w) {
+		if !util.Flush(w) {
 			log.Println("Flush not available. Dripping and streaming not supported on this platform.")
 		}
 		time.Sleep(interval)
@@ -713,7 +710,7 @@ func handleCookies(w http.ResponseWriter, req *mux.Request) {
 	for _, cookie := range req.Cookies() {
 		items[cookie.Name] = cookie.Value
 	}
-	writeJson(w, map[string]interface{}{
+	util.WriteJson(w, map[string]interface{}{
 		"cookies": items,
 	})
 }
@@ -729,7 +726,7 @@ func handleCookiesDelete(w http.ResponseWriter, req *mux.Request) {
 		})
 	}
 
-	redirect(w, req, "/cookies")
+	util.Redirect(w, req, "/cookies")
 }
 
 func handleCookiesSet(w http.ResponseWriter, req *mux.Request) {
@@ -751,7 +748,7 @@ func handleCookiesSet(w http.ResponseWriter, req *mux.Request) {
 
 	}
 
-	redirect(w, req, "/cookies")
+	util.Redirect(w, req, "/cookies")
 }
 
 func handleRedirectTo(w http.ResponseWriter, req *mux.Request) {
@@ -785,9 +782,9 @@ func handleAbsoluteRedirect(w http.ResponseWriter, req *mux.Request) {
 	n, _ := strconv.Atoi(req.Field("count"))
 
 	if n > 1 {
-		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/"+fmt.Sprint(n-1)))
+		util.Redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/"+fmt.Sprint(n-1)))
 	} else {
-		redirect(w, req, "/get")
+		util.Redirect(w, req, "/get")
 	}
 }
 
@@ -795,90 +792,8 @@ func handleRelativeRedirect(w http.ResponseWriter, req *mux.Request) {
 	n, _ := strconv.Atoi(req.Field("count"))
 
 	if n > 1 {
-		redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/"+fmt.Sprint(n-1)))
+		util.Redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/"+fmt.Sprint(n-1)))
 	} else {
-		redirect(w, req, "/get")
+		util.Redirect(w, req, "/get")
 	}
-}
-
-func redirect(w http.ResponseWriter, req *mux.Request, path string) {
-	if strings.HasPrefix(path, "/") {
-		path = strings.Repeat("../", strings.Count(req.URL.Path, "/")-1) + strings.TrimPrefix(path, "/")
-	}
-
-	w.Header().Set("Location", path)
-	w.WriteHeader(http.StatusFound)
-
-	fmt.Fprintf(w, `<!doctype html>
-<title>Redirecting...</title>
-<h1>Redirecting...</h1>
-<p>You should be redirected automatically to target URL: <a href=%q>/cookies</a>.  If not click the link.</p>`, path)
-}
-
-func headerValue(req *mux.Request, name string) string {
-	if req == nil {
-		return ""
-	}
-
-	if values := req.Header[name]; values != nil && len(values) > 0 {
-		return values[len(values)-1]
-	}
-
-	return ""
-}
-
-func queryParamInt(req *mux.Request, name string, value int) (int, error) {
-	args := req.URL.Query()
-	var err error
-
-	if len(args[name]) > 0 {
-		value, err = strconv.Atoi(args[name][0])
-		if err != nil {
-			return 0, fmt.Errorf("%s must be an integer", name)
-		}
-	}
-
-	return value, nil
-}
-
-func writeJson(w http.ResponseWriter, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintln(w, toJsonMust(data))
-}
-
-func toJsonMust(data interface{}) string {
-	b, err := json.MarshalIndent(data, "", "\t")
-	if err != nil {
-		log.Fatal(err)
-	}
-	return string(b)
-}
-
-func randomBytes(n int) []byte {
-	b := make([]byte, n)
-
-	if _, err := crypto_rand.Read(b); err != nil {
-		fmt.Println("Error: ", err)
-		return []byte{}
-	}
-
-	return b[:]
-}
-
-func randomString() string {
-	return hex.EncodeToString(randomBytes(16))
-}
-
-func md5sum(text string) string {
-	// Source: <https://stackoverflow.com/a/25286918/151048>.
-	hash := md5.Sum([]byte(text))
-	return hex.EncodeToString(hash[:])
-}
-
-func flush(w http.ResponseWriter) bool {
-	f, ok := w.(http.Flusher)
-	if ok {
-		f.Flush()
-	}
-	return ok
 }
