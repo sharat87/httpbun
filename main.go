@@ -35,6 +35,10 @@ func main() {
 	rand.Seed(time.Now().Unix())
 
 	host := os.Getenv("HOST")
+	if host == "" {
+		host = "localhost"
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3090"
@@ -59,15 +63,18 @@ func main() {
 		Handler: m,
 	}
 
-	log.Printf("Serving on %s:%s (set HOST / PORT environment variables to change)...\n", host, port)
+	scheme := "http"
+	if sslCertFile != "" {
+		scheme = "https"
+	}
+
+	log.Printf("Serving on %s://%s:%s (set HOST / PORT environment variables to change)...\n", scheme, host, port)
 	log.Printf("Version: %q, Commit: %q, Date: %q.\n", Version, Commit, Date)
 	log.Printf("OS: %q, Arch: %q.\n", runtime.GOOS, runtime.GOARCH)
 
 	if sslCertFile == "" {
-		log.Print("Not using TLS. Connect with `http://`.")
 		log.Fatal(s.ListenAndServe())
 	} else {
-		log.Print("Using TLS. Connect with `https://`.")
 		log.Fatal(s.ListenAndServeTLS(sslCertFile, sslKeyFile))
 	}
 }
