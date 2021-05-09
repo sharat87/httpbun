@@ -51,7 +51,7 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		CappedBody: io.LimitReader(req.Body, 10000),
 	}
 
-	if req2.URL.Path == "/" && util.HeaderValue(req2, "X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "true" {
+	if req2.URL.Path == "/" && util.HeaderValue(*req2, "X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "true" {
 		util.Redirect(w, req2, "https://" + req.Host + req.URL.String())
 		return
 	}

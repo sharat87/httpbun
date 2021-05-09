@@ -1,6 +1,7 @@
 package util
 
 import (
+	"os"
 	"crypto/md5"
 	crypto_rand "crypto/rand"
 	"encoding/hex"
@@ -23,11 +24,7 @@ var hiddenHeaders = map[string]bool{
 	"X-Request-Start": true,
 }
 
-func HeaderValue(req *request.Request, name string) string {
-	if req == nil {
-		return ""
-	}
-
+func HeaderValue(req request.Request, name string) string {
 	if values := req.Header[name]; values != nil && len(values) > 0 {
 		return values[len(values)-1]
 	}
@@ -113,4 +110,13 @@ func ExposableHeadersMap(req request.Request) map[string]string {
 		}
 	}
 	return headers
+}
+
+func FullUrl(req request.Request) string {
+	scheme := "http"
+	if os.Getenv("HTTPBUN_SSL_CERT") != "" || HeaderValue(req, "X-Forwarded-Proto") == "https" {
+		scheme = "https"
+	}
+
+	return scheme + "://" + req.Host + req.URL.String()
 }

@@ -190,7 +190,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 		body = string(bodyBytes)
 	}
 
-	contentType := util.HeaderValue(req, "Content-Type")
+	contentType := util.HeaderValue(*req, "Content-Type")
 
 	form := make(map[string]interface{})
 	data := ""
@@ -217,7 +217,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 		"args":    args,
 		"headers": headers,
 		"origin":  req.Host,
-		"url":     req.URL.String(),
+		"url":     util.FullUrl(*req),
 	}
 
 	if options.Method {
@@ -267,7 +267,7 @@ func handleAuthBasic(w http.ResponseWriter, req *request.Request) {
 }
 
 func handleAuthBearer(w http.ResponseWriter, req *request.Request) {
-	authHeader := util.HeaderValue(req, "Authorization")
+	authHeader := util.HeaderValue(*req, "Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		w.Header().Set("WWW-Authenticate", "Bearer")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -396,14 +396,14 @@ func handleIp(w http.ResponseWriter, req *request.Request) {
 
 func handleUserAgent(w http.ResponseWriter, req *request.Request) {
 	util.WriteJson(w, map[string]string{
-		"user-agent": util.HeaderValue(req, "User-Agent"),
+		"user-agent": util.HeaderValue(*req, "User-Agent"),
 	})
 }
 
 func handleCache(w http.ResponseWriter, req *request.Request) {
 	shouldSendData :=
-		util.HeaderValue(req, "If-Modified-Since") == "" &&
-			util.HeaderValue(req, "If-None-Match") == ""
+		util.HeaderValue(*req, "If-Modified-Since") == "" &&
+			util.HeaderValue(*req, "If-None-Match") == ""
 
 	if shouldSendData {
 		isNonGet := req.Method != http.MethodGet
@@ -428,7 +428,7 @@ func handleCacheControl(w http.ResponseWriter, req *request.Request) {
 func handleEtag(w http.ResponseWriter, req *request.Request) {
 	// TODO: Handle If-Match header in etag endpoint: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match>.
 	etagInUrl := req.Field("etag")
-	etagInHeader := util.HeaderValue(req, "If-None-Match")
+	etagInHeader := util.HeaderValue(*req, "If-None-Match")
 
 	if etagInUrl == etagInHeader {
 		w.WriteHeader(http.StatusNotModified)
