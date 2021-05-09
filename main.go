@@ -1,10 +1,5 @@
 package main
 
-// Also: <https://jsonplaceholder.typicode.com/>.
-// Endpoints that respond with data from SherlockHolmes or Shakespeare stories?
-
-// A hook+inbox system, like requestbin (requestbin.net), implemented in the style of mailinator inboxes.
-
 import (
 	"encoding/base64"
 	"fmt"
@@ -51,7 +46,7 @@ func main() {
 
 	m := makeBunHandler()
 	m.BeforeRequest = func(w http.ResponseWriter, req *mux.Request) {
-		log.Printf("Handling %s %s", req.Method, req.URL.String())
+		log.Printf("Handling %s %s %s", req.Host, req.Method, req.URL.String())
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		// TODO: Include version number in the `X-Powered-By` header.

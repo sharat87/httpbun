@@ -1,7 +1,7 @@
 LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.Date=$(DATE)"
 
 run:
-	@go run $(LDFLAGS) main.go
+	@HTTPBUN_ALLOW_HOSTS=localhost:$${PORT:-3090} go run $(LDFLAGS) main.go
 
 build:
 	@mkdir -p bin

@@ -1,7 +1,10 @@
 package mux
 
 import (
+	"strings"
+	"os"
 	"io"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -39,6 +42,13 @@ func (mux *Mux) HandleFunc(pattern string, fn HandlerFn) {
 }
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	allowedHosts := strings.Split(os.Getenv("HTTPBUN_ALLOW_HOSTS"), ",")
+	if !contains(allowedHosts, req.Host) {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintf(w, "%d Host %q not allowed", http.StatusForbidden, req.Host)
+		return
+	}
+
 	for _, route := range mux.Routes {
 		match := route.Pattern.FindStringSubmatch(req.URL.Path)
 		if match != nil {
@@ -70,4 +80,13 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func (req Request) Field(name string) string {
 	return req.fields[name]
+}
+
+func contains(haystack []string, needle string) bool {
+	for _, item := range haystack {
+		if item == needle {
+			return true
+		}
+	}
+	return false
 }
