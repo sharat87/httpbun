@@ -1,8 +1,8 @@
 package request
 
 import (
-	"net/http"
 	"io"
+	"net/http"
 )
 
 type Request struct {

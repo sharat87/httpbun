@@ -1,7 +1,6 @@
 package util
 
 import (
-	"os"
 	"crypto/md5"
 	crypto_rand "crypto/rand"
 	"encoding/hex"
@@ -10,18 +9,19 @@ import (
 	"github.com/sharat87/httpbun/request"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
 
 var hiddenHeaders = map[string]bool{
-	"Total-Route-Time": true,
-	"Via": true,
-	"X-Forwarded-For": true,
-	"X-Forwarded-Port": true,
+	"Total-Route-Time":  true,
+	"Via":               true,
+	"X-Forwarded-For":   true,
+	"X-Forwarded-Port":  true,
 	"X-Forwarded-Proto": true,
-	"X-Request-Id": true,
-	"X-Request-Start": true,
+	"X-Request-Id":      true,
+	"X-Request-Start":   true,
 }
 
 func HeaderValue(req request.Request, name string) string {
@@ -113,6 +113,10 @@ func ExposableHeadersMap(req request.Request) map[string]string {
 }
 
 func FullUrl(req request.Request) string {
+	if !strings.HasPrefix(req.URL.String(), "/") {
+		return req.URL.String()
+	}
+
 	scheme := "http"
 	if os.Getenv("HTTPBUN_SSL_CERT") != "" || HeaderValue(req, "X-Forwarded-Proto") == "https" {
 		scheme = "https"

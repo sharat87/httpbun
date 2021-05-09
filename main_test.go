@@ -105,7 +105,7 @@ func (s *TSuite) TestMethodGetWithMultipleHeaderValues() {
 	s.Equal(map[string]interface{}{
 		"args": make(map[string]interface{}),
 		"headers": map[string]interface{}{
-			"X-One": "custom header value, another custom header",
+			"X-One": "custom header value,another custom header",
 		},
 		"origin": "example.com",
 		"url":    "http://example.com/get",
@@ -185,7 +185,7 @@ func (s *TSuite) TestHeadersRepeat() {
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
 		"headers": map[string]interface{}{
-			"X-One": "custom header value, another custom header",
+			"X-One": "custom header value,another custom header",
 		},
 	}, parseJson(body))
 }
