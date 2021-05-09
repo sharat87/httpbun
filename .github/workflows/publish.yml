@@ -9,7 +9,7 @@ on:
 
 jobs:
 
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -22,6 +22,10 @@ jobs:
       - name: Test
         run: make test
 
+  docker:
+    runs-on: ubuntu-latest
+    needs: [ test ]
+    steps:
       - name: Build for Docker
         run: make build-for-docker
 
@@ -34,3 +38,21 @@ jobs:
           fi
           docker login ghcr.io --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
           docker push --all-tags ghcr.io/${{ github.actor }}/httpbun
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [ test ]
+    steps:
+      - name: Build for all platforms
+        run: make build-all
+
+      - name: Publish to release
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "bin/httpbun-darwin-amd64;bin/httpbun-linux-amd64;bin/httpbun-windows-amd64.exe"
+          update_latest_release: true
+          overwrite: true
+          verbose: true
+          draft: true
