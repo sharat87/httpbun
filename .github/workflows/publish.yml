@@ -9,7 +9,7 @@ on:
 
 jobs:
 
-  test:
+  all:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -22,19 +22,8 @@ jobs:
       - name: Test
         run: make test
 
-  docker:
-    runs-on: ubuntu-latest
-    needs: [ test ]
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
-
-      - name: Build for Docker
-        run: make build-for-docker
+      - name: Build all
+        run: make build-for-docker build-all
 
       - name: Push to GHCR
         run: |
@@ -45,20 +34,6 @@ jobs:
           fi
           docker login ghcr.io --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
           docker push --all-tags ghcr.io/${{ github.actor }}/httpbun
-
-  release:
-    runs-on: ubuntu-latest
-    needs: [ test ]
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
-
-      - name: Build for all platforms
-        run: make build-all
 
       - name: Publish to release
         uses: xresloader/upload-to-github-release@v1
