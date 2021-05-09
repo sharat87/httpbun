@@ -2,7 +2,7 @@ package assets
 
 import (
 	"embed"
-	"github.com/sharat87/httpbun/mux"
+	"github.com/sharat87/httpbun/request"
 	"log"
 	"net/http"
 	"strings"
@@ -11,7 +11,7 @@ import (
 //go:embed *.html *.png favicon.ico site.webmanifest
 var assets embed.FS
 
-func WriteAsset(name string, w http.ResponseWriter, req *mux.Request) {
+func WriteAsset(name string, w http.ResponseWriter, req *request.Request) {
 	if content, err := assets.ReadFile(name); err == nil {
 		w.Write(content)
 	} else if strings.HasSuffix(err.Error(), " file does not exist") {

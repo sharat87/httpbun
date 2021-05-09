@@ -6,14 +6,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/sharat87/httpbun/mux"
+	"github.com/sharat87/httpbun/request"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
-func HeaderValue(req *mux.Request, name string) string {
+func HeaderValue(req *request.Request, name string) string {
 	if req == nil {
 		return ""
 	}
@@ -25,7 +25,7 @@ func HeaderValue(req *mux.Request, name string) string {
 	return ""
 }
 
-func Redirect(w http.ResponseWriter, req *mux.Request, path string) {
+func Redirect(w http.ResponseWriter, req *request.Request, path string) {
 	if strings.HasPrefix(path, "/") {
 		path = strings.Repeat("../", strings.Count(req.URL.Path, "/")-1) + strings.TrimPrefix(path, "/")
 	}
@@ -39,7 +39,7 @@ func Redirect(w http.ResponseWriter, req *mux.Request, path string) {
 <p>You should be redirected automatically to target URL: <a href=%q>/cookies</a>.  If not click the link.</p>`, path)
 }
 
-func QueryParamInt(req *mux.Request, name string, value int) (int, error) {
+func QueryParamInt(req *request.Request, name string, value int) (int, error) {
 	args := req.URL.Query()
 	var err error
 
