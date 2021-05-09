@@ -1,16 +1,16 @@
 package util
 
 import (
+	"crypto/md5"
 	crypto_rand "crypto/rand"
 	"encoding/hex"
-	"crypto/md5"
-	"log"
 	"encoding/json"
-	"strconv"
-	"net/http"
-	"strings"
 	"fmt"
 	"github.com/sharat87/httpbun/mux"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 func HeaderValue(req *mux.Request, name string) string {

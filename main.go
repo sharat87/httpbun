@@ -6,13 +6,11 @@ package main
 // A hook+inbox system, like requestbin (requestbin.net), implemented in the style of mailinator inboxes.
 
 import (
-	"bytes"
-	"embed"
 	"encoding/base64"
 	"fmt"
+	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/mux"
 	"github.com/sharat87/httpbun/util"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -32,9 +30,6 @@ var (
 	Commit  string
 	Date    string
 )
-
-//go:embed assets/*
-var assets embed.FS
 
 func main() {
 	rand.Seed(time.Now().Unix())
@@ -80,32 +75,13 @@ func main() {
 func makeBunHandler() mux.Mux {
 	m := mux.New()
 
-	tpl, err := template.ParseFS(assets, "assets/*.html")
-	if err != nil {
-		log.Fatalf("Error parsing HTML assets %v.", err)
-	}
-
-	var indexHtmlBytes bytes.Buffer
-	if err := tpl.ExecuteTemplate(&indexHtmlBytes, "index.html", nil); err != nil {
-		log.Fatalf("Error executing index.html template %v.", err)
-	}
-	indexHtml := indexHtmlBytes.String()
-
 	m.HandleFunc("/", func(w http.ResponseWriter, req *mux.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, indexHtml)
+		assets.WriteAsset("index.html", w, req)
 	})
 
-	m.HandleFunc("/(?P<name>.+\\.(?P<ext>png|ico|webmanifest))", func(w http.ResponseWriter, req *mux.Request) {
-		name := req.Field("name")
-		// ext := req.Field("ext")
-		if content, err := assets.ReadFile("assets/" + name); err == nil {
-			w.Write(content)
-		} else if strings.HasSuffix(err.Error(), " file does not exist") {
-			http.NotFound(w, &req.Request)
-		} else {
-			log.Printf("Error %v", err)
-		}
+	m.HandleFunc("/(?P<name>.+\\.(png|ico|webmanifest))", func(w http.ResponseWriter, req *mux.Request) {
+		assets.WriteAsset(req.Field("name"), w, req)
 	})
 
 	m.HandleFunc("/get", handleValidMethod)
