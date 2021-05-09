@@ -4,6 +4,7 @@ MAINTAINER shrikantsharat.k@gmail.com
 
 ADD bin/httpbun-docker /
 
-EXPOSE 3090
+ENV PORT=80
+EXPOSE 80
 
 CMD ["/httpbun-docker"]
