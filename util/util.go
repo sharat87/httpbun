@@ -13,6 +13,16 @@ import (
 	"strings"
 )
 
+var hiddenHeaders = map[string]bool{
+	"Total-Route-Time": true,
+	"Via": true,
+	"X-Forwarded-For": true,
+	"X-Forwarded-Port": true,
+	"X-Forwarded-Proto": true,
+	"X-Request-Id": true,
+	"X-Request-Start": true,
+}
+
 func HeaderValue(req *request.Request, name string) string {
 	if req == nil {
 		return ""
@@ -93,4 +103,14 @@ func Flush(w http.ResponseWriter) bool {
 		f.Flush()
 	}
 	return ok
+}
+
+func ExposableHeadersMap(req request.Request) map[string]string {
+	headers := make(map[string]string)
+	for name, values := range req.Header {
+		if !hiddenHeaders[name] {
+			headers[name] = strings.Join(values, ",")
+		}
+	}
+	return headers
 }

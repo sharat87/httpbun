@@ -30,8 +30,8 @@ var (
 func main() {
 	rand.Seed(time.Now().Unix())
 
-	host := os.Getenv("HOST")
-	if host == "" {
+	host, ok := os.LookupEnv("HOST")
+	if !ok {
 		host = "localhost"
 	}
 
@@ -165,13 +165,8 @@ func handleAnything(w http.ResponseWriter, req *request.Request) {
 }
 
 func handleHeaders(w http.ResponseWriter, req *request.Request) {
-	headers := make(map[string]string)
-	for name, values := range req.Header {
-		headers[name] = strings.Join(values, ", ")
-	}
-
 	util.WriteJson(w, map[string]interface{}{
-		"headers": headers,
+		"headers": util.ExposableHeadersMap(*req),
 	})
 }
 
@@ -185,10 +180,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 		}
 	}
 
-	headers := make(map[string]string)
-	for name, values := range req.Header {
-		headers[name] = strings.Join(values, ", ")
-	}
+	headers := util.ExposableHeadersMap(*req)
 
 	body := ""
 	if bodyBytes, err := ioutil.ReadAll(req.CappedBody); err != nil {
