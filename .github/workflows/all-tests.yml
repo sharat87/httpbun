@@ -25,9 +25,9 @@ jobs:
       - name: Build for Docker
         run: make build-for-docker
 
-      - name: Build for Docker
+      - name: Push to GHCR
         run: |
           tag=${GITHUB_REF##*/}
           docker build -t ghcr.io/${{ github.actor }}/httpbun:$tag .
-          docker login --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
+          docker login ghcr.io --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
           docker push ghcr.io/${{ github.actor }}/httpbun:$tag
