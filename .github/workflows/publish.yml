@@ -61,6 +61,7 @@ jobs:
               tag: "master-build",
             })
               .then(release => {
+                console.log("Release ID ", release);
                 return github.deleteRelease({
                   owner: "sharat87",
                   repo: "httpbun",
