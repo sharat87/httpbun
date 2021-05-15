@@ -23,7 +23,7 @@ jobs:
         run: make test
 
       - name: Build all
-        run: make build-for-docker build-all
+        run: make build-for-docker
 
       - name: Push to GHCR
         run: |
@@ -34,55 +34,3 @@ jobs:
           fi
           docker login ghcr.io --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
           docker push --all-tags ghcr.io/${{ github.actor }}/httpbun
-
-      - name: Publish to release
-        uses: xresloader/upload-to-github-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          file: "bin/httpbun-darwin-amd64;bin/httpbun-linux-amd64;bin/httpbun-windows-amd64.exe"
-          update_latest_release: true
-          tag_name: master-build1
-          overwrite: true
-          verbose: true
-          draft: false
-
-      - name: Publish to release JS
-        uses: actions/github-script@v4
-        id: release-js
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          result-encoding: string
-          script: |
-            console.log(JSON.stringify(github.context))
-            github.repos.getReleaseByTag({
-              owner: "sharat87",
-              repo: "httpbun",
-              tag: "master-build",
-            })
-              .then(release => {
-                console.log("Release ", release);
-                return github.deleteRelease({
-                  owner: "sharat87",
-                  repo: "httpbun",
-                  release_id: release.data.id,
-                })
-                  .then(res => console.log("delete response", res))
-                  .catch(err => console.error("delete error", err));
-              })
-              .catch(err => {
-                if (err.status != 404) {
-                  return Promise.reject(err);
-                }
-              })
-              .finally(() => {
-                return github.repos.createRelease({
-                  owner: "sharat87",
-                  repo: "httpbun",
-                  tag_name: "master-build",
-                  name: "master",
-                  body: "This is an auto-generated release, that contains the build from master's HEAD at all times.",
-                  prerelease: true,
-                });
-              });
-            return "Fin"
