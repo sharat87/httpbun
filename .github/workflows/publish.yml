@@ -61,12 +61,14 @@ jobs:
               tag: "master-build",
             })
               .then(release => {
-                console.log("Release ID ", release);
+                console.log("Release ", release);
                 return github.deleteRelease({
                   owner: "sharat87",
                   repo: "httpbun",
                   release_id: release.data.id,
-                });
+                })
+                  .then(res => console.log("delete response", res))
+                  .catch(err => console.error("delete error", err));
               })
               .catch(err => {
                 if (err.status != 404) {
