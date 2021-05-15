@@ -2,10 +2,6 @@ name: Publish
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 jobs:
 
@@ -44,4 +40,4 @@ jobs:
           update_latest_release: true
           overwrite: true
           verbose: true
-          draft: true
+          draft: false
