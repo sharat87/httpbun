@@ -58,24 +58,27 @@ jobs:
               owner: "sharat87",
               repo: "httpbun",
               tag: "master-build",
-            });
-            console.log(JSON.stringify(release, null, 2))
-
-            if (release.id == null) {
-              github.repos.createRelease({
-                owner: "sharat87",
-                repo: "httpbun",
-                tag_name: "master-build",
-                name: "master",
-                body: "This is an auto-generated release, that contains the build from master's HEAD at all times.",
-              });
-            } else {
-              github.repos.updateRelease({
-                owner: "sharat87",
-                repo: "httpbun",
-                release_id: release.id,
-                name: "master",
-                body: "This is an auto-generated release, that contains the build from master's HEAD at all times.",
+            })
+              .then(release => {
+                return github.repos.updateRelease({
+                  owner: "sharat87",
+                  repo: "httpbun",
+                  release_id: release.id,
+                  name: "master",
+                  body: "This is an auto-generated release, that contains the build from master's HEAD at all times.",
+                }).catch(err => {
+                  console.error(err)
+                })
               })
-            }
+              .catch(err => {
+                console.error(err)
+                return github.repos.createRelease({
+                  owner: "sharat87",
+                  repo: "httpbun",
+                  tag_name: "master-build",
+                  name: "master",
+                  body: "This is an auto-generated release, that contains the build from master's HEAD at all times.",
+                });
+              });
+            console.log(JSON.stringify(release, null, 2))
             return "Fin"
