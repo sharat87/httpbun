@@ -50,7 +50,6 @@ jobs:
       - name: Publish to release JS
         uses: actions/github-script@v4
         id: release-js
-        env:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
