@@ -2,6 +2,10 @@ name: Publish
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
 
@@ -31,14 +35,45 @@ jobs:
           docker login ghcr.io --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
           docker push --all-tags ghcr.io/${{ github.actor }}/httpbun
 
-      - name: Publish to release
-        uses: xresloader/upload-to-github-release@v1
+      # - name: Publish to release
+      #   uses: xresloader/upload-to-github-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     file: "bin/httpbun-darwin-amd64;bin/httpbun-linux-amd64;bin/httpbun-windows-amd64.exe"
+      #     update_latest_release: true
+      #     tag_name: master
+      #     overwrite: true
+      #     verbose: true
+      #     draft: false
+
+      - name: Publish to release JS
+        uses: actions/github-script@v4
+        id: release-js
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          file: "bin/httpbun-darwin-amd64;bin/httpbun-linux-amd64;bin/httpbun-windows-amd64.exe"
-          update_latest_release: true
-          tag_name: master
-          overwrite: true
-          verbose: true
-          draft: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            const release = github.repos.getReleaseByTag({
+              owner: "sharat87",
+              repo: "httpbun",
+              tag: "master",
+            });
+            console.log(JSON.stringify(release, null, 2))
+            github.repos.updateRelease({
+              owner: "sharat87",
+              repo: "httpbun",
+              release_id: release.id,
+              name: "master",
+              body: "This is an auto-generated release, that contains the build from master's HEAD at all times.",
+            })
+            return JSON.stringify(release)
+
+# github.repos.createRelease({
+#   owner: "sharat87",
+#   repo: "httpbun",
+#   tag_name: "master",
+#   name: "master",
+#   body: "This is an auto-generated release, that contains the build from master's HEAD at all times.",
+# });
