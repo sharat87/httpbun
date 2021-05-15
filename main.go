@@ -377,16 +377,40 @@ func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce,
 }
 
 func handleIp(w http.ResponseWriter, req *request.Request) {
-	ip, _, err := net.SplitHostPort(req.RemoteAddr)
-	if err != nil {
-		log.Printf("Unable to read IP from address %q.", req.RemoteAddr)
-		return
+	// Compare with <http://httpbin.org/ip> or <http://checkip.amazonaws.com/> or <http://getmyip.co.in/>.
+	ipStr := ""
+
+	// The Forwarded header is a standard that Nginx can be configured to use.
+	// Ref: <https://www.nginx.com/resources/wiki/start/topics/examples/forwarded/>.
+	forwardedHeader := util.HeaderValue(*req, "Forwarded")
+	if forwardedHeader != "" {
+		specs := util.ParseHeaderValueCsv(forwardedHeader)
+		// Pick the last one among all `for` keys.
+		for i := len(specs)-1; i >= 0; i-- {
+			ipStr = specs[i]["for"]
+			if ipStr != "" {
+				break
+			}
+		}
 	}
 
-	userIP := net.ParseIP(ip)
-	ipStr := ""
-	if userIP != nil {
-		ipStr = fmt.Sprint(w, userIP)
+	// Get it from Nginx's `$proxy_add_x_forwarded_for` based configuration.
+	// Heroku also sends the actual IP in the `X-Forwarded-For` header:
+	// <https://devcenter.heroku.com/articles/http-routing#heroku-headers>
+	// AWS' ALBs also use the same header:
+	// <https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html#http-headers>
+	if ipStr == "" {
+		ipStr = util.HeaderValue(*req, "X-Forwarded-For")
+	}
+
+	// If that's also not available, get it directly from the connection.
+	if ipStr == "" {
+		if ip, _, err := net.SplitHostPort(req.RemoteAddr); err != nil {
+			log.Printf("Unable to read IP from address %q.", req.RemoteAddr)
+			return
+		} else if userIP := net.ParseIP(ip); userIP != nil {
+			ipStr = userIP.String()
+		}
 	}
 
 	util.WriteJson(w, map[string]string{

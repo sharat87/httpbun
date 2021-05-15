@@ -1,4 +1,8 @@
-# Httpbun
+<h1>
+  <img alt=Logo src='https://github.com/sharat87/httpbun/raw/master/assets/icon-180.png' height=90px>
+  <br>
+  Httpbun
+</h1>
 
 Hosted version available at [httpbun.com](https://httpbun.com) and mirrored at [httpbun.org](https://httpbun.org). Run
 with docker as `docker run -p 80:80 ghcr.io/sharat87/httpbun`.
