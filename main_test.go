@@ -356,6 +356,21 @@ func (s *TSuite) TestDrip() {
 	s.Equal(strings.Repeat("*", 10), string(body))
 }
 
+func (s *TSuite) TestIpInXForwardedFor() {
+	resp, body := s.ExecRequest(R{
+		Method: "GET",
+		Path:   "ip",
+		Headers: map[string][]string{
+			"X-Forwarded-For": []string{"12.34.56.78"},
+		},
+	})
+	s.Equal(200, resp.StatusCode)
+	s.Equal("application/json", resp.Header.Get("Content-Type"))
+	s.Equal(map[string]interface{}{
+		"origin": "12.34.56.78",
+	}, parseJson(body))
+}
+
 func parseJson(raw []byte) map[string]interface{} {
 	var data map[string]interface{}
 	if err := json.Unmarshal(raw, &data); err != nil {
