@@ -35,17 +35,17 @@ jobs:
           docker login ghcr.io --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
           docker push --all-tags ghcr.io/${{ github.actor }}/httpbun
 
-      # - name: Publish to release
-      #   uses: xresloader/upload-to-github-release@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     file: "bin/httpbun-darwin-amd64;bin/httpbun-linux-amd64;bin/httpbun-windows-amd64.exe"
-      #     update_latest_release: true
-      #     tag_name: master
-      #     overwrite: true
-      #     verbose: true
-      #     draft: false
+      - name: Publish to release
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "bin/httpbun-darwin-amd64;bin/httpbun-linux-amd64;bin/httpbun-windows-amd64.exe"
+          update_latest_release: true
+          tag_name: master-build1
+          overwrite: true
+          verbose: true
+          draft: false
 
       - name: Publish to release JS
         uses: actions/github-script@v4
