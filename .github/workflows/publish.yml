@@ -38,6 +38,7 @@ jobs:
         with:
           file: "bin/httpbun-darwin-amd64;bin/httpbun-linux-amd64;bin/httpbun-windows-amd64.exe"
           update_latest_release: true
+          tag_name: master
           overwrite: true
           verbose: true
           draft: false
