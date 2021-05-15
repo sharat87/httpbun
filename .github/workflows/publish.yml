@@ -47,14 +47,34 @@ jobs:
           verbose: true
           draft: false
 
-      - name: Create nightly release
-        id: create_release
-        uses: viperproject/create-nightly-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish to release JS
+        uses: actions/github-script@v4
+        id: release-js
         with:
-          tag_name: master-head
-          release_name: master-head
-          Body: "This is an auto-generated release, that contains the build from master's HEAD at all times."
-          keep_num: 0
-          keep_tags: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            console.log(JSON.stringify(github.context))
+            github.repos.getReleaseByTag({
+              owner: "sharat87",
+              repo: "httpbun",
+              tag: "master-build",
+            })
+              .then(release => {
+                return github.deleteRelease({
+                  owner: "sharat87",
+                  repo: "httpbun",
+                  release_id: release.id,
+                });
+              })
+              .finally(() => {
+                return github.repos.createRelease({
+                  owner: "sharat87",
+                  repo: "httpbun",
+                  tag_name: "master-build",
+                  name: "master",
+                  body: "This is an auto-generated release, that contains the build from master's HEAD at all times.",
+                  prerelease: true,
+                });
+              });
+            return "Fin"
