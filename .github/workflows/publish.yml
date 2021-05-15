@@ -46,3 +46,15 @@ jobs:
           overwrite: true
           verbose: true
           draft: false
+
+      - name: Create nightly release
+        id: create_release
+        uses: viperproject/create-nightly-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: master-head
+          release_name: master-head
+          Body: "This is an auto-generated release, that contains the build from master's HEAD at all times.",
+          keep_num: 0
+          keep_tags: false
