@@ -67,6 +67,11 @@ jobs:
                   release_id: release.id,
                 });
               })
+              catch(err => {
+                if (err.status != 404) {
+                  return Promise.reject(err);
+                }
+              })
               .finally(() => {
                 return github.repos.createRelease({
                   owner: "sharat87",
