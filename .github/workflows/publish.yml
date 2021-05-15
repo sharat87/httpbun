@@ -55,6 +55,6 @@ jobs:
         with:
           tag_name: master-head
           release_name: master-head
-          Body: "This is an auto-generated release, that contains the build from master's HEAD at all times.",
+          Body: "This is an auto-generated release, that contains the build from master's HEAD at all times."
           keep_num: 0
           keep_tags: false
