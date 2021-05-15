@@ -65,7 +65,7 @@ jobs:
                 return github.deleteRelease({
                   owner: "sharat87",
                   repo: "httpbun",
-                  release_id: release.id,
+                  release_id: release.data.id,
                 });
               })
               .catch(err => {
