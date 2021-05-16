@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/sharat87/httpbun/request"
 	"github.com/sharat87/httpbun/bun"
+	"github.com/sharat87/httpbun/request"
 	"log"
 	"math/rand"
 	"net/http"

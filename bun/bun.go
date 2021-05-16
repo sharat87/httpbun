@@ -98,15 +98,15 @@ func handleValidMethod(w http.ResponseWriter, req *request.Request) {
 
 	isNonGet := req.Method != http.MethodGet
 	sendInfoJson(w, req, InfoJsonOptions{
-		Method: false,
-		BodyInfo:   isNonGet,
+		Method:   false,
+		BodyInfo: isNonGet,
 	})
 }
 
 func handleAnything(w http.ResponseWriter, req *request.Request) {
 	sendInfoJson(w, req, InfoJsonOptions{
-		Method: true,
-		BodyInfo:   true,
+		Method:   true,
+		BodyInfo: true,
 	})
 }
 

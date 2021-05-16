@@ -1,8 +1,8 @@
 package util
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestOne(t *testing.T) {
@@ -24,8 +24,8 @@ func TestTwo(t *testing.T) {
 		t,
 		[]map[string]string{
 			map[string]string{
-				"for": "12.34.56.78",
-				"host": "example.com",
+				"for":   "12.34.56.78",
+				"host":  "example.com",
 				"proto": "https",
 			},
 			map[string]string{
@@ -45,7 +45,7 @@ func TestThree(t *testing.T) {
 				"for": "12.34.56.78",
 			},
 			map[string]string{
-				"for": "23.45.67.89",
+				"for":    "23.45.67.89",
 				"secret": "egah2CGj55fSJFs",
 			},
 			map[string]string{
@@ -88,9 +88,9 @@ func TestSix(t *testing.T) {
 		t,
 		[]map[string]string{
 			map[string]string{
-				"for": "192.0.2.60",
+				"for":   "192.0.2.60",
 				"proto": "http",
-				"by": "203.0.113.43",
+				"by":    "203.0.113.43",
 			},
 		},
 		results,
@@ -119,7 +119,7 @@ func TestSemicolonInValue(t *testing.T) {
 		t,
 		[]map[string]string{
 			map[string]string{
-				"for": "1.2.3.4",
+				"for":    "1.2.3.4",
 				"secret": "abc;def",
 			},
 		},
@@ -133,7 +133,7 @@ func TestCommaInValue(t *testing.T) {
 		t,
 		[]map[string]string{
 			map[string]string{
-				"for": "1.2.3.4",
+				"for":    "1.2.3.4",
 				"secret": "abc,def",
 			},
 		},
@@ -147,7 +147,7 @@ func TestEqualsInValue(t *testing.T) {
 		t,
 		[]map[string]string{
 			map[string]string{
-				"for": "1.2.3.4",
+				"for":    "1.2.3.4",
 				"secret": "abc=def",
 			},
 		},

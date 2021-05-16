@@ -1,15 +1,15 @@
 package request
 
 import (
+	"fmt"
+	"github.com/sharat87/httpbun/util"
+	"io"
 	"log"
 	"net"
-	"github.com/sharat87/httpbun/util"
-	"strings"
-	"fmt"
-	"strconv"
-	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 )
 
 var hiddenHeaders = map[string]bool{
@@ -26,7 +26,7 @@ type Request struct {
 	http.Request
 	Fields     map[string]string
 	CappedBody io.Reader
-	Origin *string
+	Origin     *string
 }
 
 func (req Request) Field(name string) string {
@@ -106,7 +106,7 @@ func (req *Request) FindOrigin() string {
 	if forwardedHeader != "" {
 		specs := util.ParseHeaderValueCsv(forwardedHeader)
 		// Pick the last one among all `for` keys.
-		for i := len(specs)-1; i >= 0; i-- {
+		for i := len(specs) - 1; i >= 0; i-- {
 			ipStr = specs[i]["for"]
 			if ipStr != "" {
 				break
