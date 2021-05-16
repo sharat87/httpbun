@@ -65,7 +65,7 @@ func (s *TSuite) TestMethodGet() {
 	s.Equal(map[string]interface{}{
 		"args":    make(map[string]interface{}),
 		"headers": make(map[string]interface{}),
-		"origin":  "example.com",
+		"origin":  "192.0.2.1",
 		"url":     "http://example.com/get",
 	}, parseJson(body))
 }
@@ -87,7 +87,7 @@ func (s *TSuite) TestMethodGetWithCustomHeaders() {
 			"X-One": "custom header value",
 			"X-Two": "another custom header",
 		},
-		"origin": "example.com",
+		"origin": "192.0.2.1",
 		"url":    "http://example.com/get",
 	}, parseJson(body))
 }
@@ -107,7 +107,7 @@ func (s *TSuite) TestMethodGetWithMultipleHeaderValues() {
 		"headers": map[string]interface{}{
 			"X-One": "custom header value,another custom header",
 		},
-		"origin": "example.com",
+		"origin": "192.0.2.1",
 		"url":    "http://example.com/get",
 	}, parseJson(body))
 }
@@ -124,7 +124,8 @@ func (s *TSuite) TestMethodPost() {
 		"form":    make(map[string]interface{}),
 		"data":    "",
 		"headers": make(map[string]interface{}),
-		"origin":  "example.com",
+		"json":    nil,
+		"origin":  "192.0.2.1",
 		"url":     "http://example.com/post",
 	}, parseJson(body))
 }
@@ -149,7 +150,8 @@ func (s *TSuite) TestMethodPostWithPlainBody() {
 		"headers": map[string]interface{}{
 			"Content-Type": "application/x-www-form-urlencoded",
 		},
-		"origin": "example.com",
+		"json":   nil,
+		"origin": "192.0.2.1",
 		"url":    "http://example.com/post",
 	}, parseJson(body))
 }
@@ -322,7 +324,7 @@ func (s *TSuite) TestResponseHeaders() {
 	s.Equal([]string{"two"}, resp.Header.Values("One"))
 	s.Equal([]string{"four"}, resp.Header.Values("Three"))
 	s.Equal(map[string]interface{}{
-		"Content-Length": "97",
+		"Content-Length": "102",
 		"Content-Type":   "application/json",
 		"One":            "two",
 		"Three":          "four",
@@ -338,7 +340,7 @@ func (s *TSuite) TestResponseHeadersRepeated() {
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal([]string{"two", "four"}, resp.Header.Values("One"))
 	s.Equal(map[string]interface{}{
-		"Content-Length": "96",
+		"Content-Length": "105",
 		"Content-Type":   "application/json",
 		"One": []interface{}{
 			"two",
