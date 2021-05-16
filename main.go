@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/sharat87/httpbun/request"
 	"github.com/sharat87/httpbun/bun"
+	"github.com/sharat87/httpbun/util"
 	"log"
 	"math/rand"
 	"net/http"
@@ -37,7 +38,8 @@ func main() {
 
 	m := bun.MakeBunHandler()
 	m.BeforeRequest = func(w http.ResponseWriter, req *request.Request) {
-		log.Printf("Handling %s %s %s", req.Host, req.Method, req.URL.String())
+		ip := util.HeaderValue(*req, "X-Forwarded-For")
+		log.Printf("Handling ip=%s %s %s%s", ip, req.Method, req.Host, req.URL.String())
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		// TODO: Include version number in the `X-Powered-By` header.
