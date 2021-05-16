@@ -157,9 +157,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 
 	} else if contentType == "application/json" {
 		var result interface{}
-		if err := json.Unmarshal([]byte(body), &result); err != nil {
-			log.Println("Error parsing json in request body", err)
-		} else {
+		if json.Unmarshal([]byte(body), &result) == nil {
 			jsonData = &result
 		}
 		data = body
