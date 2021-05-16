@@ -1,4 +1,4 @@
-package main
+package bun
 
 import (
 	"encoding/json"
@@ -29,7 +29,7 @@ type R struct {
 }
 
 func (s *TSuite) SetupSuite() {
-	s.Mux = makeBunHandler()
+	s.Mux = MakeBunHandler()
 }
 
 func (s *TSuite) ExecRequest(request R) (http.Response, []byte) {
