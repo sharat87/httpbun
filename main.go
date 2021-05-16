@@ -131,6 +131,10 @@ func makeBunHandler() mux.Mux {
 
 	m.HandleFunc("/anything\\b.*", handleAnything)
 
+	if os.Getenv("HTTPBUN_INFO_ENABLED") == "1" {
+		m.HandleFunc("/info", handleInfo)
+	}
+
 	return m
 }
 
@@ -791,4 +795,15 @@ func handleRelativeRedirect(w http.ResponseWriter, req *request.Request) {
 	} else {
 		util.Redirect(w, req, "/get")
 	}
+}
+
+func handleInfo(w http.ResponseWriter, req *request.Request) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "Error: " + err.Error()
+	}
+
+	util.WriteJson(w, map[string]interface{}{
+		"hostname": hostname,
+	})
 }

@@ -1,7 +1,9 @@
 LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.Date=$(DATE)"
 
 run:
-	@HTTPBUN_ALLOW_HOSTS=localhost:$${PORT:-3090} go run $(LDFLAGS) main.go
+	@HTTPBUN_ALLOW_HOSTS=localhost:$${PORT:-3090} \
+		HTTPBUN_INFO_ENABLED=1 \
+		go run $(LDFLAGS) main.go
 
 build:
 	@mkdir -p bin
@@ -17,7 +19,9 @@ build-for-docker:
 	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/httpbun-docker .
 
 test:
-	@HTTPBUN_ALLOW_HOSTS=example.com go test ./...
+	@HTTPBUN_ALLOW_HOSTS=example.com \
+		HTTPBUN_INFO_ENABLED=1 \
+		go test ./...
 
 fmt:
 	@go fmt ./...
