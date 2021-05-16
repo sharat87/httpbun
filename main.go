@@ -58,7 +58,11 @@ func main() {
 
 	log.Printf("Serving on %s://%s:%s (set HOST / PORT environment variables to change)...\n", scheme, host, port)
 	log.Printf("Version: %q, Commit: %q, Date: %q.\n", Version, Commit, Date)
-	log.Printf("OS: %q, Arch: %q.\n", runtime.GOOS, runtime.GOARCH)
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "'Error getting hostname: " + err.Error() + "'"
+	}
+	log.Printf("OS: %q, Arch: %q, Host: %q.\n", runtime.GOOS, runtime.GOARCH, hostname)
 
 	if sslCertFile == "" {
 		log.Fatal(s.ListenAndServe())
