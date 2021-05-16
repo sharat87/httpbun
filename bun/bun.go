@@ -2,6 +2,7 @@ package bun
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/mux"
@@ -84,9 +85,8 @@ func MakeBunHandler() mux.Mux {
 }
 
 type InfoJsonOptions struct {
-	Method bool
-	Form   bool
-	Data   bool
+	Method   bool
+	BodyInfo bool
 }
 
 func handleValidMethod(w http.ResponseWriter, req *request.Request) {
@@ -100,16 +100,14 @@ func handleValidMethod(w http.ResponseWriter, req *request.Request) {
 	isNonGet := req.Method != http.MethodGet
 	sendInfoJson(w, req, InfoJsonOptions{
 		Method: false,
-		Form:   isNonGet,
-		Data:   isNonGet,
+		BodyInfo:   isNonGet,
 	})
 }
 
 func handleAnything(w http.ResponseWriter, req *request.Request) {
 	sendInfoJson(w, req, InfoJsonOptions{
 		Method: true,
-		Form:   true,
-		Data:   true,
+		BodyInfo:   true,
 	})
 }
 
@@ -142,6 +140,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 	contentType := util.HeaderValue(*req, "Content-Type")
 
 	form := make(map[string]interface{})
+	var jsonData *interface{}
 	data := ""
 
 	if contentType == "application/x-www-form-urlencoded" {
@@ -156,6 +155,15 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 				}
 			}
 		}
+
+	} else if contentType == "application/json" {
+		var result interface{}
+		if err := json.Unmarshal([]byte(body), &result); err != nil {
+			log.Println("Error parsing json in request body", err)
+		} else {
+			jsonData = &result
+		}
+		data = body
 
 	} else {
 		data = body
@@ -173,12 +181,10 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 		result["method"] = req.Method
 	}
 
-	if options.Form {
+	if options.BodyInfo {
 		result["form"] = form
-	}
-
-	if options.Data {
 		result["data"] = data
+		result["json"] = jsonData
 	}
 
 	util.WriteJson(w, result)
@@ -381,8 +387,7 @@ func handleCache(w http.ResponseWriter, req *request.Request) {
 	if shouldSendData {
 		isNonGet := req.Method != http.MethodGet
 		sendInfoJson(w, req, InfoJsonOptions{
-			Form: isNonGet,
-			Data: isNonGet,
+			BodyInfo: isNonGet,
 		})
 	} else {
 		w.WriteHeader(http.StatusNotModified)
@@ -393,8 +398,7 @@ func handleCacheControl(w http.ResponseWriter, req *request.Request) {
 	w.Header().Set("Cache-Control", "public, max-age="+req.Field("age"))
 	isNonGet := req.Method != http.MethodGet
 	sendInfoJson(w, req, InfoJsonOptions{
-		Form: isNonGet,
-		Data: isNonGet,
+		BodyInfo: isNonGet,
 	})
 }
 
@@ -408,8 +412,7 @@ func handleEtag(w http.ResponseWriter, req *request.Request) {
 	} else {
 		isNonGet := req.Method != http.MethodGet
 		sendInfoJson(w, req, InfoJsonOptions{
-			Form: isNonGet,
-			Data: isNonGet,
+			BodyInfo: isNonGet,
 		})
 	}
 }

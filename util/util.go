@@ -66,7 +66,7 @@ func WriteJson(w http.ResponseWriter, data interface{}) {
 }
 
 func ToJsonMust(data interface{}) string {
-	b, err := json.MarshalIndent(data, "", "\t")
+	b, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		log.Fatal(err)
 	}
