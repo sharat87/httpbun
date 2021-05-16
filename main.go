@@ -42,8 +42,11 @@ func main() {
 		log.Printf("Handling ip=%s %s %s%s", ip, req.Method, req.Host, req.URL.String())
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		// TODO: Include version number in the `X-Powered-By` header.
-		w.Header().Set("X-Powered-By", "httpbun")
+		poweredBy := "httpbun"
+		if Version != "" {
+			poweredBy += " " + Version
+		}
+		w.Header().Set("X-Powered-By", poweredBy)
 	}
 
 	s := &http.Server{
