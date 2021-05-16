@@ -6,59 +6,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/sharat87/httpbun/request"
 	"log"
 	"net/http"
-	"os"
-	"strconv"
 	"strings"
 )
-
-var hiddenHeaders = map[string]bool{
-	"Total-Route-Time":  true,
-	"Via":               true,
-	"X-Forwarded-For":   true,
-	"X-Forwarded-Port":  true,
-	"X-Forwarded-Proto": true,
-	"X-Request-Id":      true,
-	"X-Request-Start":   true,
-}
-
-func HeaderValue(req request.Request, name string) string {
-	if values := req.Header[name]; values != nil && len(values) > 0 {
-		return values[len(values)-1]
-	}
-
-	return ""
-}
-
-func Redirect(w http.ResponseWriter, req *request.Request, path string) {
-	if strings.HasPrefix(path, "/") {
-		path = strings.Repeat("../", strings.Count(req.URL.Path, "/")-1) + strings.TrimPrefix(path, "/")
-	}
-
-	w.Header().Set("Location", path)
-	w.WriteHeader(http.StatusFound)
-
-	fmt.Fprintf(w, `<!doctype html>
-<title>Redirecting...</title>
-<h1>Redirecting...</h1>
-<p>You should be redirected automatically to target URL: <a href=%q>/cookies</a>.  If not click the link.</p>`, path)
-}
-
-func QueryParamInt(req *request.Request, name string, value int) (int, error) {
-	args := req.URL.Query()
-	var err error
-
-	if len(args[name]) > 0 {
-		value, err = strconv.Atoi(args[name][0])
-		if err != nil {
-			return 0, fmt.Errorf("%s must be an integer", name)
-		}
-	}
-
-	return value, nil
-}
 
 func WriteJson(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
@@ -100,29 +51,6 @@ func Flush(w http.ResponseWriter) bool {
 		f.Flush()
 	}
 	return ok
-}
-
-func ExposableHeadersMap(req request.Request) map[string]string {
-	headers := make(map[string]string)
-	for name, values := range req.Header {
-		if !hiddenHeaders[name] {
-			headers[name] = strings.Join(values, ",")
-		}
-	}
-	return headers
-}
-
-func FullUrl(req request.Request) string {
-	if !strings.HasPrefix(req.URL.String(), "/") {
-		return req.URL.String()
-	}
-
-	scheme := "http"
-	if os.Getenv("HTTPBUN_SSL_CERT") != "" || HeaderValue(req, "X-Forwarded-Proto") == "https" {
-		scheme = "https"
-	}
-
-	return scheme + "://" + req.Host + req.URL.String()
 }
 
 func ParseHeaderValueCsv(content string) []map[string]string {

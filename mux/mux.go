@@ -3,7 +3,6 @@ package mux
 import (
 	"fmt"
 	"github.com/sharat87/httpbun/request"
-	"github.com/sharat87/httpbun/util"
 	"io"
 	"log"
 	"net/http"
@@ -51,8 +50,8 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		CappedBody: io.LimitReader(req.Body, 10000),
 	}
 
-	if req2.URL.Path == "/" && util.HeaderValue(*req2, "X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "true" {
-		util.Redirect(w, req2, "https://"+req.Host+req.URL.String())
+	if req2.URL.Path == "/" && req2.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "true" {
+		req2.Redirect(w, "https://"+req.Host+req.URL.String())
 		return
 	}
 

@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/sharat87/httpbun/request"
 	"github.com/sharat87/httpbun/bun"
-	"github.com/sharat87/httpbun/util"
 	"log"
 	"math/rand"
 	"net/http"
@@ -38,7 +37,7 @@ func main() {
 
 	m := bun.MakeBunHandler()
 	m.BeforeRequest = func(w http.ResponseWriter, req *request.Request) {
-		ip := util.HeaderValue(*req, "X-Forwarded-For")
+		ip := req.HeaderValueLast("X-Forwarded-For")
 		log.Printf("Handling ip=%s %s %s%s", ip, req.Method, req.Host, req.URL.String())
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")

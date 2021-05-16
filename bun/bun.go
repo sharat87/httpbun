@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -113,7 +112,7 @@ func handleAnything(w http.ResponseWriter, req *request.Request) {
 
 func handleHeaders(w http.ResponseWriter, req *request.Request) {
 	util.WriteJson(w, map[string]interface{}{
-		"headers": util.ExposableHeadersMap(*req),
+		"headers": req.ExposableHeadersMap(),
 	})
 }
 
@@ -127,7 +126,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 		}
 	}
 
-	headers := util.ExposableHeadersMap(*req)
+	headers := req.ExposableHeadersMap()
 
 	body := ""
 	if bodyBytes, err := ioutil.ReadAll(req.CappedBody); err != nil {
@@ -137,7 +136,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 		body = string(bodyBytes)
 	}
 
-	contentType := util.HeaderValue(*req, "Content-Type")
+	contentType := req.HeaderValueLast("Content-Type")
 
 	form := make(map[string]interface{})
 	var jsonData *interface{}
@@ -173,8 +172,8 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 	result := map[string]interface{}{
 		"args":    args,
 		"headers": headers,
-		"origin":  req.Host,
-		"url":     util.FullUrl(*req),
+		"origin":  req.FindOrigin(),
+		"url":     req.FullUrl(),
 	}
 
 	if options.Method {
@@ -222,7 +221,7 @@ func handleAuthBasic(w http.ResponseWriter, req *request.Request) {
 }
 
 func handleAuthBearer(w http.ResponseWriter, req *request.Request) {
-	authHeader := util.HeaderValue(*req, "Authorization")
+	authHeader := req.HeaderValueLast("Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		w.Header().Set("WWW-Authenticate", "Bearer")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -332,57 +331,21 @@ func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce,
 }
 
 func handleIp(w http.ResponseWriter, req *request.Request) {
-	// Compare with <http://httpbin.org/ip> or <http://checkip.amazonaws.com/> or <http://getmyip.co.in/>.
-	ipStr := ""
-
-	// The Forwarded header is a standard that Nginx can be configured to use.
-	// Ref: <https://www.nginx.com/resources/wiki/start/topics/examples/forwarded/>.
-	forwardedHeader := util.HeaderValue(*req, "Forwarded")
-	if forwardedHeader != "" {
-		specs := util.ParseHeaderValueCsv(forwardedHeader)
-		// Pick the last one among all `for` keys.
-		for i := len(specs)-1; i >= 0; i-- {
-			ipStr = specs[i]["for"]
-			if ipStr != "" {
-				break
-			}
-		}
-	}
-
-	// Get it from Nginx's `$proxy_add_x_forwarded_for` based configuration.
-	// Heroku also sends the actual IP in the `X-Forwarded-For` header:
-	// <https://devcenter.heroku.com/articles/http-routing#heroku-headers>
-	// AWS' ALBs also use the same header:
-	// <https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html#http-headers>
-	if ipStr == "" {
-		ipStr = util.HeaderValue(*req, "X-Forwarded-For")
-	}
-
-	// If that's also not available, get it directly from the connection.
-	if ipStr == "" {
-		if ip, _, err := net.SplitHostPort(req.RemoteAddr); err != nil {
-			log.Printf("Unable to read IP from address %q.", req.RemoteAddr)
-			return
-		} else if userIP := net.ParseIP(ip); userIP != nil {
-			ipStr = userIP.String()
-		}
-	}
-
 	util.WriteJson(w, map[string]string{
-		"origin": ipStr,
+		"origin": req.FindOrigin(),
 	})
 }
 
 func handleUserAgent(w http.ResponseWriter, req *request.Request) {
 	util.WriteJson(w, map[string]string{
-		"user-agent": util.HeaderValue(*req, "User-Agent"),
+		"user-agent": req.HeaderValueLast("User-Agent"),
 	})
 }
 
 func handleCache(w http.ResponseWriter, req *request.Request) {
 	shouldSendData :=
-		util.HeaderValue(*req, "If-Modified-Since") == "" &&
-			util.HeaderValue(*req, "If-None-Match") == ""
+		req.HeaderValueLast("If-Modified-Since") == "" &&
+			req.HeaderValueLast("If-None-Match") == ""
 
 	if shouldSendData {
 		isNonGet := req.Method != http.MethodGet
@@ -405,7 +368,7 @@ func handleCacheControl(w http.ResponseWriter, req *request.Request) {
 func handleEtag(w http.ResponseWriter, req *request.Request) {
 	// TODO: Handle If-Match header in etag endpoint: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match>.
 	etagInUrl := req.Field("etag")
-	etagInHeader := util.HeaderValue(*req, "If-None-Match")
+	etagInHeader := req.HeaderValueLast("If-None-Match")
 
 	if etagInUrl == etagInHeader {
 		w.WriteHeader(http.StatusNotModified)
@@ -568,28 +531,28 @@ func handleDrip(w http.ResponseWriter, req *request.Request) {
 
 	writeNewLines := req.Field("mode") == "lines"
 
-	duration, err := util.QueryParamInt(req, "duration", 2)
+	duration, err := req.QueryParamInt("duration", 2)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, err.Error())
 		return
 	}
 
-	numbytes, err := util.QueryParamInt(req, "numbytes", 10)
+	numbytes, err := req.QueryParamInt("numbytes", 10)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, err.Error())
 		return
 	}
 
-	code, err := util.QueryParamInt(req, "code", 200)
+	code, err := req.QueryParamInt("code", 200)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, err.Error())
 		return
 	}
 
-	delay, err := util.QueryParamInt(req, "delay", 2)
+	delay, err := req.QueryParamInt("delay", 2)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, err.Error())
@@ -673,7 +636,7 @@ func handleCookiesDelete(w http.ResponseWriter, req *request.Request) {
 		})
 	}
 
-	util.Redirect(w, req, "/cookies")
+	req.Redirect(w, "/cookies")
 }
 
 func handleCookiesSet(w http.ResponseWriter, req *request.Request) {
@@ -695,7 +658,7 @@ func handleCookiesSet(w http.ResponseWriter, req *request.Request) {
 
 	}
 
-	util.Redirect(w, req, "/cookies")
+	req.Redirect(w, "/cookies")
 }
 
 func handleRedirectTo(w http.ResponseWriter, req *request.Request) {
@@ -729,9 +692,9 @@ func handleAbsoluteRedirect(w http.ResponseWriter, req *request.Request) {
 	n, _ := strconv.Atoi(req.Field("count"))
 
 	if n > 1 {
-		util.Redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/"+fmt.Sprint(n-1)))
+		req.Redirect(w, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/"+fmt.Sprint(n-1)))
 	} else {
-		util.Redirect(w, req, "/get")
+		req.Redirect(w, "/get")
 	}
 }
 
@@ -739,9 +702,9 @@ func handleRelativeRedirect(w http.ResponseWriter, req *request.Request) {
 	n, _ := strconv.Atoi(req.Field("count"))
 
 	if n > 1 {
-		util.Redirect(w, req, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/"+fmt.Sprint(n-1)))
+		req.Redirect(w, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/"+fmt.Sprint(n-1)))
 	} else {
-		util.Redirect(w, req, "/get")
+		req.Redirect(w, "/get")
 	}
 }
 
