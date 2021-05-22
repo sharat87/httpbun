@@ -185,8 +185,10 @@ well.</p>
 <dd>Requires basic authentication with <code>username</code> and <code>password</code> as the credentials.</dd>
 
 <dt id=bearer>/bearer</dt>
+<dt id=bearer-token>/bearer/<span class=var>{expectedToken}</span></dt>
 <dd>Requires bearer authentication. Which needs an <code>Authorization</code> header in the request, that takes the form
-	<code>Bearer some-auth-token-here</code>. This endpoint accepts any token as valid.</dd>
+	<code>Bearer some-auth-token-here</code>. If no <code>expectedToken</code> is given, any token will be treated as
+	valid.</dd>
 
 <dt id=digest-auth>/digest-auth/<span class=var>{qop}</span>/<span class=var>{username}</span>/<span class=var>{password}</span></dt>
 <dd>Digest authentication. The endpoint <code>/digest-auth/auth/scott/tiger</code> requires to be authenticated with the
@@ -356,10 +358,10 @@ source distribution of this project.</p>
 <p>This favicon was generated using the following graphics from Twitter Twemoji:</p>
 
 <ul>
-	<li>Graphics Title: 1fad3.svg
-	<li><a href='https://github.com/twitter/twemoji'>Graphics Author: Copyright 2020 Twitter, Inc and other contributors</a>
-	<li><a href='https://github.com/twitter/twemoji/blob/master/assets/svg/1fad3.svg'>Graphics Source</a>
-	<li><a href='https://creativecommons.org/licenses/by/4.0/'>Graphics License: CC-BY 4.0</a>
+	<li>Graphics Title: <code style='background:none'>1fad3.svg</code>.
+	<li>Graphics Author: <a href='https://github.com/twitter/twemoji'>Copyright 2020 Twitter, Inc and other contributors</a>.
+	<li><a href='https://github.com/twitter/twemoji/blob/master/assets/svg/1fad3.svg'>Graphics Source</a>.
+	<li>Graphics License: <a href='https://creativecommons.org/licenses/by/4.0/'>CC-BY 4.0</a>.
 </ul>
 
 <footer>

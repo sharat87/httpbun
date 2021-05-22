@@ -44,7 +44,7 @@ func MakeBunHandler() mux.Mux {
 	m.HandleFunc("/headers", handleHeaders)
 
 	m.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic)
-	m.HandleFunc("/bearer", handleAuthBearer)
+	m.HandleFunc("/bearer(/(?P<tok>\\w+))?", handleAuthBearer)
 	m.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest)
 
 	m.HandleFunc("/status/(?P<codes>[\\d,]+)", handleStatus)
@@ -250,6 +250,8 @@ func handleAuthBasic(w http.ResponseWriter, req *request.Request) {
 }
 
 func handleAuthBearer(w http.ResponseWriter, req *request.Request) {
+	expectedToken := req.Field("tok")
+
 	authHeader := req.HeaderValueLast("Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		w.Header().Set("WWW-Authenticate", "Bearer")
@@ -260,7 +262,7 @@ func handleAuthBearer(w http.ResponseWriter, req *request.Request) {
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 
 	util.WriteJson(w, map[string]interface{}{
-		"authenticated": true,
+		"authenticated": token != "" && (expectedToken == "" || expectedToken == token),
 		"token":         token,
 	})
 }
