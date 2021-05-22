@@ -757,13 +757,14 @@ func handleOauth(w http.ResponseWriter, req *request.Request) {
 		errors := []string{}
 		params := req.URL.Query()
 
-		redirectUrl := ""
-		if len(params["redirect_url"]) == 0 {
-			errors = append(errors, "Missing required param `redirect_url`.")
-		} else if len(params["redirect_url"]) > 1 {
-			errors = append(errors, "Too many values for param `redirect_url`. Expected only one.")
-		} else {
-			redirectUrl = params["redirect_url"][0]
+		redirectUrl, err := req.QueryParamSingle("redirect_url")
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+
+		state, err := req.QueryParamSingle("state")
+		if err != nil {
+			errors = append(errors, err.Error())
 		}
 
 		var scopes []string
@@ -775,20 +776,24 @@ func handleOauth(w http.ResponseWriter, req *request.Request) {
 			"Errors": errors,
 			"scopes": scopes,
 			"redirectUrl": redirectUrl,
+			"state": state,
 		})
 
 	} else if req.Method == http.MethodPost {
 		// TODO: Error out if there's *any* query params here.
-		req.ParseForm()
-		url := req.Form["redirect_url"][0]
+		redirectUrl, _ := req.FormParamSingle("redirect_url")
+		decision, _ := req.FormParamSingle("decision")
+		state, _ := req.FormParamSingle("state")
 
-		if req.Form["decision"][0] == "Approve" {
-			url = url + "?code=123"
+		redirectUrl = redirectUrl + "?state=" + url.QueryEscape(state)
+
+		if decision == "Approve" {
+			redirectUrl = redirectUrl + "&code=123"
 		} else {
-			url = url + "?error=access_denied"
+			redirectUrl = redirectUrl + "&error=access_denied"
 		}
 
-		req.Redirect(w, url)
+		req.Redirect(w, redirectUrl)
 
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)

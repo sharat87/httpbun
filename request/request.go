@@ -62,6 +62,27 @@ func (req Request) QueryParamInt(name string, value int) (int, error) {
 	return value, nil
 }
 
+func (req Request) QueryParamSingle(name string) (string, error) {
+	return singleParamValue(req.URL.Query(), name)
+}
+
+func (req Request) FormParamSingle(name string) (string, error) {
+	if req.Form == nil {
+		req.ParseForm()
+	}
+	return singleParamValue(req.Form, name)
+}
+
+func singleParamValue(args map[string][]string, name string) (string, error) {
+	if len(args[name]) == 0 {
+		return "", fmt.Errorf("Missing required param %q.", name)
+	} else if len(args[name]) > 1 {
+		return "", fmt.Errorf("Too many values for param %q. Expected only one.", name)
+	} else {
+		return args[name][0], nil
+	}
+}
+
 func (req Request) HeaderValueLast(name string) string {
 	if values := req.Header[name]; values != nil && len(values) > 0 {
 		return values[len(values)-1]

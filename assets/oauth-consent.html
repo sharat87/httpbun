@@ -4,10 +4,11 @@
 <title>Httpbun Fake OAuth Consent</title>
 <h1>Httpbun Fake OAuth Consent</h1>
 
-<p>{{.Errors}}</p>
+<p>Errors: {{.Errors}}</p>
 
 <form action=oauth method=post>
 	<input type=hidden name=redirect_url value='{{.redirectUrl}}'>
+	<input type=hidden name=state value='{{.state}}'>
 
 	Requesting Scopes:
 
