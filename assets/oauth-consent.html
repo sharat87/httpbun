@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang=en>
+<meta charset=utf-8>
+<title>Httpbun Fake OAuth Consent</title>
+<h1>Httpbun Fake OAuth Consent</h1>
+
+<p>{{.Errors}}</p>
+
+<form action=oauth method=post>
+	<input type=hidden name=redirect_url value='{{.redirectUrl}}'>
+
+	Requesting Scopes:
+
+	{{range .scopes}}
+	<label>
+		<input type=checkbox>
+		<span>{{.}}</span>
+	</label>
+	{{end}}
+
+	<input type=submit name=decision value=Approve>
+	<input type=submit name=decision value=Decline>
+</form>

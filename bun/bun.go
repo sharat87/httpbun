@@ -79,6 +79,8 @@ func MakeBunHandler() mux.Mux {
 
 	m.HandleFunc("/anything\\b.*", handleAnything)
 
+	m.HandleFunc("/oauth", handleOauth)
+
 	if os.Getenv("HTTPBUN_INFO_ENABLED") == "1" {
 		m.HandleFunc("/info", handleInfo)
 	}
@@ -748,4 +750,49 @@ func handleInfo(w http.ResponseWriter, req *request.Request) {
 	util.WriteJson(w, map[string]interface{}{
 		"hostname": hostname,
 	})
+}
+
+func handleOauth(w http.ResponseWriter, req *request.Request) {
+	if req.Method == http.MethodGet {
+		errors := []string{}
+		params := req.URL.Query()
+
+		redirectUrl := ""
+		if len(params["redirect_url"]) == 0 {
+			errors = append(errors, "Missing required param `redirect_url`.")
+		} else if len(params["redirect_url"]) > 1 {
+			errors = append(errors, "Too many values for param `redirect_url`. Expected only one.")
+		} else {
+			redirectUrl = params["redirect_url"][0]
+		}
+
+		var scopes []string
+		if len(params["scope"]) > 0 {
+			scopes = strings.Split(strings.Join(params["scope"], " "), " ")
+		}
+
+		assets.Render(w, "oauth-consent.html", map[string]interface{}{
+			"Errors": errors,
+			"scopes": scopes,
+			"redirectUrl": redirectUrl,
+		})
+
+	} else if req.Method == http.MethodPost {
+		// TODO: Error out if there's *any* query params here.
+		req.ParseForm()
+		url := req.Form["redirect_url"][0]
+
+		if req.Form["decision"][0] == "Approve" {
+			url = url + "?code=123"
+		} else {
+			url = url + "?error=access_denied"
+		}
+
+		req.Redirect(w, url)
+
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprintln(w, http.StatusText(http.StatusMethodNotAllowed))
+
+	}
 }
