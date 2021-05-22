@@ -762,9 +762,9 @@ func handleOauth(w http.ResponseWriter, req *request.Request) {
 			errors = append(errors, err.Error())
 		}
 
-		state, err := req.QueryParamSingle("state")
-		if err != nil {
-			errors = append(errors, err.Error())
+		state := ""
+		if len(params["state"]) > 0 {
+			state = params["state"][0]
 		}
 
 		var scopes []string
