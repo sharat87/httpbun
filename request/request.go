@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/sharat87/httpbun/util"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -134,4 +135,13 @@ func (req *Request) FindOrigin() string {
 
 	req.Origin = &ipStr
 	return ipStr
+}
+
+func (req Request) BodyString() string {
+	if bodyBytes, err := ioutil.ReadAll(req.CappedBody); err != nil {
+		fmt.Println("Error reading request payload", err)
+		return ""
+	} else {
+		return string(bodyBytes)
+	}
 }

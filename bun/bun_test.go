@@ -1,7 +1,7 @@
 package bun
 
 import (
-	"encoding/json"
+	tu "github.com/sharat87/httpbun/test_utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"io"
@@ -21,18 +21,11 @@ type TSuite struct {
 	Mux http.Handler
 }
 
-type R struct {
-	Method  string
-	Path    string
-	Body    string
-	Headers map[string][]string
-}
-
 func (s *TSuite) SetupSuite() {
 	s.Mux = MakeBunHandler()
 }
 
-func (s *TSuite) ExecRequest(request R) (http.Response, []byte) {
+func (s *TSuite) ExecRequest(request tu.R) (http.Response, []byte) {
 	var bodyReader io.Reader
 	if request.Body != "" {
 		bodyReader = strings.NewReader(request.Body)
@@ -55,109 +48,8 @@ func (s *TSuite) ExecRequest(request R) (http.Response, []byte) {
 	return *resp, responseBody
 }
 
-func (s *TSuite) TestMethodGet() {
-	resp, body := s.ExecRequest(R{
-		Method: "GET",
-		Path:   "get",
-	})
-	s.Equal(200, resp.StatusCode)
-	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]interface{}{
-		"args":    make(map[string]interface{}),
-		"headers": make(map[string]interface{}),
-		"origin":  "192.0.2.1",
-		"url":     "http://example.com/get",
-	}, parseJson(body))
-}
-
-func (s *TSuite) TestMethodGetWithCustomHeaders() {
-	resp, body := s.ExecRequest(R{
-		Method: "GET",
-		Path:   "get",
-		Headers: map[string][]string{
-			"X-One": []string{"custom header value"},
-			"X-Two": []string{"another custom header"},
-		},
-	})
-	s.Equal(200, resp.StatusCode)
-	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]interface{}{
-		"args": make(map[string]interface{}),
-		"headers": map[string]interface{}{
-			"X-One": "custom header value",
-			"X-Two": "another custom header",
-		},
-		"origin": "192.0.2.1",
-		"url":    "http://example.com/get",
-	}, parseJson(body))
-}
-
-func (s *TSuite) TestMethodGetWithMultipleHeaderValues() {
-	resp, body := s.ExecRequest(R{
-		Method: "GET",
-		Path:   "get",
-		Headers: map[string][]string{
-			"X-One": []string{"custom header value", "another custom header"},
-		},
-	})
-	s.Equal(200, resp.StatusCode)
-	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]interface{}{
-		"args": make(map[string]interface{}),
-		"headers": map[string]interface{}{
-			"X-One": "custom header value,another custom header",
-		},
-		"origin": "192.0.2.1",
-		"url":    "http://example.com/get",
-	}, parseJson(body))
-}
-
-func (s *TSuite) TestMethodPost() {
-	resp, body := s.ExecRequest(R{
-		Method: "POST",
-		Path:   "post",
-	})
-	s.Equal(200, resp.StatusCode)
-	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]interface{}{
-		"args":    make(map[string]interface{}),
-		"form":    make(map[string]interface{}),
-		"data":    "",
-		"headers": make(map[string]interface{}),
-		"json":    nil,
-		"origin":  "192.0.2.1",
-		"url":     "http://example.com/post",
-	}, parseJson(body))
-}
-
-func (s *TSuite) TestMethodPostWithPlainBody() {
-	resp, body := s.ExecRequest(R{
-		Method: "POST",
-		Path:   "post",
-		Body:   "answer=42",
-		Headers: map[string][]string{
-			"Content-Type": []string{"application/x-www-form-urlencoded"},
-		},
-	})
-	s.Equal(200, resp.StatusCode)
-	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]interface{}{
-		"args": make(map[string]interface{}),
-		"form": map[string]interface{}{
-			"answer": "42",
-		},
-		"data": "",
-		"headers": map[string]interface{}{
-			"Content-Type": "application/x-www-form-urlencoded",
-		},
-		"json":   nil,
-		"origin": "192.0.2.1",
-		"url":    "http://example.com/post",
-	}, parseJson(body))
-}
-
 func (s *TSuite) TestHeaders() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "headers",
 		Headers: map[string][]string{
@@ -172,11 +64,11 @@ func (s *TSuite) TestHeaders() {
 			"X-One": "custom header value",
 			"X-Two": "another custom header",
 		},
-	}, parseJson(body))
+	}, tu.ParseJson(body))
 }
 
 func (s *TSuite) TestHeadersRepeat() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "headers",
 		Headers: map[string][]string{
@@ -189,11 +81,11 @@ func (s *TSuite) TestHeadersRepeat() {
 		"headers": map[string]interface{}{
 			"X-One": "custom header value,another custom header",
 		},
-	}, parseJson(body))
+	}, tu.ParseJson(body))
 }
 
 func (s *TSuite) TestBasicAuthWithoutCreds() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "basic-auth/scott/tiger",
 	})
@@ -203,7 +95,7 @@ func (s *TSuite) TestBasicAuthWithoutCreds() {
 }
 
 func (s *TSuite) TestBasicAuthWithValidCreds() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "basic-auth/scott/tiger",
 		Headers: map[string][]string{
@@ -215,11 +107,11 @@ func (s *TSuite) TestBasicAuthWithValidCreds() {
 	s.Equal(map[string]interface{}{
 		"authenticated": true,
 		"user":          "scott",
-	}, parseJson(body))
+	}, tu.ParseJson(body))
 }
 
 func (s *TSuite) TestBasicAuthWithInvalidCreds() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "basic-auth/scott/tiger",
 		Headers: map[string][]string{
@@ -232,7 +124,7 @@ func (s *TSuite) TestBasicAuthWithInvalidCreds() {
 }
 
 func (s *TSuite) TestBearerAuthWithoutToken() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "bearer",
 	})
@@ -242,7 +134,7 @@ func (s *TSuite) TestBearerAuthWithoutToken() {
 }
 
 func (s *TSuite) TestBearerAuthWithToken() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "bearer",
 		Headers: map[string][]string{
@@ -254,11 +146,11 @@ func (s *TSuite) TestBearerAuthWithToken() {
 	s.Equal(map[string]interface{}{
 		"authenticated": true,
 		"token":         "my-auth-token",
-	}, parseJson(body))
+	}, tu.ParseJson(body))
 }
 
 func (s *TSuite) TestDigestAuthWithoutCreds() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "digest-auth/auth/dave/diamond",
 	})
@@ -276,7 +168,7 @@ func (s *TSuite) TestDigestAuthWithoutCreds() {
 }
 
 func (s *TSuite) TestDigestAuthWitCreds() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "digest-auth/auth/dave/diamond",
 		Headers: map[string][]string{
@@ -289,11 +181,11 @@ func (s *TSuite) TestDigestAuthWitCreds() {
 	s.Equal(map[string]interface{}{
 		"authenticated": true,
 		"user":          "dave",
-	}, parseJson(body))
+	}, tu.ParseJson(body))
 }
 
 func (s *TSuite) TestDigestAuthWitIncorrectUser() {
-	resp, _ := s.ExecRequest(R{
+	resp, _ := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "digest-auth/auth/dave/diamond",
 		Headers: map[string][]string{
@@ -315,7 +207,7 @@ func (s *TSuite) TestDigestAuthWitIncorrectUser() {
 }
 
 func (s *TSuite) TestResponseHeaders() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "response-headers?one=two&three=four",
 	})
@@ -328,11 +220,11 @@ func (s *TSuite) TestResponseHeaders() {
 		"Content-Type":   "application/json",
 		"One":            "two",
 		"Three":          "four",
-	}, parseJson(body))
+	}, tu.ParseJson(body))
 }
 
 func (s *TSuite) TestResponseHeadersRepeated() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "response-headers?one=two&one=four",
 	})
@@ -346,11 +238,11 @@ func (s *TSuite) TestResponseHeadersRepeated() {
 			"two",
 			"four",
 		},
-	}, parseJson(body))
+	}, tu.ParseJson(body))
 }
 
 func (s *TSuite) TestDrip() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "drip?duration=1&delay=0",
 	})
@@ -359,7 +251,7 @@ func (s *TSuite) TestDrip() {
 }
 
 func (s *TSuite) TestIpInXForwardedFor() {
-	resp, body := s.ExecRequest(R{
+	resp, body := s.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "ip",
 		Headers: map[string][]string{
@@ -370,15 +262,7 @@ func (s *TSuite) TestIpInXForwardedFor() {
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal(map[string]interface{}{
 		"origin": "12.34.56.78",
-	}, parseJson(body))
-}
-
-func parseJson(raw []byte) map[string]interface{} {
-	var data map[string]interface{}
-	if err := json.Unmarshal(raw, &data); err != nil {
-		panic(err)
-	}
-	return data
+	}, tu.ParseJson(body))
 }
 
 func TestComputeDigestAuthResponse(t *testing.T) {

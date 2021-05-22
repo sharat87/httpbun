@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 func MakeBunHandler() mux.Mux {
@@ -126,50 +129,9 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 		}
 	}
 
-	headers := req.ExposableHeadersMap()
-
-	body := ""
-	if bodyBytes, err := ioutil.ReadAll(req.CappedBody); err != nil {
-		fmt.Println("Error reading request payload", err)
-		return
-	} else {
-		body = string(bodyBytes)
-	}
-
-	contentType := req.HeaderValueLast("Content-Type")
-
-	form := make(map[string]interface{})
-	var jsonData *interface{}
-	data := ""
-
-	if contentType == "application/x-www-form-urlencoded" {
-		if parsed, err := url.ParseQuery(body); err != nil {
-			data = body
-		} else {
-			for name, values := range parsed {
-				if len(values) > 1 {
-					form[name] = values
-				} else {
-					form[name] = values[0]
-				}
-			}
-		}
-
-	} else if contentType == "application/json" {
-		var result interface{}
-		if json.Unmarshal([]byte(body), &result) == nil {
-			jsonData = &result
-		}
-		data = body
-
-	} else {
-		data = body
-
-	}
-
 	result := map[string]interface{}{
 		"args":    args,
-		"headers": headers,
+		"headers": req.ExposableHeadersMap(),
 		"origin":  req.FindOrigin(),
 		"url":     req.FullUrl(),
 	}
@@ -178,10 +140,79 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 		result["method"] = req.Method
 	}
 
+	contentTypeHeaderValue := req.HeaderValueLast("Content-Type")
+	if contentTypeHeaderValue == "" {
+		contentTypeHeaderValue = "text/plain"
+	}
+	contentType, params, err := mime.ParseMediaType(contentTypeHeaderValue)
+	if err != nil {
+		log.Printf("Error parsing content type %q %v.", req.HeaderValueLast("Content-Type"), err)
+		return
+	}
+
 	if options.BodyInfo {
+		form := make(map[string]interface{})
+		var jsonData *interface{}
+		files := make(map[string]interface{})
+		data := ""
+
+		if contentType == "application/x-www-form-urlencoded" {
+			body := req.BodyString()
+			if parsed, err := url.ParseQuery(body); err != nil {
+				data = body
+			} else {
+				for name, values := range parsed {
+					if len(values) > 1 {
+						form[name] = values
+					} else {
+						form[name] = values[0]
+					}
+				}
+			}
+
+		} else if contentType == "application/json" {
+			body := req.BodyString()
+			var result interface{}
+			if json.Unmarshal([]byte(body), &result) == nil {
+				jsonData = &result
+			}
+			data = body
+
+		} else if contentType == "multipart/form-data" {
+			// This might work for `multipart/mixed` as well. Confirm.
+			reader := multipart.NewReader(req.Body, params["boundary"])
+			allFileData, err := reader.ReadForm(32 << 20)
+			if err != nil {
+				fmt.Println("Error reading multipart form data", err)
+				return
+			}
+
+			for name, fileHeaders := range allFileData.File {
+				fileHeader := fileHeaders[0]
+				if f, err := fileHeader.Open(); err != nil {
+					fmt.Println("Error opening fileHeader", err)
+				} else if content, err := ioutil.ReadAll(f); err != nil {
+					fmt.Println("Error reading from fileHeader", err)
+				} else if utf8.Valid(content) {
+					files[name] = string(content)
+				} else {
+					files[name] = content
+				}
+			}
+
+			for name, valueInfo := range allFileData.Value {
+				form[name] = valueInfo[0]
+			}
+
+		} else {
+			data = req.BodyString()
+
+		}
+
 		result["form"] = form
 		result["data"] = data
 		result["json"] = jsonData
+		result["files"] = files
 	}
 
 	util.WriteJson(w, result)
