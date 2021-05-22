@@ -28,7 +28,7 @@ func Render(w http.ResponseWriter, name string, data interface{}) {
 }
 
 func WriteAsset(name string, w http.ResponseWriter, req *request.Request) {
-	if content, err := assets.ReadFile("assets/" + name); err == nil {
+	if content, err := assets.ReadFile(name); err == nil {
 		w.Write(content)
 	} else if strings.HasSuffix(err.Error(), " file does not exist") {
 		http.NotFound(w, &req.Request)
