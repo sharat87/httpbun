@@ -10,11 +10,11 @@ import (
 	"net/http"
 )
 
-//go:embed *.html *.png favicon.ico site.webmanifest
+//go:embed *.html *.css *.png favicon.ico site.webmanifest
 var assets embed.FS
 
-func Render(w http.ResponseWriter, name string, data interface{}) {
-	tpl, err := template.ParseFS(assets, "*.html")
+func Render(name string, w http.ResponseWriter, data interface{}) {
+	tpl, err := template.ParseFS(assets, "*")
 	if err != nil {
 		log.Fatalf("Error parsing HTML assets %v.", err)
 	}

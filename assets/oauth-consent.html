@@ -2,23 +2,39 @@
 <html lang=en>
 <meta charset=utf-8>
 <title>Httpbun Fake OAuth Consent</title>
+
+{{template "head.html" -}}
+
 <h1>Httpbun Fake OAuth Consent</h1>
 
-<p>Errors: {{.Errors}}</p>
+{{if .Errors -}}
+
+<h2>Errors</h2>
+<ol>
+{{range .Errors -}}
+<li>{{.}}
+{{end -}}
+</ol>
+
+{{else}}
 
 <form action=oauth method=post>
 	<input type=hidden name=redirect_url value='{{.redirectUrl}}'>
 	<input type=hidden name=state value='{{.state}}'>
 
-	Requesting Scopes:
+	<p>Requesting authorization with the following scopes:</p>
 
-	{{range .scopes}}
-	<label>
-		<input type=checkbox>
+	{{range .scopes -}}
+	<label class=flex>
+		<input type=checkbox name=scope value='{{.}}' checked>
 		<span>{{.}}</span>
 	</label>
-	{{end}}
+	{{end -}}
 
-	<input type=submit name=decision value=Approve>
-	<input type=submit name=decision value=Decline>
+	<p class=flex>
+		<input type=submit name=decision value=Approve style='background:#08c;color:#fff;margin-right:1em'>
+		<input type=submit name=decision value=Decline style='background:#a00;color:#fff;margin-right:1em'>
+	</p>
 </form>
+
+{{end -}}

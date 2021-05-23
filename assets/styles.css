@@ -1,0 +1,154 @@
+html {
+	color: #333;
+	scroll-behavior: smooth;
+	scrollbar-color: currentColor transparent;
+	scrollbar-width: thin;
+}
+
+body {
+	margin: 0 auto;
+	padding: 6px;
+	font: 18px 'Source Sans Pro', sans-serif;
+	max-width: 960px;
+	line-height: 1.4;
+	overflow-wrap: break-word;
+}
+
+h1 {
+	margin-top: 6px;
+	font-size: 3em;
+}
+
+h1 img {
+	height: 1em;
+	vertical-align: text-top;
+}
+
+h2 {
+	font-size: 2.25em;
+}
+
+h3 {
+	font-size: 1.5em;
+}
+
+h2, h3 {
+	margin: 2em 0 .5em;
+}
+
+a {
+	color: #00f;
+}
+
+dt, code {
+	font-family: 'Source Code Pro', monospace;
+}
+
+dt {
+	font-weight: bold;
+	font-size: 1.1rem;
+	padding: 0;
+}
+
+dd + dt {
+	margin-top: 2rem;
+}
+
+dt .var {
+	color: #272;
+	border-radius: 3px;
+}
+
+dd {
+	margin-left: 3em;
+}
+
+code {
+	background: #eee;
+	padding: 0 3px;
+	border-radius: 1px;
+}
+
+input {
+	font: inherit;
+}
+
+input[type=checkbox] {
+	transform: scale(1.3);
+	margin-right: 9px;
+}
+
+input[type=submit] {
+	border: none;
+	border-radius: 3px;
+	padding: 6px 1em;
+	opacity: .8;
+}
+
+input[type=submit]:hover {
+	opacity: 1;
+}
+
+label, input[type=submit], input[type=checkbox] {
+	cursor: pointer;
+}
+
+footer {
+	margin: 3rem 0 1rem;
+	padding: 1rem 0 0;
+	border-top: 1px solid #ddd;
+	text-align: center;
+}
+
+.flex {
+	display: flex;
+}
+
+@media (prefers-color-scheme: dark) {
+	html {
+		color: #eee;
+		background: #222;
+	}
+
+	a {
+		color: #8bf;
+	}
+
+	code {
+		background: #444;
+	}
+
+	dt .var {
+		color: #8fc;
+	}
+
+	footer {
+		border-color: #555;
+	}
+}
+
+@media (max-width: 400px) {
+	h1 {
+		text-align: center;
+	}
+
+	h2, h3 {
+		margin: 1em 0 .25em;
+	}
+
+	h2 {
+		font-size: 1.8em;
+	}
+
+	h3 {
+		font-size: 1.4em;
+	}
+
+	dd {
+		margin-left: 1.6em;
+	}
+
+	dd ul {
+		padding-left: 1em;
+	}
+}

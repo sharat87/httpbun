@@ -28,7 +28,7 @@ func MakeBunHandler() mux.Mux {
 
 	m.HandleFunc("/", func(w http.ResponseWriter, req *request.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		assets.WriteAsset("index.html", w, req)
+		assets.Render("index.html", w, req)
 	})
 
 	m.HandleFunc("/(?P<name>.+\\.(png|ico|webmanifest))", func(w http.ResponseWriter, req *request.Request) {
@@ -762,6 +762,10 @@ func handleOauth(w http.ResponseWriter, req *request.Request) {
 			errors = append(errors, err.Error())
 		}
 
+		if !strings.HasPrefix(redirectUrl, "http://") && !strings.HasPrefix(redirectUrl, "https://") {
+			errors = append(errors, "The `redirect_url` must be an absolute URL, and should start with `http://` or `https://`.")
+		}
+
 		state := ""
 		if len(params["state"]) > 0 {
 			state = params["state"][0]
@@ -772,7 +776,7 @@ func handleOauth(w http.ResponseWriter, req *request.Request) {
 			scopes = strings.Split(strings.Join(params["scope"], " "), " ")
 		}
 
-		assets.Render(w, "oauth-consent.html", map[string]interface{}{
+		assets.Render("oauth-consent.html", w, map[string]interface{}{
 			"Errors": errors,
 			"scopes": scopes,
 			"redirectUrl": redirectUrl,
@@ -781,19 +785,28 @@ func handleOauth(w http.ResponseWriter, req *request.Request) {
 
 	} else if req.Method == http.MethodPost {
 		// TODO: Error out if there's *any* query params here.
+		req.ParseForm()
 		redirectUrl, _ := req.FormParamSingle("redirect_url")
 		decision, _ := req.FormParamSingle("decision")
 		state, _ := req.FormParamSingle("state")
 
-		redirectUrl = redirectUrl + "?state=" + url.QueryEscape(state)
+		params := []string{}
 
-		if decision == "Approve" {
-			redirectUrl = redirectUrl + "&code=123"
-		} else {
-			redirectUrl = redirectUrl + "&error=access_denied"
+		if state != "" {
+			params = append(params, "state=" + url.QueryEscape(state))
 		}
 
-		req.Redirect(w, redirectUrl)
+		if len(req.Form["scope"]) > 0 {
+			params = append(params, "scope=" + url.QueryEscape(strings.Join(req.Form["scope"], " ")))
+		}
+
+		if decision == "Approve" {
+			params = append(params, "code=123")
+		} else {
+			params = append(params, "error=access_denied")
+		}
+
+		req.Redirect(w, redirectUrl + "?" + strings.Join(params, "&"))
 
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)

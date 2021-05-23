@@ -67,9 +67,6 @@ func (req Request) QueryParamSingle(name string) (string, error) {
 }
 
 func (req Request) FormParamSingle(name string) (string, error) {
-	if req.Form == nil {
-		req.ParseForm()
-	}
 	return singleParamValue(req.Form, name)
 }
 
