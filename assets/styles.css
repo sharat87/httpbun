@@ -75,6 +75,7 @@ code {
 pre {
 	margin: 1em 2em;
 	padding: .5em;
+	overflow-x: auto;
 }
 
 input {
