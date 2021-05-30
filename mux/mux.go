@@ -19,18 +19,19 @@ type Mux struct {
 }
 
 type route struct {
-	Pattern *regexp.Regexp
+	Pattern regexp.Regexp
 	Fn      HandlerFn
 }
 
 func (mux *Mux) HandleFunc(pattern string, fn HandlerFn) {
 	mux.Routes = append(mux.Routes, route{
-		Pattern: regexp.MustCompile("^" + pattern + "$"),
+		Pattern: *regexp.MustCompile("^" + pattern + "$"),
 		Fn:      fn,
 	})
 }
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// TODO: Don't parse HTTPBUN_ALLOW_HOSTS on every request.
 	allowedHostsStr := os.Getenv("HTTPBUN_ALLOW_HOSTS")
 	if allowedHostsStr != "" {
 		allowedHosts := strings.Split(allowedHostsStr, ",")
@@ -47,8 +48,13 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		CappedBody: io.LimitReader(req.Body, 10000),
 	}
 
-	if req2.URL.Path == "/" && req2.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" {
-		req2.Redirect(w, "https://"+req.Host+req.URL.String())
+	if req2.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" {
+		if req2.URL.Path == "/" {
+			req2.Redirect(w, "https://"+req.Host+req.URL.String())
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, "Please use https")
+		}
 		return
 	}
 
