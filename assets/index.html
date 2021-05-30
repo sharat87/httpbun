@@ -205,6 +205,19 @@ Httpbun can be configured in a limited way using the following environment varia
 <dt id=env-port>PORT</dt>
 <dd>The port on which to listen to. Defaults to <code>3090</code>.
 
+<dt id=env-allow-hosts>HTTPBUN_ALLOW_HOSTS</dt>
+<dd>A comma separated list of hosts at which this instance will accept connections. Defaults to <code>empty</code>,
+	which means it won't be accessible at all. When running locally, you may want to set this to
+	<code>localhost:3090</code>. Another example: <code>httpbun.com,httpbun.org</code>.</dd>
+
+<dt id=env-force-https>HTTPBUN_FORCE_HTTPS</dt>
+<dd>If set to <code>1</code>, only accept connections coming in as <code>https</code>. By default, https is not
+	forced.</dd>
+
+<dt id=env-info-enabled>HTTPBUN_INFO_ENABLED</dt>
+<dd>If set to <code>1</code>, the endpoint <code>/info</code> will be availble, which responds with various server
+	information.</dd>
+
 </dl>
 
 <h2 id=h2-diff-from-httpbin>Differences from Httpbin</h2>
