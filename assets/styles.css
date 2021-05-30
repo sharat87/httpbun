@@ -63,10 +63,18 @@ dd {
 	margin-left: 3em;
 }
 
-code {
+code, pre {
 	background: #eee;
-	padding: 0 3px;
 	border-radius: 1px;
+}
+
+code {
+	padding: 0 3px;
+}
+
+pre {
+	margin: 1em 2em;
+	padding: .5em;
 }
 
 input {

@@ -19,8 +19,6 @@ well.</p>
 
 <p><span style='font-size:1.6em'>★</span> Star this project on <a href='https://github.com/sharat87/httpbun' rel=noopener>GitHub</a>.</p>
 
-<p>Run with Docker: <code>docker run -p 80:80 ghcr.io/sharat87/httpbun</code></p>
-
 <h2 id=h2-endpoints>Endpoints</h2>
 
 <dl>
@@ -182,6 +180,30 @@ well.</p>
 <dt id=anything>/anything</dt>
 <dt id=anything>/anything/<span class=var>{...}</span></dt>
 <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but will work with any given method.</dd>
+
+</dl>
+
+<h2 id=self-hosting>Self Hosting</h2>
+
+Running your own version of Httpbun is super-easy, particularly because it doesn't <em>require</em> any other services
+like a database or even a disk to write to.
+
+If you have Docker installed, the following command is all you need:
+
+<pre>docker run -p 80:80 ghcr.io/sharat87/httpbun</pre>
+
+<h3>Environment</h3>
+
+Httpbun can be configured in a limited way using the following environment variables:
+
+<dl>
+
+<dt id=env-host>HOST</dt>
+<dd>The host to bind the server to. Defaults to <code>localhost</code>. Set it to <code>0.0.0.0</code> to make your
+	instance accessible from non local clients.</dd>
+
+<dt id=env-port>PORT</dt>
+<dd>The port on which to listen to. Defaults to <code>3090</code>.
 
 </dl>
 
