@@ -14,19 +14,13 @@ import (
 type HandlerFn func(w http.ResponseWriter, req *request.Request)
 
 type Mux struct {
-	BeforeRequest HandlerFn
+	BeforeHandler HandlerFn
 	Routes        []route
 }
 
 type route struct {
 	Pattern *regexp.Regexp
 	Fn      HandlerFn
-}
-
-func New() Mux {
-	return Mux{
-		Routes: []route{},
-	}
 }
 
 func (mux *Mux) HandleFunc(pattern string, fn HandlerFn) {
@@ -38,7 +32,7 @@ func (mux *Mux) HandleFunc(pattern string, fn HandlerFn) {
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	allowedHosts := strings.Split(os.Getenv("HTTPBUN_ALLOW_HOSTS"), ",")
-	if !contains(allowedHosts, req.Host) {
+	if !contains(allowedHosts, req.Host) && !contains(allowedHosts, "*") {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprintf(w, "%d Host %q not allowed", http.StatusForbidden, req.Host)
 		return
@@ -65,8 +59,8 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				}
 			}
 
-			if mux.BeforeRequest != nil {
-				mux.BeforeRequest(w, req2)
+			if mux.BeforeHandler != nil {
+				mux.BeforeHandler(w, req2)
 			}
 
 			route.Fn(w, req2)

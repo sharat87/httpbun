@@ -24,7 +24,7 @@ import (
 )
 
 func MakeBunHandler() mux.Mux {
-	m := mux.New()
+	m := mux.Mux{}
 
 	m.HandleFunc("/", func(w http.ResponseWriter, req *request.Request) {
 		w.Header().Set("Content-Type", "text/html")
@@ -79,7 +79,8 @@ func MakeBunHandler() mux.Mux {
 
 	m.HandleFunc("/anything\\b.*", handleAnything)
 
-	m.HandleFunc("/oauth", handleOauth)
+	m.HandleFunc("/oauth/authorize", handleOauthAuthorize)
+	m.HandleFunc("/oauth/authorize/submit", handleOauthAuthorizeSubmit)
 
 	if os.Getenv("HTTPBUN_INFO_ENABLED") == "1" {
 		m.HandleFunc("/info", handleInfo)
@@ -752,65 +753,96 @@ func handleInfo(w http.ResponseWriter, req *request.Request) {
 	})
 }
 
-func handleOauth(w http.ResponseWriter, req *request.Request) {
-	if req.Method == http.MethodGet {
-		errors := []string{}
-		params := req.URL.Query()
+func handleOauthAuthorize(w http.ResponseWriter, req *request.Request) {
+	// Ref: <https://datatracker.ietf.org/doc/html/rfc6749>.
 
-		redirectUrl, err := req.QueryParamSingle("redirect_url")
-		if err != nil {
-			errors = append(errors, err.Error())
-		}
-
-		if !strings.HasPrefix(redirectUrl, "http://") && !strings.HasPrefix(redirectUrl, "https://") {
-			errors = append(errors, "The `redirect_url` must be an absolute URL, and should start with `http://` or `https://`.")
-		}
-
-		state := ""
-		if len(params["state"]) > 0 {
-			state = params["state"][0]
-		}
-
-		var scopes []string
-		if len(params["scope"]) > 0 {
-			scopes = strings.Split(strings.Join(params["scope"], " "), " ")
-		}
-
-		assets.Render("oauth-consent.html", w, map[string]interface{}{
-			"Errors": errors,
-			"scopes": scopes,
-			"redirectUrl": redirectUrl,
-			"state": state,
-		})
-
-	} else if req.Method == http.MethodPost {
-		// TODO: Error out if there's *any* query params here.
-		req.ParseForm()
-		redirectUrl, _ := req.FormParamSingle("redirect_url")
-		decision, _ := req.FormParamSingle("decision")
-		state, _ := req.FormParamSingle("state")
-
-		params := []string{}
-
-		if state != "" {
-			params = append(params, "state=" + url.QueryEscape(state))
-		}
-
-		if len(req.Form["scope"]) > 0 {
-			params = append(params, "scope=" + url.QueryEscape(strings.Join(req.Form["scope"], " ")))
-		}
-
-		if decision == "Approve" {
-			params = append(params, "code=123")
-		} else {
-			params = append(params, "error=access_denied")
-		}
-
-		req.Redirect(w, redirectUrl + "?" + strings.Join(params, "&"))
-
-	} else {
+	// TODO: Handle POST also, where params are read from the body.
+	if req.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		fmt.Fprintln(w, http.StatusText(http.StatusMethodNotAllowed))
-
 	}
+
+	errors := []string{}
+	params := req.URL.Query()
+
+	redirectUrl, err := req.QueryParamSingle("redirect_uri")
+	if err != nil {
+		errors = append(errors, err.Error())
+	} else if !strings.HasPrefix(redirectUrl, "http://") && !strings.HasPrefix(redirectUrl, "https://") {
+		errors = append(errors, "The `redirect_uri` must be an absolute URL, and should start with `http://` or `https://`.")
+	}
+
+	responseType, err := req.QueryParamSingle("response_type")
+	if err != nil {
+		errors = append(errors, err.Error())
+	}
+
+	// clientId, err := req.QueryParamSingle("client_id")
+	// if err != nil {
+	// 	// Required if responseType is "code" or "token"
+	// 	errors = append(errors, err.Error())
+	// }
+
+	state := ""
+	if len(params["state"]) > 0 {
+		state = params["state"][0]
+	}
+
+	var scopes []string
+	if len(params["scope"]) > 0 {
+		scopes = strings.Split(strings.Join(params["scope"], " "), " ")
+	}
+
+	if len(errors) > 0 {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	// TODO: Error handling as per <https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1>.
+	assets.Render("oauth-consent.html", w, map[string]interface{}{
+		"Errors":       errors,
+		"scopes":       scopes,
+		"redirectUrl":  redirectUrl,
+		"responseType": responseType,
+		"state":        state,
+	})
+}
+
+func handleOauthAuthorizeSubmit(w http.ResponseWriter, req *request.Request) {
+	if req.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprintln(w, http.StatusText(http.StatusMethodNotAllowed))
+	}
+
+	// TODO: Error out if there's *any* query params here.
+	req.ParseForm()
+	decision, _ := req.FormParamSingle("decision")
+
+	redirectUrl, _ := req.FormParamSingle("redirect_uri")
+	responseType, _ := req.FormParamSingle("response_type")
+	state, _ := req.FormParamSingle("state")
+
+	params := []string{}
+
+	if state != "" {
+		params = append(params, "state="+url.QueryEscape(state))
+	}
+
+	if len(req.Form["scope"]) > 0 {
+		params = append(params, "scope="+url.QueryEscape(strings.Join(req.Form["scope"], " ")))
+	}
+
+	if decision == "Approve" {
+		if responseType == "code" {
+			params = append(params, "code=123")
+		} else if responseType == "token" {
+			params = append(params, "access_token=456")
+			params = append(params, "token_type=bearer")
+		} else {
+			params = append(params, "approved=true")
+		}
+	} else {
+		params = append(params, "error=access_denied")
+	}
+
+	req.Redirect(w, redirectUrl+"?"+strings.Join(params, "&"))
 }

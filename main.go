@@ -36,7 +36,7 @@ func main() {
 	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
 
 	m := bun.MakeBunHandler()
-	m.BeforeRequest = func(w http.ResponseWriter, req *request.Request) {
+	m.BeforeHandler = func(w http.ResponseWriter, req *request.Request) {
 		ip := req.HeaderValueLast("X-Forwarded-For")
 		log.Printf("Handling ip=%s %s %s%s", ip, req.Method, req.Host, req.URL.String())
 		w.Header().Set("Access-Control-Allow-Origin", "*")

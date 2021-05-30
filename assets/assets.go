@@ -1,13 +1,13 @@
 package assets
 
 import (
-	"github.com/sharat87/httpbun/request"
 	"bytes"
-	"log"
-	"html/template"
 	"embed"
-	"strings"
+	"github.com/sharat87/httpbun/request"
+	"html/template"
+	"log"
 	"net/http"
+	"strings"
 )
 
 //go:embed *.html *.css *.png favicon.ico site.webmanifest

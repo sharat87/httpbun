@@ -19,7 +19,8 @@
 {{else}}
 
 <form action=oauth method=post>
-	<input type=hidden name=redirect_url value='{{.redirectUrl}}'>
+	<input type=hidden name=redirect_uri value='{{.redirectUrl}}'>
+	<input type=hidden name=response_type value='{{.responseType}}'>
 	<input type=hidden name=state value='{{.state}}'>
 
 	<p>Requesting authorization with the following scopes:</p>
@@ -33,7 +34,7 @@
 
 	<p class=flex>
 		<input type=submit name=decision value=Approve style='background:#08c;color:#fff;margin-right:1em'>
-		<input type=submit name=decision value=Decline style='background:#a00;color:#fff;margin-right:1em'>
+		<input type=submit name=decision value=Decline style='background:#a00;color:#fff'>
 	</p>
 </form>
 
