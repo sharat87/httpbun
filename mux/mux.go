@@ -31,11 +31,14 @@ func (mux *Mux) HandleFunc(pattern string, fn HandlerFn) {
 }
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	allowedHosts := strings.Split(os.Getenv("HTTPBUN_ALLOW_HOSTS"), ",")
-	if !contains(allowedHosts, req.Host) && !contains(allowedHosts, "*") {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintf(w, "%d Host %q not allowed", http.StatusForbidden, req.Host)
-		return
+	allowedHostsStr := os.Getenv("HTTPBUN_ALLOW_HOSTS")
+	if allowedHostsStr != "" {
+		allowedHosts := strings.Split(allowedHostsStr, ",")
+		if !contains(allowedHosts, req.Host) {
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprintf(w, "%d Host %q not allowed", http.StatusForbidden, req.Host)
+			return
+		}
 	}
 
 	req2 := &request.Request{
