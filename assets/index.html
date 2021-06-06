@@ -181,6 +181,14 @@ well.</p>
 <dt id=anything>/anything/<span class=var>{...}</span></dt>
 <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but will work with any given method.</dd>
 
+<h3 id=h3-oauth>OAuth</h3>
+
+<dt id=oauth-authorize>/oauth/authorize</dt>
+<dd>A dummy OAuth authorization endpoint. It can take a <code>client_id</code>, <code>scope</code>, <code>state</code>
+	etc. that are required for a typical OAuth flow, and present the user a minimal UI to approve or decline, and then
+	redirect to the URL specified by <code>redirect_uri</code> with appropriate details. You may try this out with the
+	<a href='https://oauthdebugger.com' rel=noopener>OAuthDebugger</a> to understand the flow better.</dd>
+
 </dl>
 
 <h2 id=self-hosting>Self Hosting</h2>
