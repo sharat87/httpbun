@@ -39,8 +39,16 @@ func main() {
 	m.BeforeHandler = func(w http.ResponseWriter, req *request.Request) {
 		ip := req.HeaderValueLast("X-Forwarded-For")
 		log.Printf("Handling ip=%s %s %s%s", ip, req.Method, req.Host, req.URL.String())
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		// Need to set the exact origin, since `*` won't work if request includes credentials.
+		// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
+		originHeader := req.HeaderValueLast("Origin")
+		if originHeader == "" {
+			originHeader = "*"
+		}
+		w.Header().Set("Access-Control-Allow-Origin", originHeader)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
 		poweredBy := "httpbun"
 		if Version != "" {
 			poweredBy += " " + Version

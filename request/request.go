@@ -98,19 +98,23 @@ func (req Request) ExposableHeadersMap() map[string]string {
 	return headers
 }
 
+func (req Request) FindScheme() string {
+	if os.Getenv("HTTPBUN_SSL_CERT") != "" || req.HeaderValueLast("X-Forwarded-Proto") == "https" {
+		return "https"
+	}
+
+	return "http"
+}
+
 func (req Request) FullUrl() string {
 	if !strings.HasPrefix(req.URL.String(), "/") {
 		return req.URL.String()
 	}
 
-	scheme := "http"
-	if os.Getenv("HTTPBUN_SSL_CERT") != "" || req.HeaderValueLast("X-Forwarded-Proto") == "https" {
-		scheme = "https"
-	}
-
-	return scheme + "://" + req.Host + req.URL.String()
+	return req.FindScheme() + "://" + req.Host + req.URL.String()
 }
 
+// Find the IP address of the client that made this request.
 func (req *Request) FindOrigin() string {
 	if req.Origin != nil {
 		return *req.Origin
