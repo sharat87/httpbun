@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/sharat87/httpbun/bun"
 	"github.com/sharat87/httpbun/request"
+	// lh "github.com/sharat87/httpbun/lambda"
+	// "github.com/aws/aws-lambda-go/lambda"
 	"log"
 	"math/rand"
 	"net/http"
@@ -19,6 +21,10 @@ var (
 
 func main() {
 	rand.Seed(time.Now().Unix())
+
+	// if strings.HasPrefix(os.Getenv("AWS_EXECUTION_ENV"), "AWS_Lambda_") {
+	// 	lambda.Start(lh.Handler)
+	// }
 
 	host, ok := os.LookupEnv("HOST")
 	if !ok {
@@ -43,11 +49,10 @@ func main() {
 		// Need to set the exact origin, since `*` won't work if request includes credentials.
 		// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
 		originHeader := req.HeaderValueLast("Origin")
-		if originHeader == "" {
-			originHeader = "*"
+		if originHeader != "" {
+			w.Header().Set("Access-Control-Allow-Origin", originHeader)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
-		w.Header().Set("Access-Control-Allow-Origin", originHeader)
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		poweredBy := "httpbun"
 		if Version != "" {
