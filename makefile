@@ -7,6 +7,7 @@ run:
 build:
 	@mkdir -p bin
 	@go build $(LDFLAGS) -v -o bin/httpbun
+	@cd bin && zip httpbun.zip httpbun
 
 build-all:
 	@mkdir -p bin

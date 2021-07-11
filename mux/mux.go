@@ -48,13 +48,8 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		CappedBody: io.LimitReader(req.Body, 10000),
 	}
 
-	if req2.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" {
-		if req2.URL.Path == "/" {
-			req2.Redirect(w, "https://"+req.Host+req.URL.String())
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, "Please use https")
-		}
+	if req2.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" && req2.URL.Path == "/" {
+		req2.Redirect(w, "https://"+req.Host+req.URL.String())
 		return
 	}
 
