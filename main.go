@@ -2,11 +2,10 @@ package main
 
 import (
 	"github.com/sharat87/httpbun/bun"
-	"github.com/sharat87/httpbun/request"
-	// lh "github.com/sharat87/httpbun/lambda"
-	// "github.com/aws/aws-lambda-go/lambda"
+	"github.com/sharat87/httpbun/exchange"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
@@ -22,10 +21,6 @@ var (
 func main() {
 	rand.Seed(time.Now().Unix())
 
-	// if strings.HasPrefix(os.Getenv("AWS_EXECUTION_ENV"), "AWS_Lambda_") {
-	// 	lambda.Start(lh.Handler)
-	// }
-
 	host, ok := os.LookupEnv("HOST")
 	if !ok {
 		host = "localhost"
@@ -36,34 +31,34 @@ func main() {
 		port = "3090"
 	}
 
+	listener, err := net.Listen("tcp", host + ":" + port)
+	if err != nil {
+		log.Fatal("Error creating listener.", err)
+	}
+
 	// Genreate a self-signed cert with following command:
 	// openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365 -subj "/O=httpbun/CN=httpbun.com"
 	sslCertFile := os.Getenv("HTTPBUN_SSL_CERT")
 	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
 
 	m := bun.MakeBunHandler()
-	m.BeforeHandler = func(w http.ResponseWriter, req *request.Request) {
-		ip := req.HeaderValueLast("X-Forwarded-For")
-		log.Printf("Handling ip=%s %s %s%s", ip, req.Method, req.Host, req.URL.String())
+	m.BeforeHandler = func(ex *exchange.Exchange) {
+		ip := ex.HeaderValueLast("X-Forwarded-For")
+		log.Printf("Handling ip=%s %s %s%s", ip, ex.Request.Method, ex.Request.Host, ex.Request.URL.String())
 
 		// Need to set the exact origin, since `*` won't work if request includes credentials.
 		// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
-		originHeader := req.HeaderValueLast("Origin")
+		originHeader := ex.HeaderValueLast("Origin")
 		if originHeader != "" {
-			w.Header().Set("Access-Control-Allow-Origin", originHeader)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			ex.ResponseWriter.Header().Set("Access-Control-Allow-Origin", originHeader)
+			ex.ResponseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 
 		poweredBy := "httpbun"
 		if Version != "" {
 			poweredBy += " " + Version
 		}
-		w.Header().Set("X-Powered-By", poweredBy)
-	}
-
-	s := &http.Server{
-		Addr:    host + ":" + port,
-		Handler: m,
+		ex.ResponseWriter.Header().Set("X-Powered-By", poweredBy)
 	}
 
 	scheme := "http"
@@ -71,8 +66,15 @@ func main() {
 		scheme = "https"
 	}
 
-	log.Printf("Serving on %s://%s:%s (set HOST / PORT environment variables to change)...\n", scheme, host, port)
 	log.Printf("Version: %q, Commit: %q, Date: %q.\n", Version, Commit, Date)
+
+	// To get port being used as an int: listener.Addr().(*net.TCPAddr).Port
+	log.Printf(
+		"Serving on %s://%s (set HOST / PORT environment variables to change)...\n",
+		scheme,
+		listener.Addr(),
+	)
+
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "'Error getting hostname: " + err.Error() + "'"
@@ -80,8 +82,8 @@ func main() {
 	log.Printf("OS: %q, Arch: %q, Host: %q.\n", runtime.GOOS, runtime.GOARCH, hostname)
 
 	if sslCertFile == "" {
-		log.Fatal(s.ListenAndServe())
+		log.Fatal(http.Serve(listener, m))
 	} else {
-		log.Fatal(s.ListenAndServeTLS(sslCertFile, sslKeyFile))
+		log.Fatal(http.ServeTLS(listener, m, sslCertFile, sslKeyFile))
 	}
 }

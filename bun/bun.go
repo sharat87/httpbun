@@ -2,11 +2,13 @@ package bun
 
 import (
 	"encoding/base64"
+	"html/template"
 	"encoding/json"
 	"fmt"
 	"github.com/sharat87/httpbun/assets"
+	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/mux"
-	"github.com/sharat87/httpbun/request"
+	"github.com/sharat87/httpbun/storage"
 	"github.com/sharat87/httpbun/util"
 	"io/ioutil"
 	"log"
@@ -24,16 +26,20 @@ import (
 )
 
 func MakeBunHandler() mux.Mux {
-	m := mux.Mux{}
+	m := mux.Mux{
+		Storage: storage.NewMemoryStorage(),
+	}
 
-	m.HandleFunc("/", func(w http.ResponseWriter, req *request.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		assets.Render("index.html", w, req)
+	m.HandleFunc("/", func(ex *exchange.Exchange) {
+		ex.ResponseWriter.Header().Set("Content-Type", "text/html")
+		assets.Render("index.html", ex.ResponseWriter, ex.Request)
 	})
 
-	m.HandleFunc("/(?P<name>.+\\.(png|ico|webmanifest))", func(w http.ResponseWriter, req *request.Request) {
-		assets.WriteAsset(req.Field("name"), w, req)
+	m.HandleFunc("/(?P<name>.+\\.(png|ico|webmanifest))", func(ex *exchange.Exchange) {
+		assets.WriteAsset(ex.Field("name"), ex.ResponseWriter, ex.Request)
 	})
+
+	m.HandleFunc("/health", handleHealth)
 
 	m.HandleFunc("/get", handleValidMethod)
 	m.HandleFunc("/post", handleValidMethod)
@@ -82,6 +88,10 @@ func MakeBunHandler() mux.Mux {
 	m.HandleFunc("/oauth/authorize", handleOauthAuthorize)
 	m.HandleFunc("/oauth/authorize/submit", handleOauthAuthorizeSubmit)
 
+	const inboxPat = "/inbox/(?P<name>[-_a-z0-9]+?)"
+	m.HandleFunc(inboxPat, handleInboxPush)
+	m.HandleFunc(inboxPat+"/view", handleInboxView)
+
 	if os.Getenv("HTTPBUN_INFO_ENABLED") == "1" {
 		m.HandleFunc("/info", handleInfo)
 	}
@@ -89,42 +99,46 @@ func MakeBunHandler() mux.Mux {
 	return m
 }
 
+func handleHealth(ex *exchange.Exchange) {
+	fmt.Fprintln(ex.ResponseWriter, "ok")
+}
+
 type InfoJsonOptions struct {
 	Method   bool
 	BodyInfo bool
 }
 
-func handleValidMethod(w http.ResponseWriter, req *request.Request) {
-	allowedMethod := strings.TrimPrefix(req.URL.Path, "/")
-	if !strings.EqualFold(req.Method, allowedMethod) {
-		w.Header().Set("Allow", allowedMethod)
-		w.WriteHeader(http.StatusMethodNotAllowed)
+func handleValidMethod(ex *exchange.Exchange) {
+	allowedMethod := strings.TrimPrefix(ex.Request.URL.Path, "/")
+	if !strings.EqualFold(ex.Request.Method, allowedMethod) {
+		ex.ResponseWriter.Header().Set("Allow", allowedMethod)
+		ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	isNonGet := req.Method != http.MethodGet
-	sendInfoJson(w, req, InfoJsonOptions{
+	isNonGet := ex.Request.Method != http.MethodGet
+	sendInfoJson(ex, InfoJsonOptions{
 		Method:   false,
 		BodyInfo: isNonGet,
 	})
 }
 
-func handleAnything(w http.ResponseWriter, req *request.Request) {
-	sendInfoJson(w, req, InfoJsonOptions{
+func handleAnything(ex *exchange.Exchange) {
+	sendInfoJson(ex, InfoJsonOptions{
 		Method:   true,
 		BodyInfo: true,
 	})
 }
 
-func handleHeaders(w http.ResponseWriter, req *request.Request) {
-	util.WriteJson(w, map[string]interface{}{
-		"headers": req.ExposableHeadersMap(),
+func handleHeaders(ex *exchange.Exchange) {
+	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
+		"headers": ex.ExposableHeadersMap(),
 	})
 }
 
-func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonOptions) {
+func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 	args := make(map[string]interface{})
-	for name, values := range req.URL.Query() {
+	for name, values := range ex.Request.URL.Query() {
 		if len(values) > 1 {
 			args[name] = values
 		} else {
@@ -134,22 +148,22 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 
 	result := map[string]interface{}{
 		"args":    args,
-		"headers": req.ExposableHeadersMap(),
-		"origin":  req.FindOrigin(),
-		"url":     req.FullUrl(),
+		"headers": ex.ExposableHeadersMap(),
+		"origin":  ex.FindOrigin(),
+		"url":     ex.FullUrl(),
 	}
 
 	if options.Method {
-		result["method"] = req.Method
+		result["method"] = ex.Request.Method
 	}
 
-	contentTypeHeaderValue := req.HeaderValueLast("Content-Type")
+	contentTypeHeaderValue := ex.HeaderValueLast("Content-Type")
 	if contentTypeHeaderValue == "" {
 		contentTypeHeaderValue = "text/plain"
 	}
 	contentType, params, err := mime.ParseMediaType(contentTypeHeaderValue)
 	if err != nil {
-		log.Printf("Error parsing content type %q %v.", req.HeaderValueLast("Content-Type"), err)
+		log.Printf("Error parsing content type %q %v.", ex.HeaderValueLast("Content-Type"), err)
 		return
 	}
 
@@ -160,7 +174,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 		data := ""
 
 		if contentType == "application/x-www-form-urlencoded" {
-			body := req.BodyString()
+			body := ex.BodyString()
 			if parsed, err := url.ParseQuery(body); err != nil {
 				data = body
 			} else {
@@ -174,7 +188,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 			}
 
 		} else if contentType == "application/json" {
-			body := req.BodyString()
+			body := ex.BodyString()
 			var result interface{}
 			if json.Unmarshal([]byte(body), &result) == nil {
 				jsonData = &result
@@ -183,7 +197,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 
 		} else if contentType == "multipart/form-data" {
 			// This might work for `multipart/mixed` as well. Confirm.
-			reader := multipart.NewReader(req.Body, params["boundary"])
+			reader := multipart.NewReader(ex.Request.Body, params["boundary"])
 			allFileData, err := reader.ReadForm(32 << 20)
 			if err != nil {
 				fmt.Println("Error reading multipart form data", err)
@@ -208,7 +222,7 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 			}
 
 		} else {
-			data = req.BodyString()
+			data = ex.BodyString()
 
 		}
 
@@ -218,11 +232,11 @@ func sendInfoJson(w http.ResponseWriter, req *request.Request, options InfoJsonO
 		result["files"] = files
 	}
 
-	util.WriteJson(w, result)
+	util.WriteJson(ex.ResponseWriter, result)
 }
 
-func handleStatus(w http.ResponseWriter, req *request.Request) {
-	codes := regexp.MustCompile("\\d+").FindAllString(req.URL.String(), -1)
+func handleStatus(ex *exchange.Exchange) {
+	codes := regexp.MustCompile("\\d+").FindAllString(ex.Request.URL.String(), -1)
 
 	var code string
 	if len(codes) > 1 {
@@ -232,61 +246,61 @@ func handleStatus(w http.ResponseWriter, req *request.Request) {
 	}
 
 	codeNum, _ := strconv.Atoi(code)
-	w.WriteHeader(codeNum)
-	fmt.Fprintf(w, "%d %s", codeNum, http.StatusText(codeNum))
+	ex.ResponseWriter.WriteHeader(codeNum)
+	fmt.Fprintf(ex.ResponseWriter, "%d %s", codeNum, http.StatusText(codeNum))
 }
 
-func handleAuthBasic(w http.ResponseWriter, req *request.Request) {
-	givenUsername, givenPassword, ok := req.BasicAuth()
+func handleAuthBasic(ex *exchange.Exchange) {
+	givenUsername, givenPassword, ok := ex.Request.BasicAuth()
 
-	if ok && givenUsername == req.Field("user") && givenPassword == req.Field("pass") {
-		util.WriteJson(w, map[string]interface{}{
+	if ok && givenUsername == ex.Field("user") && givenPassword == ex.Field("pass") {
+		util.WriteJson(ex.ResponseWriter, map[string]interface{}{
 			"authenticated": true,
 			"user":          givenUsername,
 		})
 
 	} else {
-		w.Header().Set("WWW-Authenticate", "Basic realm=\"Fake Realm\"")
-		w.WriteHeader(http.StatusUnauthorized)
+		ex.ResponseWriter.Header().Set("WWW-Authenticate", "Basic realm=\"Fake Realm\"")
+		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
 
 	}
 }
 
-func handleAuthBearer(w http.ResponseWriter, req *request.Request) {
-	expectedToken := req.Field("tok")
+func handleAuthBearer(ex *exchange.Exchange) {
+	expectedToken := ex.Field("tok")
 
-	authHeader := req.HeaderValueLast("Authorization")
+	authHeader := ex.HeaderValueLast("Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
-		w.Header().Set("WWW-Authenticate", "Bearer")
-		w.WriteHeader(http.StatusUnauthorized)
+		ex.ResponseWriter.Header().Set("WWW-Authenticate", "Bearer")
+		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 
-	util.WriteJson(w, map[string]interface{}{
+	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
 		"authenticated": token != "" && (expectedToken == "" || expectedToken == token),
 		"token":         token,
 	})
 }
 
-func handleAuthDigest(w http.ResponseWriter, req *request.Request) {
-	expectedQop, expectedUsername, expectedPassword := req.Field("qop"), req.Field("user"), req.Field("pass")
+func handleAuthDigest(ex *exchange.Exchange) {
+	expectedQop, expectedUsername, expectedPassword := ex.Field("qop"), ex.Field("user"), ex.Field("pass")
 	newNonce := util.RandomString()
 	opaque := util.RandomString()
 	realm := "Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"" + newNonce +
 		"\", opaque=\"" + opaque + "\", algorithm=MD5, stale=FALSE"
 
 	var authHeader string
-	if vals := req.Header["Authorization"]; vals != nil && len(vals) == 1 {
+	if vals := ex.Request.Header["Authorization"]; vals != nil && len(vals) == 1 {
 		authHeader = vals[0]
 	} else {
-		w.Header().Set("WWW-Authenticate", realm)
-		http.SetCookie(w, &http.Cookie{
+		ex.ResponseWriter.Header().Set("WWW-Authenticate", realm)
+		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:  "nonce",
 			Value: newNonce,
 		})
-		w.WriteHeader(http.StatusUnauthorized)
+		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -303,26 +317,26 @@ func handleAuthDigest(w http.ResponseWriter, req *request.Request) {
 
 	givenNonce := givenDetails["nonce"]
 
-	expectedNonce, err := req.Cookie("nonce")
+	expectedNonce, err := ex.Request.Cookie("nonce")
 	if err != nil {
-		w.Header().Set("WWW-Authenticate", realm)
-		http.SetCookie(w, &http.Cookie{
+		ex.ResponseWriter.Header().Set("WWW-Authenticate", realm)
+		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:  "nonce",
 			Value: newNonce,
 		})
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, "Error: %q\n", err.Error())
+		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(ex.ResponseWriter, "Error: %q\n", err.Error())
 		return
 	}
 
 	if givenNonce != expectedNonce.Value {
-		w.Header().Set("WWW-Authenticate", realm)
-		http.SetCookie(w, &http.Cookie{
+		ex.ResponseWriter.Header().Set("WWW-Authenticate", realm)
+		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:  "nonce",
 			Value: newNonce,
 		})
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, "Error: %q\nGiven: %q\nExpected: %q", "Nonce mismatch", givenNonce, expectedNonce.Value)
+		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(ex.ResponseWriter, "Error: %q\nGiven: %q\nExpected: %q", "Nonce mismatch", givenNonce, expectedNonce.Value)
 		return
 	}
 
@@ -333,24 +347,24 @@ func handleAuthDigest(w http.ResponseWriter, req *request.Request) {
 		givenDetails["nc"],
 		givenDetails["cnonce"],
 		expectedQop,
-		req.Method,
-		req.URL.Path,
+		ex.Request.Method,
+		ex.Request.URL.Path,
 	)
 
 	givenResponseCode := givenDetails["response"]
 
 	if expectedResponseCode != givenResponseCode {
-		w.Header().Set("WWW-Authenticate", realm)
-		http.SetCookie(w, &http.Cookie{
+		ex.ResponseWriter.Header().Set("WWW-Authenticate", realm)
+		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:  "nonce",
 			Value: newNonce,
 		})
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, "Error: %q\nGiven: %q\nExpected: %q", "Response code mismatch", givenResponseCode, expectedResponseCode)
+		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(ex.ResponseWriter, "Error: %q\nGiven: %q\nExpected: %q", "Response code mismatch", givenResponseCode, expectedResponseCode)
 		return
 	}
 
-	util.WriteJson(w, map[string]interface{}{
+	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
 		"authenticated": true,
 		"user":          expectedUsername,
 	})
@@ -364,63 +378,63 @@ func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce,
 	return util.Md5sum(ha1 + ":" + serverNonce + ":" + nc + ":" + clientNonce + ":" + qop + ":" + ha2)
 }
 
-func handleIp(w http.ResponseWriter, req *request.Request) {
-	util.WriteJson(w, map[string]string{
-		"origin": req.FindOrigin(),
+func handleIp(ex *exchange.Exchange) {
+	util.WriteJson(ex.ResponseWriter, map[string]string{
+		"origin": ex.FindOrigin(),
 	})
 }
 
-func handleUserAgent(w http.ResponseWriter, req *request.Request) {
-	util.WriteJson(w, map[string]string{
-		"user-agent": req.HeaderValueLast("User-Agent"),
+func handleUserAgent(ex *exchange.Exchange) {
+	util.WriteJson(ex.ResponseWriter, map[string]string{
+		"user-agent": ex.HeaderValueLast("User-Agent"),
 	})
 }
 
-func handleCache(w http.ResponseWriter, req *request.Request) {
+func handleCache(ex *exchange.Exchange) {
 	shouldSendData :=
-		req.HeaderValueLast("If-Modified-Since") == "" &&
-			req.HeaderValueLast("If-None-Match") == ""
+		ex.HeaderValueLast("If-Modified-Since") == "" &&
+			ex.HeaderValueLast("If-None-Match") == ""
 
 	if shouldSendData {
-		isNonGet := req.Method != http.MethodGet
-		sendInfoJson(w, req, InfoJsonOptions{
+		isNonGet := ex.Request.Method != http.MethodGet
+		sendInfoJson(ex, InfoJsonOptions{
 			BodyInfo: isNonGet,
 		})
 	} else {
-		w.WriteHeader(http.StatusNotModified)
+		ex.ResponseWriter.WriteHeader(http.StatusNotModified)
 	}
 }
 
-func handleCacheControl(w http.ResponseWriter, req *request.Request) {
-	w.Header().Set("Cache-Control", "public, max-age="+req.Field("age"))
-	isNonGet := req.Method != http.MethodGet
-	sendInfoJson(w, req, InfoJsonOptions{
+func handleCacheControl(ex *exchange.Exchange) {
+	ex.ResponseWriter.Header().Set("Cache-Control", "public, max-age="+ex.Field("age"))
+	isNonGet := ex.Request.Method != http.MethodGet
+	sendInfoJson(ex, InfoJsonOptions{
 		BodyInfo: isNonGet,
 	})
 }
 
-func handleEtag(w http.ResponseWriter, req *request.Request) {
+func handleEtag(ex *exchange.Exchange) {
 	// TODO: Handle If-Match header in etag endpoint: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match>.
-	etagInUrl := req.Field("etag")
-	etagInHeader := req.HeaderValueLast("If-None-Match")
+	etagInUrl := ex.Field("etag")
+	etagInHeader := ex.HeaderValueLast("If-None-Match")
 
 	if etagInUrl == etagInHeader {
-		w.WriteHeader(http.StatusNotModified)
+		ex.ResponseWriter.WriteHeader(http.StatusNotModified)
 	} else {
-		isNonGet := req.Method != http.MethodGet
-		sendInfoJson(w, req, InfoJsonOptions{
+		isNonGet := ex.Request.Method != http.MethodGet
+		sendInfoJson(ex, InfoJsonOptions{
 			BodyInfo: isNonGet,
 		})
 	}
 }
 
-func handleResponseHeaders(w http.ResponseWriter, req *request.Request) {
+func handleResponseHeaders(ex *exchange.Exchange) {
 	data := make(map[string]interface{})
 
-	for name, values := range req.URL.Query() {
+	for name, values := range ex.Request.URL.Query() {
 		name = http.CanonicalHeaderKey(name)
 		for _, value := range values {
-			w.Header().Add(name, value)
+			ex.ResponseWriter.Header().Add(name, value)
 		}
 		if len(values) > 1 {
 			data[name] = values
@@ -429,7 +443,7 @@ func handleResponseHeaders(w http.ResponseWriter, req *request.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	ex.ResponseWriter.Header().Set("Content-Type", "application/json")
 	data["Content-Type"] = "application/json"
 
 	jsonContent := ""
@@ -443,12 +457,12 @@ func handleResponseHeaders(w http.ResponseWriter, req *request.Request) {
 		data["Content-Length"] = newContentLength
 	}
 
-	fmt.Fprintln(w, jsonContent)
+	fmt.Fprintln(ex.ResponseWriter, jsonContent)
 }
 
-func handleSampleXml(w http.ResponseWriter, req *request.Request) {
-	w.Header().Set("Content-Type", "application/xml")
-	fmt.Fprintln(w, `<?xml version='1.0' encoding='us-ascii'?>
+func handleSampleXml(ex *exchange.Exchange) {
+	ex.ResponseWriter.Header().Set("Content-Type", "application/xml")
+	fmt.Fprintln(ex.ResponseWriter, `<?xml version='1.0' encoding='us-ascii'?>
 
 <!--  A SAMPLE set of slides  -->
 
@@ -474,14 +488,14 @@ func handleSampleXml(w http.ResponseWriter, req *request.Request) {
 </slideshow>`)
 }
 
-func handleSampleRobotsTxt(w http.ResponseWriter, req *request.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-	fmt.Fprintln(w, "User-agent: *\nDisallow: /deny")
+func handleSampleRobotsTxt(ex *exchange.Exchange) {
+	ex.ResponseWriter.Header().Set("Content-Type", "text/plain")
+	fmt.Fprintln(ex.ResponseWriter, "User-agent: *\nDisallow: /deny")
 }
 
-func handleSampleRobotsDeny(w http.ResponseWriter, req *request.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-	fmt.Fprintln(w, `
+func handleSampleRobotsDeny(ex *exchange.Exchange) {
+	ex.ResponseWriter.Header().Set("Content-Type", "text/plain")
+	fmt.Fprintln(ex.ResponseWriter, `
           .-''''''-.
         .' _      _ '.
        /   O      O   \
@@ -494,9 +508,9 @@ func handleSampleRobotsDeny(w http.ResponseWriter, req *request.Request) {
      YOU SHOULDN'T BE HERE`)
 }
 
-func handleSampleHtml(w http.ResponseWriter, req *request.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprintln(w, `<!DOCTYPE html>
+func handleSampleHtml(ex *exchange.Exchange) {
+	ex.ResponseWriter.Header().Set("Content-Type", "text/html")
+	fmt.Fprintln(ex.ResponseWriter, `<!DOCTYPE html>
 <html>
   <head>
   </head>
@@ -512,9 +526,9 @@ func handleSampleHtml(w http.ResponseWriter, req *request.Request) {
 </html>`)
 }
 
-func handleSampleJson(w http.ResponseWriter, req *request.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintln(w, `{
+func handleSampleJson(ex *exchange.Exchange) {
+	ex.ResponseWriter.Header().Set("Content-Type", "application/json")
+	fmt.Fprintln(ex.ResponseWriter, `{
   "slideshow": {
     "author": "Yours Truly",
     "date": "date of publication",
@@ -537,75 +551,75 @@ func handleSampleJson(w http.ResponseWriter, req *request.Request) {
 }`)
 }
 
-func handleDecodeBase64(w http.ResponseWriter, req *request.Request) {
-	encoded := req.Field("encoded")
+func handleDecodeBase64(ex *exchange.Exchange) {
+	encoded := ex.Field("encoded")
 	if encoded == "" {
 		encoded = "SFRUUEJVTiBpcyBhd2Vzb21lciE="
 	}
 	if decoded, err := base64.StdEncoding.DecodeString(encoded); err != nil {
-		fmt.Fprint(w, "Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
+		fmt.Fprint(ex.ResponseWriter, "Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
 	} else {
-		fmt.Fprint(w, string(decoded))
+		fmt.Fprint(ex.ResponseWriter, string(decoded))
 	}
 }
 
-func handleRandomBytes(w http.ResponseWriter, req *request.Request) {
-	w.Header().Set("content-type", "application/octet-stream")
-	n, _ := strconv.Atoi(req.Field("size"))
-	w.Write(util.RandomBytes(n))
+func handleRandomBytes(ex *exchange.Exchange) {
+	ex.ResponseWriter.Header().Set("content-type", "application/octet-stream")
+	n, _ := strconv.Atoi(ex.Field("size"))
+	ex.ResponseWriter.Write(util.RandomBytes(n))
 }
 
-func handleDelayedResponse(w http.ResponseWriter, req *request.Request) {
-	n, _ := strconv.Atoi(req.Field("delay"))
+func handleDelayedResponse(ex *exchange.Exchange) {
+	n, _ := strconv.Atoi(ex.Field("delay"))
 	time.Sleep(time.Duration(n) * time.Second)
 }
 
-func handleDrip(w http.ResponseWriter, req *request.Request) {
+func handleDrip(ex *exchange.Exchange) {
 	// Test with `curl -N localhost:3090/drip`.
 
-	writeNewLines := req.Field("mode") == "lines"
+	writeNewLines := ex.Field("mode") == "lines"
 
-	duration, err := req.QueryParamInt("duration", 2)
+	duration, err := ex.QueryParamInt("duration", 2)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, err.Error())
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(ex.ResponseWriter, err.Error())
 		return
 	}
 
-	numbytes, err := req.QueryParamInt("numbytes", 10)
+	numbytes, err := ex.QueryParamInt("numbytes", 10)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, err.Error())
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(ex.ResponseWriter, err.Error())
 		return
 	}
 
-	code, err := req.QueryParamInt("code", 200)
+	code, err := ex.QueryParamInt("code", 200)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, err.Error())
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(ex.ResponseWriter, err.Error())
 		return
 	}
 
-	delay, err := req.QueryParamInt("delay", 2)
+	delay, err := ex.QueryParamInt("delay", 2)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, err.Error())
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(ex.ResponseWriter, err.Error())
 		return
 	}
 
 	if delay > 0 {
 		time.Sleep(time.Duration(delay) * time.Second)
 	}
-	w.WriteHeader(code)
+	ex.ResponseWriter.WriteHeader(code)
 
 	interval := time.Duration(float32(time.Second) * float32(duration) / float32(numbytes))
 
 	for numbytes > 0 {
-		fmt.Fprint(w, "*")
+		fmt.Fprint(ex.ResponseWriter, "*")
 		if writeNewLines {
-			fmt.Fprint(w, "\n")
+			fmt.Fprint(ex.ResponseWriter, "\n")
 		}
-		if !util.Flush(w) {
+		if !util.Flush(ex.ResponseWriter) {
 			log.Println("Flush not available. Dripping and streaming not supported on this platform.")
 		}
 		time.Sleep(interval)
@@ -613,25 +627,25 @@ func handleDrip(w http.ResponseWriter, req *request.Request) {
 	}
 }
 
-func handleLinks(w http.ResponseWriter, req *request.Request) {
-	count, _ := strconv.Atoi(req.Field("count"))
-	offset, _ := strconv.Atoi(req.Field("offset"))
+func handleLinks(ex *exchange.Exchange) {
+	count, _ := strconv.Atoi(ex.Field("count"))
+	offset, _ := strconv.Atoi(ex.Field("offset"))
 
-	fmt.Fprint(w, "<html><head><title>Links</title></head><body>")
+	fmt.Fprint(ex.ResponseWriter, "<html><head><title>Links</title></head><body>")
 	for i := 0; i < count; i++ {
 		if offset == i {
-			fmt.Fprint(w, i)
+			fmt.Fprint(ex.ResponseWriter, i)
 		} else {
-			fmt.Fprintf(w, "<a href='/links/%d/%d'>%d</a>", count, i, i)
+			fmt.Fprintf(ex.ResponseWriter, "<a href='/links/%d/%d'>%d</a>", count, i, i)
 		}
-		fmt.Fprint(w, " ")
+		fmt.Fprint(ex.ResponseWriter, " ")
 	}
-	fmt.Fprint(w, "</body></html>")
+	fmt.Fprint(ex.ResponseWriter, "</body></html>")
 }
 
-func handleRange(w http.ResponseWriter, req *request.Request) {
+func handleRange(ex *exchange.Exchange) {
 	// TODO: Cache range response, don't have to generate over and over again.
-	count, _ := strconv.Atoi(req.Field("count"))
+	count, _ := strconv.Atoi(ex.Field("count"))
 
 	if count > 1000 {
 		count = 1000
@@ -639,29 +653,29 @@ func handleRange(w http.ResponseWriter, req *request.Request) {
 		count = 0
 	}
 
-	w.Header().Set("content-type", "application/octet-stream")
+	ex.ResponseWriter.Header().Set("content-type", "application/octet-stream")
 
 	if count > 0 {
 		r := rand.New(rand.NewSource(42))
 		b := make([]byte, count)
 		r.Read(b)
-		w.Write(b)
+		ex.ResponseWriter.Write(b)
 	}
 }
 
-func handleCookies(w http.ResponseWriter, req *request.Request) {
+func handleCookies(ex *exchange.Exchange) {
 	items := make(map[string]string)
-	for _, cookie := range req.Cookies() {
+	for _, cookie := range ex.Request.Cookies() {
 		items[cookie.Name] = cookie.Value
 	}
-	util.WriteJson(w, map[string]interface{}{
+	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
 		"cookies": items,
 	})
 }
 
-func handleCookiesDelete(w http.ResponseWriter, req *request.Request) {
-	for name, _ := range req.URL.Query() {
-		http.SetCookie(w, &http.Cookie{
+func handleCookiesDelete(ex *exchange.Exchange) {
+	for name, _ := range ex.Request.URL.Query() {
+		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:    name,
 			Value:   "",
 			Path:    "/",
@@ -670,13 +684,13 @@ func handleCookiesDelete(w http.ResponseWriter, req *request.Request) {
 		})
 	}
 
-	req.Redirect(w, "/cookies")
+	ex.Redirect(ex.ResponseWriter, "/cookies")
 }
 
-func handleCookiesSet(w http.ResponseWriter, req *request.Request) {
-	if req.Field("name") == "" {
-		for name, values := range req.URL.Query() {
-			http.SetCookie(w, &http.Cookie{
+func handleCookiesSet(ex *exchange.Exchange) {
+	if ex.Field("name") == "" {
+		for name, values := range ex.Request.URL.Query() {
+			http.SetCookie(ex.ResponseWriter, &http.Cookie{
 				Name:  name,
 				Value: values[0],
 				Path:  "/",
@@ -684,33 +698,33 @@ func handleCookiesSet(w http.ResponseWriter, req *request.Request) {
 		}
 
 	} else {
-		http.SetCookie(w, &http.Cookie{
-			Name:  req.Field("name"),
-			Value: req.Field("value"),
+		http.SetCookie(ex.ResponseWriter, &http.Cookie{
+			Name:  ex.Field("name"),
+			Value: ex.Field("value"),
 			Path:  "/",
 		})
 
 	}
 
-	req.Redirect(w, "/cookies")
+	ex.Redirect(ex.ResponseWriter, "/cookies")
 }
 
-func handleRedirectTo(w http.ResponseWriter, req *request.Request) {
-	urls := req.URL.Query()["url"]
+func handleRedirectTo(ex *exchange.Exchange) {
+	urls := ex.Request.URL.Query()["url"]
 	if len(urls) < 1 || urls[0] == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, "Need url parameter")
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(ex.ResponseWriter, "Need url parameter")
 		return
 	}
 
 	url := urls[0]
-	statusCodes := req.URL.Query()["status_code"]
+	statusCodes := ex.Request.URL.Query()["status_code"]
 	statusCode := http.StatusFound
 	if statusCodes != nil {
 		var err error
 		if statusCode, err = strconv.Atoi(statusCodes[0]); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(w, "status_code must be an integer")
+			ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(ex.ResponseWriter, "status_code must be an integer")
 			return
 		}
 		if statusCode < 300 || statusCode > 399 {
@@ -718,66 +732,66 @@ func handleRedirectTo(w http.ResponseWriter, req *request.Request) {
 		}
 	}
 
-	w.Header().Set("Location", url)
-	w.WriteHeader(statusCode)
+	ex.ResponseWriter.Header().Set("Location", url)
+	ex.ResponseWriter.WriteHeader(statusCode)
 }
 
-func handleAbsoluteRedirect(w http.ResponseWriter, req *request.Request) {
-	n, _ := strconv.Atoi(req.Field("count"))
+func handleAbsoluteRedirect(ex *exchange.Exchange) {
+	n, _ := strconv.Atoi(ex.Field("count"))
 
 	if n > 1 {
-		req.Redirect(w, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.String(), "/"+fmt.Sprint(n-1)))
+		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.Request.URL.String(), "/"+fmt.Sprint(n-1)))
 	} else {
-		req.Redirect(w, "/get")
+		ex.Redirect(ex.ResponseWriter, "/get")
 	}
 }
 
-func handleRelativeRedirect(w http.ResponseWriter, req *request.Request) {
-	n, _ := strconv.Atoi(req.Field("count"))
+func handleRelativeRedirect(ex *exchange.Exchange) {
+	n, _ := strconv.Atoi(ex.Field("count"))
 
 	if n > 1 {
-		req.Redirect(w, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(req.URL.Path, "/"+fmt.Sprint(n-1)))
+		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.Request.URL.Path, "/"+fmt.Sprint(n-1)))
 	} else {
-		req.Redirect(w, "/get")
+		ex.Redirect(ex.ResponseWriter, "/get")
 	}
 }
 
-func handleInfo(w http.ResponseWriter, req *request.Request) {
+func handleInfo(ex *exchange.Exchange) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "Error: " + err.Error()
 	}
 
-	util.WriteJson(w, map[string]interface{}{
+	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
 		"hostname": hostname,
 	})
 }
 
-func handleOauthAuthorize(w http.ResponseWriter, req *request.Request) {
+func handleOauthAuthorize(ex *exchange.Exchange) {
 	// Ref: <https://datatracker.ietf.org/doc/html/rfc6749>.
 
 	// TODO: Handle POST also, where params are read from the body.
-	if req.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprintln(w, http.StatusText(http.StatusMethodNotAllowed))
+	if ex.Request.Method != http.MethodGet {
+		ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprintln(ex.ResponseWriter, http.StatusText(http.StatusMethodNotAllowed))
 	}
 
 	errors := []string{}
-	params := req.URL.Query()
+	params := ex.Request.URL.Query()
 
-	redirectUrl, err := req.QueryParamSingle("redirect_uri")
+	redirectUrl, err := ex.QueryParamSingle("redirect_uri")
 	if err != nil {
 		errors = append(errors, err.Error())
 	} else if !strings.HasPrefix(redirectUrl, "http://") && !strings.HasPrefix(redirectUrl, "https://") {
 		errors = append(errors, "The `redirect_uri` must be an absolute URL, and should start with `http://` or `https://`.")
 	}
 
-	responseType, err := req.QueryParamSingle("response_type")
+	responseType, err := ex.QueryParamSingle("response_type")
 	if err != nil {
 		errors = append(errors, err.Error())
 	}
 
-	// clientId, err := req.QueryParamSingle("client_id")
+	// clientId, err := ex.QueryParamSingle("client_id")
 	// if err != nil {
 	// 	// Required if responseType is "code" or "token"
 	// 	errors = append(errors, err.Error())
@@ -794,11 +808,11 @@ func handleOauthAuthorize(w http.ResponseWriter, req *request.Request) {
 	}
 
 	if len(errors) > 0 {
-		w.WriteHeader(http.StatusBadRequest)
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
 	}
 
 	// TODO: Error handling as per <https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1>.
-	assets.Render("oauth-consent.html", w, map[string]interface{}{
+	assets.Render("oauth-consent.html", ex.ResponseWriter, map[string]interface{}{
 		"Errors":       errors,
 		"scopes":       scopes,
 		"redirectUrl":  redirectUrl,
@@ -807,19 +821,19 @@ func handleOauthAuthorize(w http.ResponseWriter, req *request.Request) {
 	})
 }
 
-func handleOauthAuthorizeSubmit(w http.ResponseWriter, req *request.Request) {
-	if req.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprintln(w, http.StatusText(http.StatusMethodNotAllowed))
+func handleOauthAuthorizeSubmit(ex *exchange.Exchange) {
+	if ex.Request.Method != http.MethodPost {
+		ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprintln(ex.ResponseWriter, http.StatusText(http.StatusMethodNotAllowed))
 	}
 
 	// TODO: Error out if there's *any* query params here.
-	req.ParseForm()
-	decision, _ := req.FormParamSingle("decision")
+	ex.Request.ParseForm()
+	decision, _ := ex.FormParamSingle("decision")
 
-	redirectUrl, _ := req.FormParamSingle("redirect_uri")
-	responseType, _ := req.FormParamSingle("response_type")
-	state, _ := req.FormParamSingle("state")
+	redirectUrl, _ := ex.FormParamSingle("redirect_uri")
+	responseType, _ := ex.FormParamSingle("response_type")
+	state, _ := ex.FormParamSingle("state")
 
 	params := []string{}
 
@@ -827,8 +841,8 @@ func handleOauthAuthorizeSubmit(w http.ResponseWriter, req *request.Request) {
 		params = append(params, "state="+url.QueryEscape(state))
 	}
 
-	if len(req.Form["scope"]) > 0 {
-		params = append(params, "scope="+url.QueryEscape(strings.Join(req.Form["scope"], " ")))
+	if len(ex.Request.Form["scope"]) > 0 {
+		params = append(params, "scope="+url.QueryEscape(strings.Join(ex.Request.Form["scope"], " ")))
 	}
 
 	if decision == "Approve" {
@@ -844,5 +858,18 @@ func handleOauthAuthorizeSubmit(w http.ResponseWriter, req *request.Request) {
 		params = append(params, "error=access_denied")
 	}
 
-	req.Redirect(w, redirectUrl+"?"+strings.Join(params, "&"))
+	ex.Redirect(ex.ResponseWriter, redirectUrl+"?"+strings.Join(params, "&"))
+}
+
+func handleInboxPush(ex *exchange.Exchange) {
+	ex.Storage.PushRequestToInbox(ex.Field("name"), *ex.Request)
+}
+
+func handleInboxView(ex *exchange.Exchange) {
+	name := ex.Field("name")
+	entries := ex.Storage.GetFromInbox(name)
+	assets.Render("inbox-view.html", ex.ResponseWriter, template.JS(util.ToJsonMust(map[string]interface{}{
+		"name": name,
+		"entries": entries,
+	})))
 }

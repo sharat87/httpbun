@@ -3,7 +3,6 @@ package assets
 import (
 	"bytes"
 	"embed"
-	"github.com/sharat87/httpbun/request"
 	"html/template"
 	"log"
 	"net/http"
@@ -27,11 +26,11 @@ func Render(name string, w http.ResponseWriter, data interface{}) {
 	w.Write(rendered.Bytes())
 }
 
-func WriteAsset(name string, w http.ResponseWriter, req *request.Request) {
+func WriteAsset(name string, w http.ResponseWriter, req *http.Request) {
 	if content, err := assets.ReadFile(name); err == nil {
 		w.Write(content)
 	} else if strings.HasSuffix(err.Error(), " file does not exist") {
-		http.NotFound(w, &req.Request)
+		http.NotFound(w, req)
 	} else {
 		log.Printf("Error %v", err)
 	}

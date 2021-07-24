@@ -2,7 +2,8 @@ package mux
 
 import (
 	"fmt"
-	"github.com/sharat87/httpbun/request"
+	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/storage"
 	"io"
 	"log"
 	"net/http"
@@ -11,11 +12,12 @@ import (
 	"strings"
 )
 
-type HandlerFn func(w http.ResponseWriter, req *request.Request)
+type HandlerFn func(ex *exchange.Exchange)
 
 type Mux struct {
 	BeforeHandler HandlerFn
 	Routes        []route
+	Storage       storage.Storage
 }
 
 type route struct {
@@ -42,14 +44,16 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	req2 := &request.Request{
-		Request:    *req,
-		Fields:     make(map[string]string),
-		CappedBody: io.LimitReader(req.Body, 10000),
+	ex := &exchange.Exchange{
+		Request:        req,
+		ResponseWriter: w,
+		Fields:         make(map[string]string),
+		CappedBody:     io.LimitReader(req.Body, 10000),
+		Storage:        mux.Storage,
 	}
 
-	if req2.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" && req2.URL.Path == "/" {
-		req2.Redirect(w, "https://"+req.Host+req.URL.String())
+	if ex.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" && ex.Request.URL.Path == "/" {
+		ex.Redirect(w, "https://"+req.Host+req.URL.String())
 		return
 	}
 
@@ -59,20 +63,21 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			names := route.Pattern.SubexpNames()
 			for i, name := range names {
 				if name != "" {
-					req2.Fields[name] = match[i]
+					ex.Fields[name] = match[i]
 				}
 			}
 
 			if mux.BeforeHandler != nil {
-				mux.BeforeHandler(w, req2)
+				mux.BeforeHandler(ex)
 			}
 
-			route.Fn(w, req2)
+			route.Fn(ex)
 			return
 		}
 	}
 
-	log.Printf("NotFound %s %s", req.Method, req.URL.String())
+	ip := ex.HeaderValueLast("X-Forwarded-For")
+	log.Printf("NotFound ip=%s %s %s", ip, req.Method, req.URL.String())
 	http.NotFound(w, req)
 }
 

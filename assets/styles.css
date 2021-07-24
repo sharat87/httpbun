@@ -17,6 +17,7 @@ body {
 h1 {
 	margin-top: 6px;
 	font-size: 3em;
+	letter-spacing: -2px;
 }
 
 h1 img {
@@ -111,6 +112,25 @@ footer {
 
 .flex {
 	display: flex;
+}
+
+summary {
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	margin: 6px;
+}
+
+summary > :first-child:before {
+	content: "▶";
+	margin-right: 9px;
+	font-size: .7em;
+	display: inline-block;
+	width: 12px;
+}
+
+details[open] summary > :first-child:before {
+	content: "▼";
 }
 
 @media (prefers-color-scheme: dark) {

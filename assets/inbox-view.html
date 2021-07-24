@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang=en>
+<meta charset=utf-8>
+<title>Httpbun Inbox Viewer</title>
+
+{{template "head.html" -}}
+
+<h1><a href=../..><img alt=Logo src='../../icon-180.png'></a> Httpbun Inbox</h1>
+
+<main id=main></main>
+
+<script src='https://unpkg.com/mithril@2.0.4/mithril.min.js'></script>
+<script>
+	const data = {{.}}
+	console.log("data", data)
+
+	window.onload = function () {
+		m.mount(document.getElementById("main"), RootView)
+	}
+
+	function RootView() {
+		return { view }
+
+		function view() {
+			return [
+				m("p", ["Inbox: ", m("code", data.name)]),
+				data.entries.map(entry => m(
+					"details",
+					{
+						style: {
+							display: "list-item",
+							listStyle: "decimal",
+						},
+					},
+					[
+						m("summary", [
+							m("span", [
+								m("code", {style: {marginRight: "6px"}}, entry.method),
+								entry.host + entry.path,
+							]),
+							m("time", {datetime: entry.pushedAt}, entry.pushedAt),
+						]),
+						m("pre", JSON.stringify(entry, null, 2)),
+					],
+				)),
+			]
+		}
+	}
+</script>
