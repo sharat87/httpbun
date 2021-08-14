@@ -2,7 +2,6 @@ package bun
 
 import (
 	"encoding/base64"
-	"html/template"
 	"encoding/json"
 	"fmt"
 	"github.com/sharat87/httpbun/assets"
@@ -10,6 +9,7 @@ import (
 	"github.com/sharat87/httpbun/mux"
 	"github.com/sharat87/httpbun/storage"
 	"github.com/sharat87/httpbun/util"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -610,6 +610,9 @@ func handleDrip(ex *exchange.Exchange) {
 	if delay > 0 {
 		time.Sleep(time.Duration(delay) * time.Second)
 	}
+
+	ex.ResponseWriter.Header().Set("Cache-Control", "no-cache")
+	ex.ResponseWriter.Header().Set("Content-Type", "text/event-stream")
 	ex.ResponseWriter.WriteHeader(code)
 
 	interval := time.Duration(float32(time.Second) * float32(duration) / float32(numbytes))
@@ -869,7 +872,7 @@ func handleInboxView(ex *exchange.Exchange) {
 	name := ex.Field("name")
 	entries := ex.Storage.GetFromInbox(name)
 	assets.Render("inbox-view.html", ex.ResponseWriter, template.JS(util.ToJsonMust(map[string]interface{}{
-		"name": name,
+		"name":    name,
 		"entries": entries,
 	})))
 }

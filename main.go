@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -21,17 +22,18 @@ var (
 func main() {
 	rand.Seed(time.Now().Unix())
 
-	host, ok := os.LookupEnv("HOST")
+	protocol := "tcp"
+	bind_target, ok := os.LookupEnv("BIND")
 	if !ok {
-		host = "localhost"
+		bind_target = "localhost:3090"
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3090"
+	if strings.HasPrefix(bind_target, "unix/") {
+		protocol = "unix"
+		bind_target = strings.TrimPrefix(bind_target, "unix/")
 	}
 
-	listener, err := net.Listen("tcp", host + ":" + port)
+	listener, err := net.Listen(protocol, bind_target)
 	if err != nil {
 		log.Fatal("Error creating listener.", err)
 	}

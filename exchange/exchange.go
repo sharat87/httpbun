@@ -55,7 +55,8 @@ func (ex Exchange) Redirect(w http.ResponseWriter, path string) {
 	fmt.Fprintf(w, `<!doctype html>
 <title>Redirecting...</title>
 <h1>Redirecting...</h1>
-<p>You should be redirected automatically to target URL: <a href=%q>/cookies</a>.  If not click the link.</p>`, path)
+<p>You should be redirected automatically to target URL: <a href=%q>%q</a>.  If not click the link.</p>
+`, path, path)
 }
 
 func (ex Exchange) QueryParamInt(name string, value int) (int, error) {

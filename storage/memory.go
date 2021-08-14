@@ -25,7 +25,7 @@ func (st *MemoryStorage) PushRequestToInbox(name string, request http.Request) {
 		Protocol: request.Proto,
 		Scheme:   request.URL.Scheme,
 		Host:     request.Host,
-		Path: request.URL.Path,
+		Path:     request.URL.Path,
 		Method:   request.Method,
 		Params:   request.URL.Query(),
 		Headers:  request.Header,
@@ -68,7 +68,7 @@ const SIZE = 10
 type EntryQueue struct {
 	slots [SIZE]*Entry
 	first uint8
-	last uint8
+	last  uint8
 }
 
 func NewSizedQueue() *EntryQueue {
@@ -80,14 +80,14 @@ func (q *EntryQueue) Push(entry Entry) {
 		if q.slots[q.first] == nil {
 			q.slots[q.last] = &entry
 		} else {
-			q.last = (q.last+1)%SIZE
+			q.last = (q.last + 1) % SIZE
 			q.slots[q.last] = &entry
 		}
 	} else {
-		q.last = (q.last+1)%SIZE
+		q.last = (q.last + 1) % SIZE
 		q.slots[q.last] = &entry
 		if q.first == q.last {
-			q.first = (q.first+1)%SIZE
+			q.first = (q.first + 1) % SIZE
 		}
 	}
 }
@@ -103,7 +103,7 @@ func (q *EntryQueue) Pop() *Entry {
 	entry := q.slots[q.first]
 	q.slots[q.first] = nil
 	if q.first != q.last {
-		q.first = (q.first+1)%SIZE
+		q.first = (q.first + 1) % SIZE
 	}
 	return entry
 }
@@ -117,7 +117,7 @@ func (q *EntryQueue) toSlice() []Entry {
 		if i == 0 {
 			i = SIZE - 1
 		} else {
-			i = i-1
+			i = i - 1
 		}
 		count += 1
 	}

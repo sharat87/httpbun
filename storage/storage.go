@@ -11,14 +11,14 @@ type Storage interface {
 }
 
 type Entry struct {
-	Protocol string `json:"protocol"`
-	Scheme   string `json:"scheme"`
-	Host     string `json:"host"`
-	Path     string `json:"path"`
-	Method   string `json:"method"`
+	Protocol string              `json:"protocol"`
+	Scheme   string              `json:"scheme"`
+	Host     string              `json:"host"`
+	Path     string              `json:"path"`
+	Method   string              `json:"method"`
 	Params   map[string][]string `json:"params"`
 	Headers  map[string][]string `json:"headers"`
-	Fragment string `json:"fragment"`
-	Body     string  `json:"body"`  // TODO: What happens for binary body?
-	PushedAt time.Time `json:"pushedAt"`
+	Fragment string              `json:"fragment"`
+	Body     string              `json:"body"` // TODO: What happens for binary body?
+	PushedAt time.Time           `json:"pushedAt"`
 }

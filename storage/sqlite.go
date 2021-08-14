@@ -25,7 +25,7 @@ func (st *SqliteStorage) PushRequestToInbox(name string, request http.Request) {
 		Protocol: request.Proto,
 		Scheme:   request.URL.Scheme,
 		Host:     request.Host,
-		Path: request.URL.Path,
+		Path:     request.URL.Path,
 		Method:   request.Method,
 		Params:   request.URL.Query(),
 		Headers:  request.Header,
