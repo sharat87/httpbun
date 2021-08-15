@@ -18,6 +18,13 @@ build-all:
 build-for-docker:
 	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/httpbun-docker .
 
+build-for-prod:
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -v -o bin/httpbun-linux-amd64
+	cd bin && tar -caf ../package.tar.gz httpbun-linux-amd64
+
+upload-package:
+	aws s3 cp package.tar.gz s3://ssk-artifacts/httpbun-package.tar.gz
+
 test:
 	@HTTPBUN_ALLOW_HOSTS=example.com \
 		HTTPBUN_INFO_ENABLED=1 \
