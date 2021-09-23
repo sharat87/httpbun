@@ -743,7 +743,7 @@ func handleAbsoluteRedirect(ex *exchange.Exchange) {
 	n, _ := strconv.Atoi(ex.Field("count"))
 
 	if n > 1 {
-		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.Request.URL.String(), "/"+fmt.Sprint(n-1)))
+		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.URL.String(), "/"+fmt.Sprint(n-1)))
 	} else {
 		ex.Redirect(ex.ResponseWriter, "/get")
 	}

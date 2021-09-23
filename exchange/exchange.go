@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -38,6 +39,7 @@ type Exchange struct {
 	CappedBody     io.Reader
 	Origin         *string
 	Storage        storage.Storage
+	URL            *url.URL
 }
 
 func (ex Exchange) Field(name string) string {

@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -44,13 +45,48 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	url := &url.URL{
+		Scheme:      req.URL.Scheme,
+		Opaque:      req.URL.Opaque,
+		User:        req.URL.User,
+		Host:        req.URL.Host,
+		Path:        req.URL.Path,
+		RawPath:     req.URL.RawPath,
+		ForceQuery:  req.URL.ForceQuery,
+		RawQuery:    req.URL.RawQuery,
+		Fragment:    req.URL.Fragment,
+		RawFragment: req.URL.RawFragment,
+	}
+
 	ex := &exchange.Exchange{
 		Request:        req,
 		ResponseWriter: w,
 		Fields:         make(map[string]string),
 		CappedBody:     io.LimitReader(req.Body, 10000),
 		Storage:        mux.Storage,
+		URL:            url,
 	}
+
+	if ex.URL.Scheme == "" {
+		// Other headers: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Proto#examples>.
+		if forwardedProto := ex.HeaderValueLast("X-Forwarded-Proto"); forwardedProto != "" {
+			ex.URL.Scheme = forwardedProto
+		} else if req.TLS == nil {
+			ex.URL.Scheme = "http"
+		} else {
+			ex.URL.Scheme = "https"
+		}
+	}
+
+	if ex.URL.Host == "" {
+		if req.Host != "" {
+			ex.URL.Host = req.Host
+		} else if forwardedHost := ex.HeaderValueLast("X-Forwarded-Host"); forwardedHost != "" {
+			ex.URL.Host = forwardedHost
+		}
+	}
+
+	fmt.Printf("Processing URL %q %q.\n", ex.URL, req.URL)
 
 	if ex.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" && ex.Request.URL.Path == "/" {
 		ex.Redirect(w, "https://"+req.Host+req.URL.String())
