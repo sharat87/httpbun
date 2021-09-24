@@ -85,6 +85,8 @@ func MakeBunHandler() mux.Mux {
 
 	m.HandleFunc("/anything\\b.*", handleAnything)
 
+	m.HandleFunc("/iframe", handleFrame)
+
 	m.HandleFunc("/oauth/authorize", handleOauthAuthorize)
 	m.HandleFunc("/oauth/authorize/submit", handleOauthAuthorizeSubmit)
 
@@ -768,6 +770,22 @@ func handleInfo(ex *exchange.Exchange) {
 	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
 		"hostname": hostname,
 	})
+}
+
+func handleFrame(ex *exchange.Exchange) {
+	embedUrl, _ := ex.QueryParamSingle("url")
+	ex.ResponseWriter.Header().Set("Content-Type", "text/html")
+	fmt.Fprintf(ex.ResponseWriter, `<!DOCTYPE html>
+<html>
+<style>
+html, body { height: 100vh }
+body { display: flex; flex-direction: column; margin: 0 }
+iframe { border: none; flex-grow: 1 }
+pre { margin: .5em; padding: .5em; border-radius: 3px; background: #09f; color: #fff; font-size: 1.2em; overflow-x: auto }
+</style>
+<pre>%s</pre>
+<iframe src="%s"></iframe>
+`, embedUrl, embedUrl)
 }
 
 func handleOauthAuthorize(ex *exchange.Exchange) {
