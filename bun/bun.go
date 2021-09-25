@@ -785,21 +785,29 @@ func handleFrame(ex *exchange.Exchange) {
 
 	ex.ResponseWriter.Header().Set("Content-Type", "text/html")
 
+	warning := ""
+	if ex.URL.Scheme == "http" && strings.HasPrefix(embedUrl, "https://") {
+		warning = `
+		<p>You are embedding an https URL inside an http page, switch to full https for best experience.
+		<a href='#' onclick='location.protocol = "https:"'>Click here to switch</a>.</p>`
+	}
+
 	fmt.Fprintf(ex.ResponseWriter, `<!doctype html>
 <html>
 <style>
 html, body, form { margin: 0; min-height: 100vh }
 form { display: flex; flex-direction: column }
 iframe { border: none; flex-grow: 1 }
-p { margin: .5em; padding: .5em; display: flex }
-input { font-size: 1.2em; flex-grow: 1 }
+input { font-size: 1.2em; width: 100%%; margin: .5em }
+p { margin: .5em }
 </style>
 <form>
-<p><input name=url value='%s' placeholder='Enter URL to embed in an iframe' autofocus required></p>
+<input name=url value='%s' placeholder='Enter URL to embed in an iframe' autofocus required>
+%s
 <button style='display:none'>Embed</button>
 <iframe src="%s"></iframe>
 </form>
-`, embedUrl, embedUrl)
+`, embedUrl, warning, embedUrl)
 }
 
 func handleOauthAuthorize(ex *exchange.Exchange) {
