@@ -26,6 +26,10 @@ whatever you're working to contribute *before* you start working on it. This wil
 your work would be in the right place to be merged in. It'll also ensure we don't end up working on the same thing,
 duplicating efforts. Thanks!
 
+## Plug
+
+If you are interested in API testing and API development, you should check [Prestige](https://prestigemad.com) out. It is a text based API testing tool with Javascript templating support. It's also open source at [sharat87/prestige](https://github.com/sharat87/prestige).
+
 ## License
 
 [Apache-2.0 License](https://github.com/sharat87/httpbun/blob/master/LICENSE). Project includes a

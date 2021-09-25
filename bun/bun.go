@@ -795,10 +795,11 @@ func handleFrame(ex *exchange.Exchange) {
 	fmt.Fprintf(ex.ResponseWriter, `<!doctype html>
 <html>
 <style>
+* { box-sizing: border-box }
 html, body, form { margin: 0; min-height: 100vh }
 form { display: flex; flex-direction: column }
 iframe { border: none; flex-grow: 1 }
-input { font-size: 1.2em; width: 100%%; margin: .5em }
+input { font-size: 1.2em; width: calc(100%% - 1em); margin: .5em }
 p { margin: .5em }
 </style>
 <form>
