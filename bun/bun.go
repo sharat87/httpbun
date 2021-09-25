@@ -25,6 +25,8 @@ import (
 	"unicode/utf8"
 )
 
+const MAX_REDIRECT_COUNT = 20
+
 func MakeBunHandler() mux.Mux {
 	m := mux.Mux{
 		Storage: storage.NewMemoryStorage(),
@@ -744,7 +746,10 @@ func handleRedirectTo(ex *exchange.Exchange) {
 func handleAbsoluteRedirect(ex *exchange.Exchange) {
 	n, _ := strconv.Atoi(ex.Field("count"))
 
-	if n > 1 {
+	if n > MAX_REDIRECT_COUNT {
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(ex.ResponseWriter, "No more than %v redirects allowed.\n", MAX_REDIRECT_COUNT)
+	} else if n > 1 {
 		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.URL.String(), "/"+fmt.Sprint(n-1)))
 	} else {
 		ex.Redirect(ex.ResponseWriter, "/get")
@@ -754,7 +759,10 @@ func handleAbsoluteRedirect(ex *exchange.Exchange) {
 func handleRelativeRedirect(ex *exchange.Exchange) {
 	n, _ := strconv.Atoi(ex.Field("count"))
 
-	if n > 1 {
+	if n > MAX_REDIRECT_COUNT {
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(ex.ResponseWriter, "No more than %v redirects allowed.\n", MAX_REDIRECT_COUNT)
+	} else if n > 1 {
 		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.Request.URL.Path, "/"+fmt.Sprint(n-1)))
 	} else {
 		ex.Redirect(ex.ResponseWriter, "/get")
