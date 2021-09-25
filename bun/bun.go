@@ -774,17 +774,23 @@ func handleInfo(ex *exchange.Exchange) {
 
 func handleFrame(ex *exchange.Exchange) {
 	embedUrl, _ := ex.QueryParamSingle("url")
+
 	ex.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(ex.ResponseWriter, `<!DOCTYPE html>
+
+	fmt.Fprintf(ex.ResponseWriter, `<!doctype html>
 <html>
 <style>
-html, body { height: 100vh }
-body { display: flex; flex-direction: column; margin: 0 }
+html, body, form { margin: 0; min-height: 100vh }
+form { display: flex; flex-direction: column }
 iframe { border: none; flex-grow: 1 }
-pre { margin: .5em; padding: .5em; border-radius: 3px; background: #09f; color: #fff; font-size: 1.2em; overflow-x: auto }
+p { margin: .5em; padding: .5em; display: flex }
+input { font-size: 1.2em; flex-grow: 1 }
 </style>
-<pre>%s</pre>
+<form>
+<p><input name=url value='%s' placeholder='Enter URL to embed in an iframe' autofocus required></p>
+<button style='display:none'>Embed</button>
 <iframe src="%s"></iframe>
+</form>
 `, embedUrl, embedUrl)
 }
 
