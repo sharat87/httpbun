@@ -3,6 +3,7 @@ html {
 	scroll-behavior: smooth;
 	scrollbar-color: currentColor transparent;
 	scrollbar-width: thin;
+	overflow-y: scroll;
 }
 
 body {

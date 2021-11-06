@@ -46,7 +46,7 @@ well.</p>
 <dt id=bearer-token>/bearer/<span class=var>{expectedToken}</span></dt>
 <dd>Requires bearer authentication. Which needs an <code>Authorization</code> header in the request, that takes the form
 	<code>Bearer some-auth-token-here</code>. If no <code>expectedToken</code> is given, any token will be treated as
-	valid.</dd>
+	valid. If no <code>Authorization</code> header is present in the request, this results in a 401 response.</dd>
 
 <dt id=digest-auth>/digest-auth/<span class=var>{qop}</span>/<span class=var>{username}</span>/<span class=var>{password}</span></dt>
 <dd>Digest authentication. The endpoint <code>/digest-auth/auth/scott/tiger</code> requires to be authenticated with the

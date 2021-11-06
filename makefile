@@ -2,6 +2,7 @@ LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main
 
 run:
 	@HTTPBUN_INFO_ENABLED=1 \
+		DATABASE_URL=sqlite3://st.db \
 		go run $(LDFLAGS) main.go
 
 build:

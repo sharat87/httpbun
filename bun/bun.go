@@ -29,7 +29,7 @@ const MAX_REDIRECT_COUNT = 20
 
 func MakeBunHandler() mux.Mux {
 	m := mux.Mux{
-		Storage: storage.NewMemoryStorage(),
+		Storage: storage.NewSqliteStorage(),
 	}
 
 	m.HandleFunc("/", func(ex *exchange.Exchange) {
