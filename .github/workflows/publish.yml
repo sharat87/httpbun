@@ -63,10 +63,11 @@ jobs:
         run: |
           make build-all
           echo "release '${{ github.event.release.id }}' '${{ github.event.release.name }}' '${{ github.event.release.tag_name }}'"
-          file=bin/httpbun-darwin-amd64
-          curl --request POST \
+          for file in bin/httpbun-darwin-amd64 bin/httpbun-linux-amd64 bin/httpbun-windows-amd64.exe; do
+            curl --request POST \
               --header "Content-Type: $(file -b --mime-type $file)" \
               --header "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               --header "Accept: application/vnd.github.v3+json" \
               --upload-file "$file" \
               "https://uploads.github.com/repos/sharat87/httpbun/releases/${{ github.event.release.id }}/assets?name=$(basename "$file")"
+          done
