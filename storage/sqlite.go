@@ -138,7 +138,6 @@ func (st *SqliteStorage) StartAutoDeletes() {
 }
 
 func (st *SqliteStorage) DoAutoDelete() {
-	log.Println("Performing auto-delete.")
 	result, err := st.db.Exec(
 		"delete from requests where pushedAt < ?",
 		time.Now().UTC().Add(10*time.Minute),
@@ -146,7 +145,6 @@ func (st *SqliteStorage) DoAutoDelete() {
 	if err != nil {
 		log.Fatal("Error deleting old requests", err)
 	}
-	log.Printf("Deleted old requests %v.\n", result)
 }
 
 func prepareDatabase(db *sql.DB) {

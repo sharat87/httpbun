@@ -68,7 +68,7 @@ func main() {
 		scheme = "https"
 	}
 
-	log.Printf("Version: %q, Commit: %q, Date: %q.\n", Version, Commit, Date)
+	log.Printf("Version: %q, Commit: %q, Built: %q.\n", Version, Commit, Date)
 
 	// To get port being used as an int: listener.Addr().(*net.TCPAddr).Port
 	log.Printf(

@@ -69,6 +69,7 @@ func MakeBunHandler() mux.Mux {
 	m.HandleFunc("/json", handleSampleJson)
 	m.HandleFunc("/robots.txt", handleSampleRobotsTxt)
 	m.HandleFunc("/xml", handleSampleXml)
+	m.HandleFunc("/image/svg1", handleImageSvg1)
 
 	m.HandleFunc("/base64(/(?P<encoded>.*))?", handleDecodeBase64)
 	m.HandleFunc("/bytes/(?P<size>\\d+)", handleRandomBytes)
@@ -490,6 +491,21 @@ func handleSampleXml(ex *exchange.Exchange) {
     </slide>
 
 </slideshow>`)
+}
+
+func handleImageSvg1(ex *exchange.Exchange) {
+	ex.ResponseWriter.Header().Set("Content-Type", "image/svg+xml")
+	fmt.Fprintln(ex.ResponseWriter, `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" viewBox="0 0 100 100">
+
+  <title>SVG Logo</title>
+
+  <a xlink:href="http://www.w3.org/Graphics/SVG/" target="_parent"
+     xlink:title="W3C SVG Working Group home page">
+
+    <rect fill="#f09" x="5" y="5" width="90" height="90" rx="4" ry="4" />
+
+  </a>
+</svg>`)
 }
 
 func handleSampleRobotsTxt(ex *exchange.Exchange) {

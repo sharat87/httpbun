@@ -1,4 +1,4 @@
-LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.Date=$(DATE)"
+LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$$(git rev-parse HEAD) -X main.Date=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 run:
 	@HTTPBUN_INFO_ENABLED=1 \
@@ -17,7 +17,7 @@ build-all:
 	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -v -o bin/httpbun-windows-amd64.exe
 
 build-for-docker:
-	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/httpbun-docker .
+	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -a -installsuffix cgo -o bin/httpbun-docker .
 
 build-for-prod:
 	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -v -o bin/httpbun-linux-amd64
