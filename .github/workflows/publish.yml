@@ -64,7 +64,7 @@ jobs:
           file=bin/httpbun-darwin-amd64
           curl --request POST \
               --header "Content-Type: $(file -b --mime-type $file)" \
-              --header "Authorization: token ${{ secrets.GITHUB_PAT }}" \
+              --header "Authorization: token ${{ secrets.PAT }}" \
               --header "Accept: application/vnd.github.v3+json" \
               --upload-file "$file" \
               "https://uploads.github.com/repos/sharat87/httpbun/releases/${{ github.event.release.id }}/assets?name=$(basename "$file")"
