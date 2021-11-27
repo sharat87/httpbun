@@ -138,7 +138,7 @@ func (st *SqliteStorage) StartAutoDeletes() {
 }
 
 func (st *SqliteStorage) DoAutoDelete() {
-	result, err := st.db.Exec(
+	_, err := st.db.Exec(
 		"delete from requests where pushedAt < ?",
 		time.Now().UTC().Add(10*time.Minute),
 	)
