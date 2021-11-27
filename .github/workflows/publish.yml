@@ -6,8 +6,8 @@ on:
   push:
     branches:
       - "master"
-    tags:
-      - "v*"
+
+  release:
 
   pull_request:
     branches:
@@ -56,6 +56,15 @@ jobs:
           docker push --all-tags ghcr.io/${{ github.actor }}/httpbun
 
       - name: "Identify version"
-        id: version
+        if: |
+          success() && github.event_name == 'release'
         run: |
-          echo "::set-output name=version::${{ github.ref }}"
+          make build-all
+          echo "release '${{ github.event.release.id }}' '${{ github.event.release.name }}' '${{ github.event.release.tag_name }}'"
+          file=bin/httpbun-darwin-amd64
+          curl --request POST \
+              --header "Content-Type: $(file -b --mime-type $file)" \
+              --header "Authorization: token $GITHUB_TOKEN" \
+              --header "Accept: application/vnd.github.v3+json" \
+              --upload-file "$file" \
+              "https://uploads.github.com/repos/sharat87/httpbun/releases/${{ github.event.release.id }}/assets?name=$(basename "$file")"
