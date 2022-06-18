@@ -82,7 +82,7 @@ func MakeBunHandler() mux.Mux {
 	m.HandleFunc("/cookies/delete", handleCookiesDelete)
 	m.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
 
-	m.HandleFunc("/redirect-to", handleRedirectTo)
+	m.HandleFunc("/redirect-to/?", handleRedirectTo)
 	m.HandleFunc("/(relative-)?redirect/(?P<count>\\d+)", handleRelativeRedirect)
 	m.HandleFunc("/absolute-redirect/(?P<count>\\d+)", handleAbsoluteRedirect)
 

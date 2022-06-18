@@ -1,4 +1,5 @@
 html {
+	background: #fff;
 	color: #333;
 	scroll-behavior: smooth;
 	scrollbar-color: currentColor transparent;
@@ -9,7 +10,7 @@ html {
 body {
 	margin: 0 auto;
 	padding: 6px;
-	font: 18px 'Source Sans Pro', sans-serif;
+	font: 18px system-ui, sans-serif;
 	max-width: 960px;
 	line-height: 1.4;
 	overflow-wrap: break-word;
@@ -43,7 +44,7 @@ a {
 }
 
 dt, code {
-	font-family: 'Source Code Pro', monospace;
+	font-family: Menlo, 'Cascadia Code', Consolas, Monaco, monospace;
 }
 
 dt {
