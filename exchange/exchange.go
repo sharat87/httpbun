@@ -46,9 +46,9 @@ func (ex Exchange) Field(name string) string {
 	return ex.Fields[name]
 }
 
-func (ex Exchange) Redirect(w http.ResponseWriter, path string) {
-	if strings.HasPrefix(path, "/") {
-		path = strings.Repeat("../", strings.Count(ex.Request.URL.Path, "/")-1) + strings.TrimPrefix(path, "/")
+func (ex Exchange) Redirect(w http.ResponseWriter, path string, changeToRelative bool) {
+	if changeToRelative && strings.HasPrefix(path, "/") {
+		path = strings.Repeat("../", strings.Count(ex.URL.Path, "/")-1) + strings.TrimPrefix(path, "/")
 	}
 
 	w.Header().Set("Location", path)

@@ -1,2 +1,8 @@
 /bin
+*.db
+*.log
+
 .DS_Store
+
+/.idea
+*.iml

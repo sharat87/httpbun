@@ -19,21 +19,64 @@ var (
 	Date    string
 )
 
+type RunConfig struct {
+	BindProtocol string
+	BindTarget   string
+	PathPrefix   string
+}
+
+func parseArgs(args []string) RunConfig {
+	rc := &RunConfig{}
+	bindTarget := ""
+
+	i := 0
+
+	for i < len(args) {
+		arg := args[i]
+
+		if arg == "--bind" {
+			i++
+			bindTarget = args[i]
+
+		} else if arg == "--path-prefix" {
+			i++
+			rc.PathPrefix = args[i]
+
+		}
+
+		i++
+	}
+
+	if bindTarget == "" {
+		bindTarget, _ = os.LookupEnv("HTTPBUN_BIND")
+		if bindTarget == "" {
+			bindTarget = "localhost:3090"
+		}
+	}
+
+	if strings.HasPrefix(bindTarget, "unix/") {
+		rc.BindProtocol = "unix"
+		rc.BindTarget = strings.TrimPrefix(bindTarget, "unix/")
+	} else {
+		rc.BindProtocol = "tcp"
+		rc.BindTarget = bindTarget
+	}
+
+	// Ensure the path prefix has a leading `/`.
+	if rc.PathPrefix != "" && !strings.HasPrefix(rc.PathPrefix, "/") {
+		rc.PathPrefix = "/" + rc.PathPrefix
+	}
+
+	return *rc
+}
+
 func main() {
+	runConfig := parseArgs(os.Args[1:])
+	log.Println(runConfig)
+
 	rand.Seed(time.Now().Unix())
 
-	protocol := "tcp"
-	bind_target, ok := os.LookupEnv("BIND")
-	if !ok {
-		bind_target = "localhost:3090"
-	}
-
-	if strings.HasPrefix(bind_target, "unix/") {
-		protocol = "unix"
-		bind_target = strings.TrimPrefix(bind_target, "unix/")
-	}
-
-	listener, err := net.Listen(protocol, bind_target)
+	listener, err := net.Listen(runConfig.BindProtocol, runConfig.BindTarget)
 	if err != nil {
 		log.Fatal("Error creating listener.", err)
 	}
@@ -43,7 +86,7 @@ func main() {
 	sslCertFile := os.Getenv("HTTPBUN_SSL_CERT")
 	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
 
-	m := bun.MakeBunHandler()
+	m := bun.MakeBunHandler(runConfig.PathPrefix)
 	m.BeforeHandler = func(ex *exchange.Exchange) {
 		ip := ex.HeaderValueLast("X-Forwarded-For")
 		log.Printf("Handling ip=%s %s %s%s", ip, ex.Request.Method, ex.Request.Host, ex.Request.URL.String())

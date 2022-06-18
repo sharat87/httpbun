@@ -20,7 +20,7 @@ type MethodSuite struct {
 }
 
 func (s *MethodSuite) SetupSuite() {
-	s.Mux = MakeBunHandler()
+	s.Mux = MakeBunHandler("")
 }
 
 func (s *MethodSuite) ExecRequest(request tu.R) (http.Response, []byte) {

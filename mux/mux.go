@@ -16,6 +16,7 @@ import (
 type HandlerFn func(ex *exchange.Exchange)
 
 type Mux struct {
+	PathPrefix    string
 	BeforeHandler HandlerFn
 	Routes        []route
 	Storage       storage.Storage
@@ -50,7 +51,7 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		Opaque:      req.URL.Opaque,
 		User:        req.URL.User,
 		Host:        req.URL.Host,
-		Path:        req.URL.Path,
+		Path:        strings.TrimPrefix(req.URL.Path, mux.PathPrefix),
 		RawPath:     req.URL.RawPath,
 		ForceQuery:  req.URL.ForceQuery,
 		RawQuery:    req.URL.RawQuery,
@@ -88,13 +89,13 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	fmt.Printf("Processing URL %q %q.\n", ex.URL, req.URL)
 
-	if ex.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" && ex.Request.URL.Path == "/" {
-		ex.Redirect(w, "https://"+req.Host+req.URL.String())
+	if ex.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" && ex.URL.Path == "/" {
+		ex.Redirect(w, "https://"+req.Host+req.URL.String(), true)
 		return
 	}
 
 	for _, route := range mux.Routes {
-		match := route.Pattern.FindStringSubmatch(req.URL.Path)
+		match := route.Pattern.FindStringSubmatch(ex.URL.Path)
 		if match != nil {
 			names := route.Pattern.SubexpNames()
 			for i, name := range names {

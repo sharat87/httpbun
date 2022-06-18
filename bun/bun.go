@@ -27,9 +27,10 @@ import (
 
 const MAX_REDIRECT_COUNT = 20
 
-func MakeBunHandler() mux.Mux {
+func MakeBunHandler(pathPrefix string) mux.Mux {
 	m := mux.Mux{
-		Storage: storage.NewMemoryStorage(),
+		PathPrefix: pathPrefix,
+		Storage:    storage.NewMemoryStorage(),
 	}
 
 	m.HandleFunc("/", func(ex *exchange.Exchange) {
@@ -114,7 +115,7 @@ type InfoJsonOptions struct {
 }
 
 func handleValidMethod(ex *exchange.Exchange) {
-	allowedMethod := strings.TrimPrefix(ex.Request.URL.Path, "/")
+	allowedMethod := strings.TrimPrefix(ex.URL.Path, "/")
 	if !strings.EqualFold(ex.Request.Method, allowedMethod) {
 		ex.ResponseWriter.Header().Set("Allow", allowedMethod)
 		ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
@@ -707,7 +708,7 @@ func handleCookiesDelete(ex *exchange.Exchange) {
 		})
 	}
 
-	ex.Redirect(ex.ResponseWriter, "/cookies")
+	ex.Redirect(ex.ResponseWriter, "/cookies", true)
 }
 
 func handleCookiesSet(ex *exchange.Exchange) {
@@ -729,7 +730,7 @@ func handleCookiesSet(ex *exchange.Exchange) {
 
 	}
 
-	ex.Redirect(ex.ResponseWriter, "/cookies")
+	ex.Redirect(ex.ResponseWriter, "/cookies", true)
 }
 
 func handleRedirectTo(ex *exchange.Exchange) {
@@ -766,9 +767,9 @@ func handleAbsoluteRedirect(ex *exchange.Exchange) {
 		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(ex.ResponseWriter, "No more than %v redirects allowed.\n", MAX_REDIRECT_COUNT)
 	} else if n > 1 {
-		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.URL.String(), "/"+fmt.Sprint(n-1)))
+		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.Request.URL.String(), "/"+fmt.Sprint(n-1)), false)
 	} else {
-		ex.Redirect(ex.ResponseWriter, "/get")
+		ex.Redirect(ex.ResponseWriter, "/get", true)
 	}
 }
 
@@ -779,9 +780,9 @@ func handleRelativeRedirect(ex *exchange.Exchange) {
 		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(ex.ResponseWriter, "No more than %v redirects allowed.\n", MAX_REDIRECT_COUNT)
 	} else if n > 1 {
-		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.Request.URL.Path, "/"+fmt.Sprint(n-1)))
+		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.URL.Path, "/"+fmt.Sprint(n-1)), true)
 	} else {
-		ex.Redirect(ex.ResponseWriter, "/get")
+		ex.Redirect(ex.ResponseWriter, "/get", true)
 	}
 }
 
@@ -918,7 +919,7 @@ func handleOauthAuthorizeSubmit(ex *exchange.Exchange) {
 		params = append(params, "error=access_denied")
 	}
 
-	ex.Redirect(ex.ResponseWriter, redirectUrl+"?"+strings.Join(params, "&"))
+	ex.Redirect(ex.ResponseWriter, redirectUrl+"?"+strings.Join(params, "&"), true)
 }
 
 func handleInboxPush(ex *exchange.Exchange) {
