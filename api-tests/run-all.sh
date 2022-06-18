@@ -49,3 +49,5 @@ for test_file in ./test-*.sh; do
 	# shellcheck source=/dev/null
 	source "$test_file"
 done
+
+echo "Done"

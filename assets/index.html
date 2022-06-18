@@ -175,7 +175,7 @@ well.</p>
 <h3 id=h3-anything>Anything</h3>
 
 <dt id=anything>/anything</dt>
-<dt id=anything>/anything/<span class=var>{...}</span></dt>
+<dt id=anything-path>/anything/<span class=var>{...}</span></dt>
 <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but will work with any given method.</dd>
 
 <h3 id=h3-frame>Frame embedding</h3>
@@ -204,28 +204,30 @@ If you have Docker installed, the following command is all you need:
 
 <pre>docker run -p 8008:80 ghcr.io/sharat87/httpbun</pre>
 
-<h3>Environment</h3>
-
-Httpbun can be configured in a limited way using the following environment variables:
+<h2 id=configuration>Configuration</h2>
 
 <dl>
 
-<dt id=env-host>HOST</dt>
-<dd>The host to bind the server to. Defaults to <code>localhost</code>. Set it to <code>0.0.0.0</code> to make your
-	instance accessible from non local clients.</dd>
+<dt id=configuration-bind>--bind</dt>
+<dd>The network address to bind the server to. Defaults to <code>localhost:3090</code>, which configures the server to
+	listen on TCP port 3090 on localhost. It can also be set to <code>unix//var/run/httpbun.sock</code>, which
+	configures the server to listen on the <em>Unix socket</em> located at <code>/var/run/httpbun.sock</code>.<br>
+	This option can also be set with the <code>HTTPBUN_BIND</code> environment variable.</dd>
 
-<dt id=env-port>PORT</dt>
-<dd>The port on which to listen to. Defaults to <code>3090</code>.
+<dt id=configuration-path-prefix>--path-prefix</dt>
+<dd>Sets a path prefix for <em>all</em> the paths in Httpbun. For example, if this is set to <code>/the-one</code>, then
+	Httpbun's <code>/get</code> endpoint will be available on <code>/the-one/get</code> instead. Similarly, all other
+	endpoints are also prefixed with the value of this argument.</dd>
 
-<dt id=env-allow-hosts>HTTPBUN_ALLOW_HOSTS</dt>
+<dt id=configuration-allow-hosts>HTTPBUN_ALLOW_HOSTS</dt>
 <dd>A comma separated list of hosts at which this instance will accept connections. Defaults to <code>empty</code>,
 	which means it will allow any. An example: <code>httpbun.com,httpbun.org</code>.</dd>
 
-<dt id=env-force-https>HTTPBUN_FORCE_HTTPS</dt>
+<dt id=configuration-force-https>HTTPBUN_FORCE_HTTPS</dt>
 <dd>If set to <code>1</code>, only accept connections coming in as <code>https</code>. By default, https is not
 	forced.</dd>
 
-<dt id=env-info-enabled>HTTPBUN_INFO_ENABLED</dt>
+<dt id=configuration-info-enabled>HTTPBUN_INFO_ENABLED</dt>
 <dd>If set to <code>1</code>, the endpoint <code>/info</code> will be availble, which responds with various server
 	information. By default, <code>/info</code> returns a <code>404 Not Found</code> response.</dd>
 
