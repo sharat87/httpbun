@@ -1,6 +1,7 @@
 package bun
 
 import (
+	"fmt"
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/exchange"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 
 func handleOauthAuthorize(ex *exchange.Exchange) {
 	// Ref: <https://datatracker.ietf.org/doc/html/rfc6749>.
+	fmt.Println("oauth auth")
 
 	// TODO: Handle POST also, where params are read from the body.
 	if ex.Request.Method != http.MethodGet {

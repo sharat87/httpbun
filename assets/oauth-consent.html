@@ -18,7 +18,7 @@
 
 {{else}}
 
-<form action=oauth method=post>
+<form action=./authorize/submit method=post>
 	<input type=hidden name=redirect_uri value='{{.redirectUrl}}'>
 	<input type=hidden name=response_type value='{{.responseType}}'>
 	<input type=hidden name=state value='{{.state}}'>

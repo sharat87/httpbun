@@ -37,7 +37,11 @@ well.</p>
 	request, as keys and values. If a header repeats in the request, then its values are concatenated with a comma and
 	treated as a single header value.</dd>
 
+</dl>
+
 <h3 id=h3-auth>Authentication</h3>
+
+<dl>
 
 <dt id=basic-auth>/basic-auth/<span class=var>{username}</span>/<span class=var>{password}</span></dt>
 <dd>Requires basic authentication with <code>username</code> and <code>password</code> as the credentials.</dd>
@@ -51,10 +55,14 @@ well.</p>
 <dt id=digest-auth>/digest-auth/<span class=var>{qop}</span>/<span class=var>{username}</span>/<span class=var>{password}</span></dt>
 <dd>Digest authentication. The endpoint <code>/digest-auth/auth/scott/tiger</code> requires to be authenticated with the
 	credentials <code>scott</code> and <code>tiger</code> as username and password. The implementation is based on
-	<a href='https://en.wikipedia.org/wiki/Digest_access_authentication#Example_with_explanation' rel=_blank
+	<a href='https://en.wikipedia.org/wiki/Digest_access_authentication#Example_with_explanation' target=_blank
 		rel=noopener>this example from Wikipedia</a>. The value of <code>qop</code> is usually <code>auth</code>.</dd>
 
+</dl>
+
 <h3 id=h3-client-details>Client Details</h3>
+
+<dl>
 
 <dt id=ip>/ip</dt>
 <dd>Responds with a JSON object with a single field, <code>origin</code>, with the client's IP Address for value.</dd>
@@ -63,7 +71,11 @@ well.</p>
 <dd>Responds with a JSON object with a single field, <code>user-agent</code>, with the client's user agent (as present
 	in the <code>User-Agent</code> header) for value.</dd>
 
+</dl>
+
 <h3 id=h3-caching>Caching</h3>
+
+<dl>
 
 <dt id=cache>/cache</dt>
 <dd>If the request contains an <code>If-Modified-Since</code> or <code>If-None-Match</code> header, returns a 304
@@ -79,7 +91,11 @@ well.</p>
 	and <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match' target=_blank rel=noopener>If-Match</a>
 	headers appropriately.</dd>
 
+</dl>
+
 <h3 id=h3-client-tuned-responses>Client Tuned Response</h3>
+
+<dl>
 
 <dt id=status>/status/<span class=var>{codes}</span></dt>
 <dd>Responds with the HTTP status as given by <code>codes</code>. It can be a comma-separated list of multiple status
@@ -136,13 +152,17 @@ well.</p>
 <dt id=links>/links/<span class=var>{count}</span></dt>
 <dt id=links-offset>/links/<span class=var>{count}</span>/<span class=var>{offset}</span></dt>
 <dd>Returns an HTML document with <code>count</code> links, which in turn respond with HTML documents with links again.
-	You mostly want to use the first version (<i>i.e.</i>, without <code>offset</code>).</dd>
+	You mostly want to use the first version (<em>i.e.</em>, without <code>offset</code>).</dd>
 
 <dt id=range>/range/<span class=var>{count}</span></dt>
 <dd>Returns <code>count</code> random bytes, that are generated with the <em>same</em> random seed every time. The value
 	of <code>count</code> is capped to 1000.</dd>
 
+</dl>
+
 <h3 id=h3-cookies>Cookies</h3>
+
+<dl>
 
 <dt id=cookies>/cookies</dt>
 <dd>Returns cookie data from the request headers.</dd>
@@ -157,7 +177,11 @@ well.</p>
 <dd>Returns a response that will delete cookies in the browser. Cookies to be deleted should be given as query params.
 	The values of these query params are ignored and can be empty.</dd>
 
+</dl>
+
 <h3 id=h3-redirects>Redirects</h3>
+
+<dl>
 
 <dt id=redirect-to>/redirect-to</dt>
 <dd>Responds with a redirect to the URL given by the <code>url</code> query param. If a <code>status_code</code> query
@@ -166,26 +190,38 @@ well.</p>
 <dt id=redirect>/redirect/<span class=var>{count}</span></dt>
 <dt id=relative-redirect>/relative-redirect/<span class=var>{count}</span></dt>
 <dd>Redirect <code>count</code> times. For example, <code>/redirect/3</code> will redirect three times before settling
-	on a response. The redirect URLs specified in the <code>Location</code> header will be <i>relative</i> URLs.</dd>
+	on a response. The redirect URLs specified in the <code>Location</code> header will be <em>relative</em> URLs.</dd>
 
 <dt id=absolute-redirect>/absolute-redirect/<span class=var>{count}</span></dt>
 <dd>Redirect <code>count</code> times. For example, <code>/redirect/3</code> will redirect three times before settling
-	on a response. The redirect URLs specified in the <code>Location</code> header will be <i>absolute</i> URLs.</dd>
+	on a response. The redirect URLs specified in the <code>Location</code> header will be <em>absolute</em> URLs.</dd>
+
+</dl>
 
 <h3 id=h3-anything>Anything</h3>
+
+<dl>
 
 <dt id=anything>/anything</dt>
 <dt id=anything-path>/anything/<span class=var>{...}</span></dt>
 <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but will work with any given method.</dd>
 
+</dl>
+
 <h3 id=h3-frame>Frame embedding</h3>
+
+<dl>
 
 <dt id=iframe>/iframe?url=<span class=var>{url}</span></dt>
 <dd>Returns a small HTML page with an <code>iframe</code>, pointing to the given <code>url</code>. For example, opening
 	<code>/iframe?url=https://sharats.me</code> in the browser will show a page that tries to open
 	<code>https://sharats.me</code> in an <code>iframe</code>.</dd>
 
+</dl>
+
 <h3 id=h3-oauth>OAuth</h3>
+
+<dl>
 
 <dt id=oauth-authorize>/oauth/authorize</dt>
 <dd>A dummy OAuth authorization endpoint. It can take a <code>client_id</code>, <code>scope</code>, <code>state</code>
@@ -278,5 +314,5 @@ source distribution of this project.</p>
 </ul>
 
 <footer>
-	<em>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a></em>.
+	<p>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a>.</p>
 </footer>

@@ -44,6 +44,23 @@ assert-eq() {
 	fi
 }
 
+assert-contains() {
+	local ac=$(($# - 1))
+	local curl_args=( "${@:1:$ac}" )
+	local expected="${*: -1}"
+	local got
+	got="$(pcurl "${curl_args[@]}"; echo .)"
+	got="${got%.}"
+	if ! str-contains "$got" "$expected"; then
+		echo -e "${RED}Fail for '${curl_args[*]}' (-Got +Expected)$NC"
+		diff --unified --label "From ""${curl_args[*]}" --label Expected <(echo "$got") <(echo "$expected")
+	fi
+}
+
+str-contains() {
+	python -c 'import sys; sys.exit(0 if sys.argv[2] in sys.argv[1] else 1)' "$1" "$2"
+}
+
 go run ../main.go &>test-server.log &
 server_pid="$!"
 echo "Starting server at PID $server_pid"

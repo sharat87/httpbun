@@ -23,12 +23,18 @@ func Render(name string, w http.ResponseWriter, data interface{}) {
 		log.Fatalf("Error executing %q template %v.", name, err)
 	}
 
-	w.Write(rendered.Bytes())
+	_, err = w.Write(rendered.Bytes())
+	if err != nil {
+		log.Printf("Error writing rendered template %v", err)
+	}
 }
 
 func WriteAsset(name string, w http.ResponseWriter, req *http.Request) {
 	if content, err := assets.ReadFile(name); err == nil {
-		w.Write(content)
+		_, err := w.Write(content)
+		if err != nil {
+			log.Printf("Error writing asset content %v", err)
+		}
 	} else if strings.HasSuffix(err.Error(), " file does not exist") {
 		http.NotFound(w, req)
 	} else {
