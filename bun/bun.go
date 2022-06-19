@@ -106,7 +106,7 @@ func MakeBunHandler(pathPrefix string) mux.Mux {
 }
 
 func handleHealth(ex *exchange.Exchange) {
-	fmt.Fprintln(ex.ResponseWriter, "ok")
+	ex.WriteLn("ok")
 }
 
 type InfoJsonOptions struct {
@@ -263,7 +263,7 @@ func handleStatus(ex *exchange.Exchange) {
 		})
 
 	} else {
-		fmt.Fprintf(ex.ResponseWriter, "%d %s", codeNum, http.StatusText(codeNum))
+		ex.WriteF("%d %s", codeNum, http.StatusText(codeNum))
 
 	}
 }
@@ -343,7 +343,7 @@ func handleAuthDigest(ex *exchange.Exchange) {
 			Value: newNonce,
 		})
 		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(ex.ResponseWriter, "Error: %q\n", err.Error())
+		ex.WriteF("Error: %q\n", err.Error())
 		return
 	}
 
@@ -354,7 +354,7 @@ func handleAuthDigest(ex *exchange.Exchange) {
 			Value: newNonce,
 		})
 		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(ex.ResponseWriter, "Error: %q\nGiven: %q\nExpected: %q", "Nonce mismatch", givenNonce, expectedNonce.Value)
+		ex.WriteF("Error: %q\nGiven: %q\nExpected: %q", "Nonce mismatch", givenNonce, expectedNonce.Value)
 		return
 	}
 
@@ -378,7 +378,7 @@ func handleAuthDigest(ex *exchange.Exchange) {
 			Value: newNonce,
 		})
 		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(ex.ResponseWriter, "Error: %q\nGiven: %q\nExpected: %q", "Response code mismatch", givenResponseCode, expectedResponseCode)
+		ex.WriteF("Error: %q\nGiven: %q\nExpected: %q", "Response code mismatch", givenResponseCode, expectedResponseCode)
 		return
 	}
 
@@ -475,12 +475,12 @@ func handleResponseHeaders(ex *exchange.Exchange) {
 		data["Content-Length"] = newContentLength
 	}
 
-	fmt.Fprintln(ex.ResponseWriter, jsonContent)
+	ex.WriteLn(jsonContent)
 }
 
 func handleSampleXml(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("Content-Type", "application/xml")
-	fmt.Fprintln(ex.ResponseWriter, `<?xml version='1.0' encoding='us-ascii'?>
+	ex.WriteLn(`<?xml version='1.0' encoding='us-ascii'?>
 
 <!--  A SAMPLE set of slides  -->
 
@@ -508,7 +508,7 @@ func handleSampleXml(ex *exchange.Exchange) {
 
 func handleImageSvg1(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("Content-Type", "image/svg+xml")
-	fmt.Fprintln(ex.ResponseWriter, `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" viewBox="0 0 100 100">
+	ex.WriteLn(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" viewBox="0 0 100 100">
 
   <title>SVG Logo</title>
 
@@ -523,19 +523,19 @@ func handleImageSvg1(ex *exchange.Exchange) {
 
 func handleSampleRobotsTxt(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("Content-Type", "text/plain")
-	fmt.Fprintln(ex.ResponseWriter, "User-agent: *\nDisallow: /deny")
+	ex.WriteLn("User-agent: *\nDisallow: /deny")
 }
 
 func handleSampleRobotsDeny(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("Content-Type", "text/plain")
-	fmt.Fprintln(ex.ResponseWriter, `
+	ex.WriteLn(`
           .-''''''-.
         .' _      _ '.
        /   O      O   \
       :                :
       |                |
       :       __       :
-       \  .-"`+"`  `"+`"-.  /
+       \  .-"` + "`  `" + `"-.  /
         '.          .'
           '-......-'
      YOU SHOULDN'T BE HERE`)
@@ -543,7 +543,7 @@ func handleSampleRobotsDeny(ex *exchange.Exchange) {
 
 func handleSampleHtml(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintln(ex.ResponseWriter, `<!DOCTYPE html>
+	ex.WriteLn(`<!DOCTYPE html>
 <html>
   <head>
   </head>
@@ -561,7 +561,7 @@ func handleSampleHtml(ex *exchange.Exchange) {
 
 func handleSampleJson(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("Content-Type", "application/json")
-	fmt.Fprintln(ex.ResponseWriter, `{
+	ex.WriteLn(`{
   "slideshow": {
     "author": "Yours Truly",
     "date": "date of publication",
@@ -590,16 +590,16 @@ func handleDecodeBase64(ex *exchange.Exchange) {
 		encoded = "SFRUUEJVTiBpcyBhd2Vzb21lciE="
 	}
 	if decoded, err := base64.StdEncoding.DecodeString(encoded); err != nil {
-		fmt.Fprint(ex.ResponseWriter, "Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
+		ex.Write("Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
 	} else {
-		fmt.Fprint(ex.ResponseWriter, string(decoded))
+		ex.Write(string(decoded))
 	}
 }
 
 func handleRandomBytes(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("content-type", "application/octet-stream")
 	n, _ := strconv.Atoi(ex.Field("size"))
-	ex.ResponseWriter.Write(util.RandomBytes(n))
+	ex.Write(util.RandomBytes(n))
 }
 
 func handleDelayedResponse(ex *exchange.Exchange) {
@@ -615,28 +615,28 @@ func handleDrip(ex *exchange.Exchange) {
 	duration, err := ex.QueryParamInt("duration", 2)
 	if err != nil {
 		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(ex.ResponseWriter, err.Error())
+		ex.WriteLn(err.Error())
 		return
 	}
 
 	numbytes, err := ex.QueryParamInt("numbytes", 10)
 	if err != nil {
 		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(ex.ResponseWriter, err.Error())
+		ex.WriteLn(err.Error())
 		return
 	}
 
 	code, err := ex.QueryParamInt("code", 200)
 	if err != nil {
 		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(ex.ResponseWriter, err.Error())
+		ex.WriteLn(err.Error())
 		return
 	}
 
 	delay, err := ex.QueryParamInt("delay", 2)
 	if err != nil {
 		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(ex.ResponseWriter, err.Error())
+		ex.WriteLn(err.Error())
 		return
 	}
 
@@ -651,9 +651,9 @@ func handleDrip(ex *exchange.Exchange) {
 	interval := time.Duration(float32(time.Second) * float32(duration) / float32(numbytes))
 
 	for numbytes > 0 {
-		fmt.Fprint(ex.ResponseWriter, "*")
+		ex.Write("*")
 		if writeNewLines {
-			fmt.Fprint(ex.ResponseWriter, "\n")
+			ex.Write("\n")
 		}
 		if !util.Flush(ex.ResponseWriter) {
 			log.Println("Flush not available. Dripping and streaming not supported on this platform.")
@@ -667,16 +667,16 @@ func handleLinks(ex *exchange.Exchange) {
 	count, _ := strconv.Atoi(ex.Field("count"))
 	offset, _ := strconv.Atoi(ex.Field("offset"))
 
-	fmt.Fprint(ex.ResponseWriter, "<html><head><title>Links</title></head><body>")
+	ex.Write("<html><head><title>Links</title></head><body>")
 	for i := 0; i < count; i++ {
 		if offset == i {
-			fmt.Fprint(ex.ResponseWriter, i)
+			ex.Write(i)
 		} else {
-			fmt.Fprintf(ex.ResponseWriter, "<a href='/links/%d/%d'>%d</a>", count, i, i)
+			ex.WriteF("<a href='/links/%d/%d'>%d</a>", count, i, i)
 		}
-		fmt.Fprint(ex.ResponseWriter, " ")
+		ex.Write(" ")
 	}
-	fmt.Fprint(ex.ResponseWriter, "</body></html>")
+	ex.Write("</body></html>")
 }
 
 func handleRange(ex *exchange.Exchange) {
@@ -695,7 +695,7 @@ func handleRange(ex *exchange.Exchange) {
 		r := rand.New(rand.NewSource(42))
 		b := make([]byte, count)
 		r.Read(b)
-		ex.ResponseWriter.Write(b)
+		ex.Write(b)
 	}
 }
 
@@ -710,7 +710,7 @@ func handleCookies(ex *exchange.Exchange) {
 }
 
 func handleCookiesDelete(ex *exchange.Exchange) {
-	for name, _ := range ex.Request.URL.Query() {
+	for name := range ex.Request.URL.Query() {
 		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:    name,
 			Value:   "",
@@ -749,18 +749,17 @@ func handleRedirectTo(ex *exchange.Exchange) {
 	urls := ex.Request.URL.Query()["url"]
 	if len(urls) < 1 || urls[0] == "" {
 		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(ex.ResponseWriter, "Need url parameter")
+		ex.WriteLn("Need url parameter")
 		return
 	}
 
-	url := urls[0]
 	statusCodes := ex.Request.URL.Query()["status_code"]
 	statusCode := http.StatusFound
 	if statusCodes != nil {
 		var err error
 		if statusCode, err = strconv.Atoi(statusCodes[0]); err != nil {
 			ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintln(ex.ResponseWriter, "status_code must be an integer")
+			ex.WriteLn("status_code must be an integer")
 			return
 		}
 		if statusCode < 300 || statusCode > 399 {
@@ -768,7 +767,7 @@ func handleRedirectTo(ex *exchange.Exchange) {
 		}
 	}
 
-	ex.ResponseWriter.Header().Set("Location", url)
+	ex.ResponseWriter.Header().Set("Location", urls[0])
 	ex.ResponseWriter.WriteHeader(statusCode)
 }
 
@@ -777,7 +776,7 @@ func handleAbsoluteRedirect(ex *exchange.Exchange) {
 
 	if n > MaxRedirectCount {
 		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(ex.ResponseWriter, "No more than %v redirects allowed.\n", MaxRedirectCount)
+		ex.WriteF("No more than %v redirects allowed.\n", MaxRedirectCount)
 	} else if n > 1 {
 		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.Request.URL.String(), "/"+fmt.Sprint(n-1)), false)
 	} else {
@@ -790,7 +789,7 @@ func handleRelativeRedirect(ex *exchange.Exchange) {
 
 	if n > MaxRedirectCount {
 		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(ex.ResponseWriter, "No more than %v redirects allowed.\n", MaxRedirectCount)
+		ex.WriteF("No more than %v redirects allowed.\n", MaxRedirectCount)
 	} else if n > 1 {
 		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.URL.Path, "/"+fmt.Sprint(n-1)), true)
 	} else {
@@ -809,47 +808,16 @@ func handleInfo(ex *exchange.Exchange) {
 	})
 }
 
-func handleFrame(ex *exchange.Exchange) {
-	embedUrl, _ := ex.QueryParamSingle("url")
-
-	ex.ResponseWriter.Header().Set("Content-Type", "text/html")
-
-	warning := ""
-	if ex.URL.Scheme == "http" && strings.HasPrefix(embedUrl, "https://") {
-		warning = `
-		<p>You are embedding an https URL inside an http page, switch to full https for best experience.
-		<a href='#' onclick='location.protocol = "https:"'>Click here to switch</a>.</p>`
-	}
-
-	fmt.Fprintf(ex.ResponseWriter, `<!doctype html>
-<html>
-<style>
-* { box-sizing: border-box }
-html, body, form { margin: 0; min-height: 100vh }
-form { display: flex; flex-direction: column }
-iframe { border: none; flex-grow: 1 }
-input { font-size: 1.2em; width: calc(100%% - 1em); margin: .5em }
-p { margin: .5em }
-</style>
-<form>
-<input name=url value='%s' placeholder='Enter URL to embed in an iframe' autofocus required>
-%s
-<button style='display:none'>Embed</button>
-<iframe src="%s"></iframe>
-</form>
-`, embedUrl, warning, embedUrl)
-}
-
 func handleOauthAuthorize(ex *exchange.Exchange) {
 	// Ref: <https://datatracker.ietf.org/doc/html/rfc6749>.
 
 	// TODO: Handle POST also, where params are read from the body.
 	if ex.Request.Method != http.MethodGet {
-		ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprintln(ex.ResponseWriter, http.StatusText(http.StatusMethodNotAllowed))
+		ex.RespondError(http.StatusMethodNotAllowed)
+		return
 	}
 
-	errors := []string{}
+	var errors []string
 	params := ex.Request.URL.Query()
 
 	redirectUrl, err := ex.QueryParamSingle("redirect_uri")
@@ -896,19 +864,24 @@ func handleOauthAuthorize(ex *exchange.Exchange) {
 
 func handleOauthAuthorizeSubmit(ex *exchange.Exchange) {
 	if ex.Request.Method != http.MethodPost {
-		ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprintln(ex.ResponseWriter, http.StatusText(http.StatusMethodNotAllowed))
+		ex.RespondError(http.StatusMethodNotAllowed)
+		return
 	}
 
 	// TODO: Error out if there's *any* query params here.
-	ex.Request.ParseForm()
+	err := ex.Request.ParseForm()
+	if err != nil {
+		ex.RespondError(http.StatusBadRequest)
+		return
+	}
+
 	decision, _ := ex.FormParamSingle("decision")
 
 	redirectUrl, _ := ex.FormParamSingle("redirect_uri")
 	responseType, _ := ex.FormParamSingle("response_type")
 	state, _ := ex.FormParamSingle("state")
 
-	params := []string{}
+	var params []string
 
 	if state != "" {
 		params = append(params, "state="+url.QueryEscape(state))

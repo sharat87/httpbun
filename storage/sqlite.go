@@ -1,12 +1,12 @@
 package storage
 
 import (
-	"time"
-	"net/http"
 	"database/sql"
-	_ "modernc.org/sqlite"
-	"log"
 	"encoding/json"
+	"log"
+	_ "modernc.org/sqlite"
+	"net/http"
+	"time"
 )
 
 type SqliteStorage struct {

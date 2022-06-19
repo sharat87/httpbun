@@ -11,6 +11,8 @@ echo "Starting curl based test suite, at $(date), with curl version:"
 curl --version
 echo
 
+cd "$(dirname "$0")"
+
 export HTTPBUN_BIND=localhost:30001
 
 RED='\033[0;31m'
@@ -19,23 +21,28 @@ NC='\033[0m'
 pcurl() {
 	# We remove the Date header, since it's not static, and we don't care about it's value anyway.
 	# We also remove `\r` chars at end of lines, to convert Windows style line-endings (used by headers) to Unix style.
-	curl --silent --show-error \
+	curl --disable \
+		--silent \
+		--show-error \
 		--location \
 		--include \
 		--user-agent curl \
+		"${@:2:$#}" \
 		"$HTTPBUN_BIND$1" \
 		| awk '!b && $1 == "Date:" {next} NF == 0 {b=1} {sub("\r$", ""); print}'
 }
 
 assert-eq() {
-	local url="$1"
-	local expected="$2"
+	local ac=$(($# - 1))
+	local curl_args=( "${@:1:$ac}" )
+	local expected="${*: -1}."
 	local got
-	got="$(pcurl "$url")"
-	if [[ $got != "$expected" ]]; then
-		echo "${RED}Fail for $url (<Got >Expected)$NC"
-		diff <(echo "$got") <(echo "$expected")
-		return 1
+	got="$(pcurl "${curl_args[@]}"; echo .)"
+	if [[ "$got" != "$expected" ]]; then
+		echo "got=$got"
+		pcurl "${curl_args[@]}" | wc
+		echo -e "${RED}Fail for '${curl_args[*]}' (-Got +Expected)$NC"
+		diff --unified --label "${curl_args[*]}" <(echo "$got") <(echo "$expected")
 	fi
 }
 

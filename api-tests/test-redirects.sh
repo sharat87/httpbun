@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+assert-eq '/redirect-to' 'HTTP/1.1 400 Bad Request
+X-Powered-By: httpbun
+Content-Length: 19
+Content-Type: text/plain; charset=utf-8
+
+Need url parameter
+'
+
 assert-eq '/redirect/2' 'HTTP/1.1 302 Found
 Location: ../redirect/1
 X-Powered-By: httpbun
@@ -25,7 +33,8 @@ Content-Length: 147
   },
   "origin": "127.0.0.1",
   "url": "http://'"$HTTPBUN_BIND"'/get"
-}'
+}
+'
 
 assert-eq '/redirect-to?url=http://'"$HTTPBUN_BIND"'/get' 'HTTP/1.1 302 Found
 Location: http://'"$HTTPBUN_BIND"'/get
@@ -45,4 +54,5 @@ Content-Length: 147
   },
   "origin": "127.0.0.1",
   "url": "http://'"$HTTPBUN_BIND"'/get"
-}'
+}
+'

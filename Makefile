@@ -1,6 +1,8 @@
 LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$$(git rev-parse HEAD) -X main.Date=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 run:
+	go mod tidy
+	go fmt ./...
 	@HTTPBUN_INFO_ENABLED=1 CGO_ENABLED=0 \
 		DATABASE_URL=sqlite3://st.db \
 		go run $(LDFLAGS) main.go

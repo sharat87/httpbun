@@ -180,3 +180,24 @@ func (ex Exchange) BodyString() string {
 		return string(bodyBytes)
 	}
 }
+
+func (ex Exchange) Write(content any) {
+	_, err := fmt.Fprint(ex.ResponseWriter, content)
+	if err != nil {
+		log.Printf("Error writing to exchange response: %v\n", err)
+	}
+}
+
+func (ex Exchange) WriteLn(content any) {
+	ex.Write(content)
+	ex.Write("\n")
+}
+
+func (ex Exchange) WriteF(content string, vars ...any) {
+	ex.Write(fmt.Sprintf(content, vars...))
+}
+
+func (ex Exchange) RespondError(errorStatus int) {
+	ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
+	ex.WriteLn(http.StatusText(http.StatusMethodNotAllowed))
+}

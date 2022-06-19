@@ -38,9 +38,18 @@ func parseArgs(args []string) RunConfig {
 			i++
 			bindTarget = args[i]
 
+		} else if strings.HasPrefix(arg, "--bind=") {
+			bindTarget = strings.SplitN(arg, "=", 2)[1]
+
 		} else if arg == "--path-prefix" {
 			i++
 			rc.PathPrefix = args[i]
+
+		} else if strings.HasPrefix(arg, "--path-prefix=") {
+			rc.PathPrefix = strings.SplitN(arg, "=", 2)[1]
+
+		} else {
+			log.Fatalf("Unknown argument '%v'", arg)
 
 		}
 
@@ -81,7 +90,7 @@ func main() {
 		log.Fatal("Error creating listener.", err)
 	}
 
-	// Genreate a self-signed cert with following command:
+	// Generate a self-signed cert with following command:
 	// openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365 -subj "/O=httpbun/CN=httpbun.com"
 	sslCertFile := os.Getenv("HTTPBUN_SSL_CERT")
 	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
