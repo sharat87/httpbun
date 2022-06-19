@@ -43,7 +43,7 @@ func handleAbsoluteRedirect(ex *exchange.Exchange) {
 	} else if n > 1 {
 		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.Request.URL.String(), "/"+fmt.Sprint(n-1)), false)
 	} else {
-		ex.Redirect(ex.ResponseWriter, "/get", true)
+		ex.Redirect(ex.ResponseWriter, "/get", false)
 	}
 }
 

@@ -36,6 +36,34 @@ Content-Length: 147
 }
 '
 
+assert-eq '/absolute-redirect/2' 'HTTP/1.1 302 Found
+Location: /absolute-redirect/1
+X-Powered-By: httpbun
+Content-Length: 214
+Content-Type: text/html; charset=utf-8
+
+HTTP/1.1 302 Found
+Location: /get
+X-Powered-By: httpbun
+Content-Length: 182
+Content-Type: text/html; charset=utf-8
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+X-Powered-By: httpbun
+Content-Length: 147
+
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "User-Agent": "curl"
+  },
+  "origin": "127.0.0.1",
+  "url": "http://'"$HTTPBUN_BIND"'/get"
+}
+'
+
 assert-eq '/redirect-to?url=http://'"$HTTPBUN_BIND"'/get' 'HTTP/1.1 302 Found
 Location: http://'"$HTTPBUN_BIND"'/get
 X-Powered-By: httpbun

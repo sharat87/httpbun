@@ -39,10 +39,8 @@ assert-eq() {
 	local got
 	got="$(pcurl "${curl_args[@]}"; echo .)"
 	if [[ "$got" != "$expected" ]]; then
-		echo "got=$got"
-		pcurl "${curl_args[@]}" | wc
 		echo -e "${RED}Fail for '${curl_args[*]}' (-Got +Expected)$NC"
-		diff --unified --label "${curl_args[*]}" <(echo "$got") <(echo "$expected")
+		diff --unified --label "From ""${curl_args[*]}" --label Expected <(echo "$got") <(echo "$expected")
 	fi
 }
 
