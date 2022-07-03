@@ -89,7 +89,7 @@ func parseArgs(args []string) RunConfig {
 
 func main() {
 	runConfig := parseArgs(os.Args[1:])
-	log.Printf("Startting with config %v", runConfig)
+	log.Printf("Starting with config %v", runConfig)
 
 	rand.Seed(time.Now().Unix())
 
