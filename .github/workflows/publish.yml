@@ -24,16 +24,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Get required Go version
-        id: get-go-version
-        run: |
-          set -o xtrace
-          echo '::set-output name=go_version::'"$(awk '$1 == "golang" { print $2 }' "$GITHUB_WORKSPACE/.tool-versions")"
-
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '${{ steps.get-go-version.go_version }}'
+          go-version: 1.18.3
 
       - name: Test
         run: make test
