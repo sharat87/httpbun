@@ -86,7 +86,7 @@ func MakeBunHandler(pathPrefix, database string) mux.Mux {
 	m.HandleFunc("/json", handleSampleJson)
 	m.HandleFunc("/robots.txt", handleSampleRobotsTxt)
 	m.HandleFunc("/xml", handleSampleXml)
-	m.HandleFunc("/image/svg1", handleImageSvg1)
+	m.HandleFunc("/image/svg", handleImageSvg)
 
 	m.HandleFunc("/base64(/(?P<encoded>.*))?", handleDecodeBase64)
 	m.HandleFunc("/bytes/(?P<size>\\d+)", handleRandomBytes)

@@ -1,6 +1,9 @@
 package bun
 
-import "github.com/sharat87/httpbun/exchange"
+import (
+	"github.com/sharat87/httpbun/assets"
+	"github.com/sharat87/httpbun/exchange"
+)
 
 func handleSampleXml(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("Content-Type", "application/xml")
@@ -30,19 +33,9 @@ func handleSampleXml(ex *exchange.Exchange) {
 </slideshow>`)
 }
 
-func handleImageSvg1(ex *exchange.Exchange) {
+func handleImageSvg(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("Content-Type", "image/svg+xml")
-	ex.WriteLn(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" viewBox="0 0 100 100">
-
-  <title>SVG Logo</title>
-
-  <a xlink:href="http://www.w3.org/Graphics/SVG/" target="_parent"
-     xlink:title="W3C SVG Working Group home page">
-
-    <rect fill="#f09" x="5" y="5" width="90" height="90" rx="4" ry="4" />
-
-  </a>
-</svg>`)
+	assets.WriteAsset("svg-logo.svg", ex.ResponseWriter, ex.Request)
 }
 
 func handleSampleRobotsTxt(ex *exchange.Exchange) {

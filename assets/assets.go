@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-//go:embed *.html *.css *.png favicon.ico site.webmanifest
+//go:embed *.html *.css *.png *.svg favicon.ico site.webmanifest
 var assets embed.FS
 
 func Render(name string, w http.ResponseWriter, data interface{}) {
