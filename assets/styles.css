@@ -45,6 +45,7 @@ a {
 
 dt, code {
 	font-family: Menlo, 'Cascadia Code', Consolas, Monaco, monospace;
+	font-size: .95rem;
 }
 
 dt {
@@ -131,7 +132,11 @@ summary > :first-child:before {
 	width: 12px;
 }
 
-details[open] summary > :first-child:before {
+details[open] > summary {
+	font-weight: bold;
+}
+
+details[open] > summary > :first-child:before {
 	content: "▼";
 }
 

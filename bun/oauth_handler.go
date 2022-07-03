@@ -15,7 +15,7 @@ func handleOauthAuthorize(ex *exchange.Exchange) {
 
 	// TODO: Handle POST also, where params are read from the body.
 	if ex.Request.Method != http.MethodGet {
-		ex.RespondError(http.StatusMethodNotAllowed)
+		ex.RespondWithStatus(http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -66,14 +66,14 @@ func handleOauthAuthorize(ex *exchange.Exchange) {
 
 func handleOauthAuthorizeSubmit(ex *exchange.Exchange) {
 	if ex.Request.Method != http.MethodPost {
-		ex.RespondError(http.StatusMethodNotAllowed)
+		ex.RespondWithStatus(http.StatusMethodNotAllowed)
 		return
 	}
 
 	// TODO: Error out if there's *any* query params here.
 	err := ex.Request.ParseForm()
 	if err != nil {
-		ex.RespondError(http.StatusBadRequest)
+		ex.RespondWithStatus(http.StatusBadRequest)
 		return
 	}
 

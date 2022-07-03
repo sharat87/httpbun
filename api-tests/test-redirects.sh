@@ -23,7 +23,7 @@ Content-Type: text/html; charset=utf-8
 HTTP/1.1 200 OK
 Content-Type: application/json
 X-Powered-By: httpbun
-Content-Length: 147
+Content-Length: 166
 
 {
   "args": {},
@@ -31,6 +31,7 @@ Content-Length: 147
     "Accept": "*/*",
     "User-Agent": "curl"
   },
+  "method": "GET",
   "origin": "127.0.0.1",
   "url": "http://'"$HTTPBUN_BIND"'/get"
 }
@@ -51,7 +52,7 @@ Content-Type: text/html; charset=utf-8
 HTTP/1.1 200 OK
 Content-Type: application/json
 X-Powered-By: httpbun
-Content-Length: 147
+Content-Length: 166
 
 {
   "args": {},
@@ -59,6 +60,7 @@ Content-Length: 147
     "Accept": "*/*",
     "User-Agent": "curl"
   },
+  "method": "GET",
   "origin": "127.0.0.1",
   "url": "http://'"$HTTPBUN_BIND"'/get"
 }
@@ -72,7 +74,7 @@ Content-Length: 0
 HTTP/1.1 200 OK
 Content-Type: application/json
 X-Powered-By: httpbun
-Content-Length: 147
+Content-Length: 166
 
 {
   "args": {},
@@ -80,6 +82,7 @@ Content-Length: 147
     "Accept": "*/*",
     "User-Agent": "curl"
   },
+  "method": "GET",
   "origin": "127.0.0.1",
   "url": "http://'"$HTTPBUN_BIND"'/get"
 }

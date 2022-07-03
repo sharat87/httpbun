@@ -54,11 +54,14 @@ func (ex Exchange) Redirect(w http.ResponseWriter, path string, changeToRelative
 	w.Header().Set("Location", path)
 	w.WriteHeader(http.StatusFound)
 
-	fmt.Fprintf(w, `<!doctype html>
+	_, err := fmt.Fprintf(w, `<!doctype html>
 <title>Redirecting...</title>
 <h1>Redirecting...</h1>
 <p>You should be redirected automatically to target URL: <a href=%q>%q</a>.  If not click the link.</p>
 `, path, path)
+	if err != nil {
+		log.Printf("Error writing redirect HTML to HTTP response %v", err)
+	}
 }
 
 func (ex Exchange) QueryParamInt(name string, value int) (int, error) {
@@ -85,9 +88,9 @@ func (ex Exchange) FormParamSingle(name string) (string, error) {
 
 func singleParamValue(args map[string][]string, name string) (string, error) {
 	if len(args[name]) == 0 {
-		return "", fmt.Errorf("Missing required param %q.", name)
+		return "", fmt.Errorf("missing required param %q", name)
 	} else if len(args[name]) > 1 {
-		return "", fmt.Errorf("Too many values for param %q. Expected only one.", name)
+		return "", fmt.Errorf("too many values for param %q, expected only one", name)
 	} else {
 		return args[name][0], nil
 	}
@@ -127,7 +130,7 @@ func (ex Exchange) FullUrl() string {
 	return ex.FindScheme() + "://" + ex.Request.Host + ex.Request.URL.String()
 }
 
-// Find the IP address of the client that made this Exchange.
+// FindOrigin Find the IP address of the client that made this Exchange.
 func (ex *Exchange) FindOrigin() string {
 	if ex.Origin != nil {
 		return *ex.Origin
@@ -197,7 +200,17 @@ func (ex Exchange) WriteF(content string, vars ...any) {
 	ex.Write(fmt.Sprintf(content, vars...))
 }
 
-func (ex Exchange) RespondError(errorStatus int) {
-	ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
-	ex.WriteLn(http.StatusText(http.StatusMethodNotAllowed))
+func (ex Exchange) RespondWithStatus(errorStatus int) {
+	ex.ResponseWriter.WriteHeader(errorStatus)
+	ex.WriteLn(http.StatusText(errorStatus))
+}
+
+func (ex Exchange) RespondError(status int, code, detail string) {
+	ex.ResponseWriter.WriteHeader(status)
+	util.WriteJson(ex.ResponseWriter, map[string]any{
+		"error": map[string]any{
+			"code":   code,
+			"detail": detail,
+		},
+	})
 }

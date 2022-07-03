@@ -4,7 +4,6 @@ run:
 	go mod tidy
 	go fmt ./...
 	@HTTPBUN_INFO_ENABLED=1 CGO_ENABLED=0 \
-		DATABASE_URL=sqlite3://st.db \
 		go run $(LDFLAGS) main.go
 
 build:

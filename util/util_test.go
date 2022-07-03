@@ -10,7 +10,7 @@ func TestOne(t *testing.T) {
 	assert.Equal(
 		t,
 		[]map[string]string{
-			map[string]string{
+			{
 				"for": "12.34.56.78",
 			},
 		},
@@ -23,12 +23,12 @@ func TestTwo(t *testing.T) {
 	assert.Equal(
 		t,
 		[]map[string]string{
-			map[string]string{
+			{
 				"for":   "12.34.56.78",
 				"host":  "example.com",
 				"proto": "https",
 			},
-			map[string]string{
+			{
 				"for": "23.45.67.89",
 			},
 		},
@@ -41,14 +41,14 @@ func TestThree(t *testing.T) {
 	assert.Equal(
 		t,
 		[]map[string]string{
-			map[string]string{
+			{
 				"for": "12.34.56.78",
 			},
-			map[string]string{
+			{
 				"for":    "23.45.67.89",
 				"secret": "egah2CGj55fSJFs",
 			},
-			map[string]string{
+			{
 				"for": "10.1.2.3",
 			},
 		},
@@ -61,7 +61,7 @@ func TestFour(t *testing.T) {
 	assert.Equal(
 		t,
 		[]map[string]string{
-			map[string]string{
+			{
 				"for": "_gazonk",
 			},
 		},
@@ -74,7 +74,7 @@ func TestFive(t *testing.T) {
 	assert.Equal(
 		t,
 		[]map[string]string{
-			map[string]string{
+			{
 				"for": "[2001:db8:cafe::17]:4711",
 			},
 		},
@@ -87,7 +87,7 @@ func TestSix(t *testing.T) {
 	assert.Equal(
 		t,
 		[]map[string]string{
-			map[string]string{
+			{
 				"for":   "192.0.2.60",
 				"proto": "http",
 				"by":    "203.0.113.43",
@@ -102,10 +102,10 @@ func TestSeven(t *testing.T) {
 	assert.Equal(
 		t,
 		[]map[string]string{
-			map[string]string{
+			{
 				"for": "192.0.2.43",
 			},
-			map[string]string{
+			{
 				"for": "198.51.100.17",
 			},
 		},
@@ -118,7 +118,7 @@ func TestSemicolonInValue(t *testing.T) {
 	assert.Equal(
 		t,
 		[]map[string]string{
-			map[string]string{
+			{
 				"for":    "1.2.3.4",
 				"secret": "abc;def",
 			},
@@ -132,7 +132,7 @@ func TestCommaInValue(t *testing.T) {
 	assert.Equal(
 		t,
 		[]map[string]string{
-			map[string]string{
+			{
 				"for":    "1.2.3.4",
 				"secret": "abc,def",
 			},
@@ -146,7 +146,7 @@ func TestEqualsInValue(t *testing.T) {
 	assert.Equal(
 		t,
 		[]map[string]string{
-			map[string]string{
+			{
 				"for":    "1.2.3.4",
 				"secret": "abc=def",
 			},

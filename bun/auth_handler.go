@@ -20,6 +20,10 @@ func handleAuthBasic(ex *exchange.Exchange) {
 	} else {
 		ex.ResponseWriter.Header().Set("WWW-Authenticate", "Basic realm=\"Fake Realm\"")
 		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
+		util.WriteJson(ex.ResponseWriter, map[string]interface{}{
+			"authenticated": false,
+			"user":          givenUsername,
+		})
 
 	}
 }

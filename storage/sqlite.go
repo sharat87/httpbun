@@ -6,6 +6,7 @@ import (
 	"log"
 	_ "modernc.org/sqlite"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -13,8 +14,8 @@ type SqliteStorage struct {
 	db *sql.DB
 }
 
-func NewSqliteStorage() *SqliteStorage {
-	db, err := sql.Open("sqlite", "st.db")
+func NewSqliteStorage(dbFile string) *SqliteStorage {
+	db, err := sql.Open("sqlite", dbFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,7 +25,7 @@ func NewSqliteStorage() *SqliteStorage {
 	st := &SqliteStorage{
 		db: db,
 	}
-	go st.StartAutoDeletes()
+	go st.autoDelete()
 	return st
 }
 
@@ -71,7 +72,7 @@ func (st *SqliteStorage) GetFromInbox(name string) []Entry {
 		return nil
 	}
 
-	entries := []Entry{}
+	var entries []Entry
 
 	rows, err := st.db.Query("select protocol, scheme, host, path, method, params, headers, fragment, pushedAt from requests where inbox_name == ?", name)
 	if err != nil {
@@ -88,7 +89,7 @@ func (st *SqliteStorage) GetFromInbox(name string) []Entry {
 		var headersStr string
 		var fragment string
 		var pushedAtStr string
-		rows.Scan(
+		err := rows.Scan(
 			&protocol,
 			&scheme,
 			&host,
@@ -99,6 +100,10 @@ func (st *SqliteStorage) GetFromInbox(name string) []Entry {
 			&fragment,
 			&pushedAtStr,
 		)
+		if err != nil {
+			log.Printf("Error scanning row contents %v", err)
+			return nil
+		}
 		var params map[string][]string
 		if err := json.Unmarshal([]byte(paramsStr), &params); err != nil {
 			log.Print("Error deserializing params", err)
@@ -127,31 +132,22 @@ func (st *SqliteStorage) GetFromInbox(name string) []Entry {
 	return entries
 }
 
-func (st *SqliteStorage) StartAutoDeletes() {
-	st.DoAutoDelete()
-	ticker := time.NewTicker(time.Minute)
-	defer ticker.Stop()
-	for {
-		<-ticker.C
-		st.DoAutoDelete()
-	}
-}
-
-func (st *SqliteStorage) DoAutoDelete() {
+func (st *SqliteStorage) autoDelete() {
 	_, err := st.db.Exec(
 		"delete from requests where pushedAt < ?",
-		time.Now().UTC().Add(10*time.Minute),
+		time.Now().UTC().Add(-60*time.Minute),
 	)
 	if err != nil {
 		log.Fatal("Error deleting old requests", err)
 	}
+	time.AfterFunc(time.Minute, st.autoDelete)
 }
 
 func prepareDatabase(db *sql.DB) {
 	var version int
 	row := db.QueryRow("select n from version limit 1")
 	if err := row.Err(); err != nil {
-		if err.Error() != "no such table: version" {
+		if !strings.Contains(err.Error(), " no such table: version ") {
 			log.Fatal(err)
 		}
 

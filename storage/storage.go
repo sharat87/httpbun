@@ -10,7 +10,10 @@ type Storage interface {
 	GetFromInbox(name string) []Entry
 }
 
+// TODO: Handle binary body.
+
 type Entry struct {
+	Inbox    string              `json:"inbox"`
 	Protocol string              `json:"protocol"`
 	Scheme   string              `json:"scheme"`
 	Host     string              `json:"host"`
@@ -19,6 +22,6 @@ type Entry struct {
 	Params   map[string][]string `json:"params"`
 	Headers  map[string][]string `json:"headers"`
 	Fragment string              `json:"fragment"`
-	Body     string              `json:"body"` // TODO: What happens for binary body?
-	PushedAt time.Time           `json:"pushedAt"`
+	Body     string              `json:"body"`
+	PushedAt time.Time           `json:"pushedAt" bson:"pushedAt"`
 }

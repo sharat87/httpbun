@@ -3,7 +3,7 @@
 assert-eq '/get' 'HTTP/1.1 200 OK
 Content-Type: application/json
 X-Powered-By: httpbun
-Content-Length: 147
+Content-Length: 166
 
 {
   "args": {},
@@ -11,6 +11,7 @@ Content-Length: 147
     "Accept": "*/*",
     "User-Agent": "curl"
   },
+  "method": "GET",
   "origin": "127.0.0.1",
   "url": "http://'"$HTTPBUN_BIND"'/get"
 }
@@ -19,7 +20,7 @@ Content-Length: 147
 assert-eq '/get?name=Sherlock' 'HTTP/1.1 200 OK
 Content-Type: application/json
 X-Powered-By: httpbun
-Content-Length: 187
+Content-Length: 206
 
 {
   "args": {
@@ -29,6 +30,7 @@ Content-Length: 187
     "Accept": "*/*",
     "User-Agent": "curl"
   },
+  "method": "GET",
   "origin": "127.0.0.1",
   "url": "http://'"$HTTPBUN_BIND"'/get?name=Sherlock"
 }
@@ -37,7 +39,7 @@ Content-Length: 187
 assert-eq '/get?first=Sherlock&last=Holmes' 'HTTP/1.1 200 OK
 Content-Type: application/json
 X-Powered-By: httpbun
-Content-Length: 228
+Content-Length: 247
 
 {
   "args": {
@@ -48,6 +50,7 @@ Content-Length: 228
     "Accept": "*/*",
     "User-Agent": "curl"
   },
+  "method": "GET",
   "origin": "127.0.0.1",
   "url": "http://'"$HTTPBUN_BIND"'/get?first=Sherlock\u0026last=Holmes"
 }
@@ -56,7 +59,7 @@ Content-Length: 228
 assert-eq '/get' -H x-custom:first-custom 'HTTP/1.1 200 OK
 Content-Type: application/json
 X-Powered-By: httpbun
-Content-Length: 179
+Content-Length: 198
 
 {
   "args": {},
@@ -65,6 +68,7 @@ Content-Length: 179
     "User-Agent": "curl",
     "X-Custom": "first-custom"
   },
+  "method": "GET",
   "origin": "127.0.0.1",
   "url": "http://'"$HTTPBUN_BIND"'/get"
 }
@@ -73,7 +77,7 @@ Content-Length: 179
 assert-eq '/get' -H x-first:first-custom -H x-second:second-custom 'HTTP/1.1 200 OK
 Content-Type: application/json
 X-Powered-By: httpbun
-Content-Length: 211
+Content-Length: 230
 
 {
   "args": {},
@@ -83,6 +87,7 @@ Content-Length: 211
     "X-First": "first-custom",
     "X-Second": "second-custom"
   },
+  "method": "GET",
   "origin": "127.0.0.1",
   "url": "http://'"$HTTPBUN_BIND"'/get"
 }

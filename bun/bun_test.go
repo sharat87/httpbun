@@ -22,7 +22,7 @@ type TSuite struct {
 }
 
 func (s *TSuite) SetupSuite() {
-	s.Mux = MakeBunHandler("")
+	s.Mux = MakeBunHandler("", "")
 }
 
 func (s *TSuite) ExecRequest(request tu.R) (http.Response, []byte) {
@@ -53,8 +53,8 @@ func (s *TSuite) TestHeaders() {
 		Method: "GET",
 		Path:   "headers",
 		Headers: map[string][]string{
-			"X-One": []string{"custom header value"},
-			"X-Two": []string{"another custom header"},
+			"X-One": {"custom header value"},
+			"X-Two": {"another custom header"},
 		},
 	})
 	s.Equal(200, resp.StatusCode)
@@ -72,7 +72,7 @@ func (s *TSuite) TestHeadersRepeat() {
 		Method: "GET",
 		Path:   "headers",
 		Headers: map[string][]string{
-			"X-One": []string{"custom header value", "another custom header"},
+			"X-One": {"custom header value", "another custom header"},
 		},
 	})
 	s.Equal(200, resp.StatusCode)
@@ -91,7 +91,10 @@ func (s *TSuite) TestBasicAuthWithoutCreds() {
 	})
 	s.Equal(401, resp.StatusCode)
 	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(len(body), 0)
+	s.Equal(map[string]interface{}{
+		"authenticated": false,
+		"user":          "",
+	}, tu.ParseJson(body))
 }
 
 func (s *TSuite) TestBasicAuthWithValidCreds() {
@@ -99,7 +102,7 @@ func (s *TSuite) TestBasicAuthWithValidCreds() {
 		Method: "GET",
 		Path:   "basic-auth/scott/tiger",
 		Headers: map[string][]string{
-			"Authorization": []string{"Basic c2NvdHQ6dGlnZXI="},
+			"Authorization": {"Basic c2NvdHQ6dGlnZXI="},
 		},
 	})
 	s.Equal(200, resp.StatusCode)
@@ -115,12 +118,15 @@ func (s *TSuite) TestBasicAuthWithInvalidCreds() {
 		Method: "GET",
 		Path:   "basic-auth/scott/tiger",
 		Headers: map[string][]string{
-			"Authorization": []string{"Basic x2NvdHQ6dGlnZXI="},
+			"Authorization": {"Basic c2NvdHQ6d3Jvbmc="},
 		},
 	})
 	s.Equal(401, resp.StatusCode)
 	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(len(body), 0)
+	s.Equal(map[string]interface{}{
+		"authenticated": false,
+		"user":          "scott",
+	}, tu.ParseJson(body))
 }
 
 func (s *TSuite) TestBearerAuthWithoutToken() {
@@ -138,7 +144,7 @@ func (s *TSuite) TestBearerAuthWithToken() {
 		Method: "GET",
 		Path:   "bearer",
 		Headers: map[string][]string{
-			"Authorization": []string{"Bearer my-auth-token"},
+			"Authorization": {"Bearer my-auth-token"},
 		},
 	})
 	s.Equal(200, resp.StatusCode)
@@ -172,8 +178,8 @@ func (s *TSuite) TestDigestAuthWitCreds() {
 		Method: "GET",
 		Path:   "digest-auth/auth/dave/diamond",
 		Headers: map[string][]string{
-			"Cookie":        []string{"nonce=d9fc96d7fe39099441042eea21006d77"},
-			"Authorization": []string{"Digest username=\"dave\", realm=\"testrealm@host.com\", nonce=\"d9fc96d7fe39099441042eea21006d77\", uri=\"/digest-auth/auth/dave/diamond\", algorithm=MD5, response=\"10c1132a06ac0de7c39a07e8553f0f14\", opaque=\"362d9b0fe6787b534eb27677f4210b61\", qop=auth, nc=00000001, cnonce=\"bb2ec71d21a27e19\""},
+			"Cookie":        {"nonce=d9fc96d7fe39099441042eea21006d77"},
+			"Authorization": {"Digest username=\"dave\", realm=\"testrealm@host.com\", nonce=\"d9fc96d7fe39099441042eea21006d77\", uri=\"/digest-auth/auth/dave/diamond\", algorithm=MD5, response=\"10c1132a06ac0de7c39a07e8553f0f14\", opaque=\"362d9b0fe6787b534eb27677f4210b61\", qop=auth, nc=00000001, cnonce=\"bb2ec71d21a27e19\""},
 		},
 	})
 	s.Equal(200, resp.StatusCode)
@@ -189,8 +195,8 @@ func (s *TSuite) TestDigestAuthWitIncorrectUser() {
 		Method: "GET",
 		Path:   "digest-auth/auth/dave/diamond",
 		Headers: map[string][]string{
-			"Cookie":        []string{"nonce=0801ff8cf72e952e08643d2dc735231d"},
-			"Authorization": []string{"Authorization: Digest username=\"dave2\", realm=\"testrealm@host.com\", nonce=\"0801ff8cf72e952e08643d2dc735231d\", uri=\"/digest-auth/auth/dave/diamond\", algorithm=MD5, response=\"72cdee27bacbfa650470d0428fe7c4e8\", opaque=\"74061f9b6361455b1a7a74c5b075fd98\", qop=auth, nc=00000001, cnonce=\"810eae48ae823e66\""},
+			"Cookie":        {"nonce=0801ff8cf72e952e08643d2dc735231d"},
+			"Authorization": {"Authorization: Digest username=\"dave2\", realm=\"testrealm@host.com\", nonce=\"0801ff8cf72e952e08643d2dc735231d\", uri=\"/digest-auth/auth/dave/diamond\", algorithm=MD5, response=\"72cdee27bacbfa650470d0428fe7c4e8\", opaque=\"74061f9b6361455b1a7a74c5b075fd98\", qop=auth, nc=00000001, cnonce=\"810eae48ae823e66\""},
 		},
 	})
 	s.Equal(401, resp.StatusCode)
@@ -255,7 +261,7 @@ func (s *TSuite) TestIpInXForwardedFor() {
 		Method: "GET",
 		Path:   "ip",
 		Headers: map[string][]string{
-			"X-Forwarded-For": []string{"12.34.56.78"},
+			"X-Forwarded-For": {"12.34.56.78"},
 		},
 	})
 	s.Equal(200, resp.StatusCode)

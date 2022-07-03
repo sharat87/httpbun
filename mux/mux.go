@@ -41,22 +41,17 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		allowedHosts := strings.Split(allowedHostsStr, ",")
 		if !contains(allowedHosts, req.Host) {
 			w.WriteHeader(http.StatusForbidden)
-			fmt.Fprintf(w, "%d Host %q not allowed", http.StatusForbidden, req.Host)
+			_, err := fmt.Fprintf(w, "%d host %q not allowed", http.StatusForbidden, req.Host)
+			if err != nil {
+				log.Printf("Error writing disallow hosts message %v", err)
+			}
 			return
 		}
 	}
 
-	url := &url.URL{
-		Scheme:      req.URL.Scheme,
-		Opaque:      req.URL.Opaque,
-		User:        req.URL.User,
-		Host:        req.URL.Host,
-		Path:        strings.TrimPrefix(req.URL.Path, mux.PathPrefix),
-		RawPath:     req.URL.RawPath,
-		ForceQuery:  req.URL.ForceQuery,
-		RawQuery:    req.URL.RawQuery,
-		Fragment:    req.URL.Fragment,
-		RawFragment: req.URL.RawFragment,
+	if !strings.HasPrefix(req.URL.Path, mux.PathPrefix) {
+		http.NotFound(w, req)
+		return
 	}
 
 	ex := &exchange.Exchange{
@@ -65,7 +60,18 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		Fields:         make(map[string]string),
 		CappedBody:     io.LimitReader(req.Body, 10000),
 		Storage:        mux.Storage,
-		URL:            url,
+		URL: &url.URL{
+			Scheme:      req.URL.Scheme,
+			Opaque:      req.URL.Opaque,
+			User:        req.URL.User,
+			Host:        req.URL.Host,
+			Path:        strings.TrimPrefix(req.URL.Path, mux.PathPrefix),
+			RawPath:     req.URL.RawPath,
+			ForceQuery:  req.URL.ForceQuery,
+			RawQuery:    req.URL.RawQuery,
+			Fragment:    req.URL.Fragment,
+			RawFragment: req.URL.RawFragment,
+		},
 	}
 
 	if ex.URL.Scheme == "" {
@@ -86,8 +92,6 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			ex.URL.Host = forwardedHost
 		}
 	}
-
-	fmt.Printf("Processing URL %q %q.\n", ex.URL, req.URL)
 
 	if ex.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" && ex.URL.Path == "/" {
 		ex.Redirect(w, "https://"+req.Host+req.URL.String(), true)

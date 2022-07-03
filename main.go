@@ -23,6 +23,7 @@ type RunConfig struct {
 	BindProtocol string
 	BindTarget   string
 	PathPrefix   string
+	Database     string
 }
 
 func parseArgs(args []string) RunConfig {
@@ -48,6 +49,13 @@ func parseArgs(args []string) RunConfig {
 		} else if strings.HasPrefix(arg, "--path-prefix=") {
 			rc.PathPrefix = strings.SplitN(arg, "=", 2)[1]
 
+		} else if arg == "--db" {
+			i++
+			rc.Database = args[i]
+
+		} else if strings.HasPrefix(arg, "--db=") {
+			rc.Database = strings.SplitN(arg, "=", 2)[1]
+
 		} else {
 			log.Fatalf("Unknown argument '%v'", arg)
 
@@ -57,7 +65,7 @@ func parseArgs(args []string) RunConfig {
 	}
 
 	if bindTarget == "" {
-		bindTarget, _ = os.LookupEnv("HTTPBUN_BIND")
+		bindTarget = os.Getenv("HTTPBUN_BIND")
 		if bindTarget == "" {
 			bindTarget = "localhost:3090"
 		}
@@ -81,7 +89,7 @@ func parseArgs(args []string) RunConfig {
 
 func main() {
 	runConfig := parseArgs(os.Args[1:])
-	log.Println(runConfig)
+	log.Printf("Startting with config %v", runConfig)
 
 	rand.Seed(time.Now().Unix())
 
@@ -95,10 +103,10 @@ func main() {
 	sslCertFile := os.Getenv("HTTPBUN_SSL_CERT")
 	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
 
-	m := bun.MakeBunHandler(runConfig.PathPrefix)
+	m := bun.MakeBunHandler(runConfig.PathPrefix, runConfig.Database)
 	m.BeforeHandler = func(ex *exchange.Exchange) {
 		ip := ex.HeaderValueLast("X-Forwarded-For")
-		log.Printf("Handling ip=%s %s %s%s", ip, ex.Request.Method, ex.Request.Host, ex.Request.URL.String())
+		log.Printf("From ip=%s %s %s%s", ip, ex.Request.Method, ex.Request.Host, ex.Request.URL.String())
 
 		// Need to set the exact origin, since `*` won't work if request includes credentials.
 		// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
@@ -110,7 +118,7 @@ func main() {
 
 		poweredBy := "httpbun"
 		if Version != "" {
-			poweredBy += " " + Version
+			poweredBy += "/" + Version
 		}
 		ex.ResponseWriter.Header().Set("X-Powered-By", poweredBy)
 	}

@@ -9,225 +9,307 @@
 <h1><img alt=Logo src='icon-180.png'> Httpbun</h1>
 
 <p>This is a service to help easily test the behaviour of HTTP clients like browsers, libraries, developer tools or
-anything else. Heavily inspired by the <a href='http://httpbin.org' target=_blank rel=noopener>httpbin</a> project.
-Canonical version available at
-<a href='https://httpbun.com'>httpbun.com</a>, currently mirrored at <a href='https://httpbun.org'>httpbun.org</a> as
-well.</p>
+    anything else. Heavily inspired by the <a href='http://httpbin.org' target=_blank rel=noopener>httpbin</a> project.
+    Canonical version available at <a href='https://httpbun.com'>httpbun.com</a>,
+    currently mirrored at <a href='https://httpbun.org'>httpbun.org</a> as well.</p>
 
 <p><span style='font-size:1.6em'>★</span> Star this project on <a href='https://github.com/sharat87/httpbun' rel=noopener>GitHub</a>.</p>
 
-<h2 id=h2-endpoints>Endpoints</h2>
+<h2 id=endpoints>Endpoints</h2>
 
 <dl>
 
-<dt id=get>/get</dt>
-<dd>Accepts GET requests and responds with a JSON object with query params, headers and a few other information about
-	the request.</dd>
+    <dt id=get>/get</dt>
+    <dd>Accepts GET requests and responds with a JSON object with query params, headers and a few other information
+        about the request.
+        <details>
+            <summary><span>Examples</span></summary>
+            <pre>curl {{.Host}}/get</pre>
+        </details>
+    </dd>
 
-<dt id=post>/post</dt>
-<dt id=put>/put</dt>
-<dt id=patch>/patch</dt>
-<dt id=delete>/delete</dt>
-<dd>Accepts POST requests and responds with a JSON object with form body, query params, headers and a few other
-	information about the request. There's also <code>/put</code>, <code>/patch</code> and <code>/delete</code>
-	endpoints that behave similarly.</dd>
+    <dt id=post>/post</dt>
+    <dt id=put>/put</dt>
+    <dt id=patch>/patch</dt>
+    <dt id=delete>/delete</dt>
+    <dd>Accepts POST requests and responds with a JSON object with form body, query params, headers and a few other
+        information about the request. There's also <code>/put</code>, <code>/patch</code> and <code>/delete</code>
+        endpoints that behave similarly.
+        <details>
+            <summary><span>Examples</span></summary>
+            <pre>curl -X POST -d 'one=1' {{.Host}}/post</pre>
+            <pre>curl -X POST -d '{"one": 1}' -H 'content-type:application/json' {{.Host}}/post</pre>
+            <pre>curl -X PUT {{.Host}}/put</pre>
+            <pre>curl -X PATCH {{.Host}}/patch</pre>
+            <pre>curl -X DELETE {{.Host}}/delete</pre>
+        </details>
+    </dd>
 
-<dt id=headers>/headers</dt>
-<dd>Responds with a JSON object with a single field, <code>headers</code> which is an object of all the headers in the
-	request, as keys and values. If a header repeats in the request, then its values are concatenated with a comma and
-	treated as a single header value.</dd>
+    <dt id=headers>/headers</dt>
+    <dd>Responds with a JSON object with a single field, <code>headers</code> which is an object of all the headers in
+        the request, as keys and values. If a header repeats in the request, then its values are concatenated with a
+        comma and treated as a single header value.
+        <details>
+            <summary><span>Examples</span></summary>
+            <pre>curl -H 'x-custom: custom header value' {{.Host}}/headers</pre>
+        </details>
+    </dd>
 
 </dl>
 
-<h3 id=h3-auth>Authentication</h3>
+<h3 id=authentication>Authentication</h3>
 
 <dl>
 
-<dt id=basic-auth>/basic-auth/<span class=var>{username}</span>/<span class=var>{password}</span></dt>
-<dd>Requires basic authentication with <code>username</code> and <code>password</code> as the credentials.</dd>
+    <dt id=basic-auth>/basic-auth/<span class=var>{username}</span>/<span class=var>{password}</span></dt>
+    <dd>Requires basic authentication with <code>username</code> and <code>password</code> as the credentials.
+        <details>
+            <summary><span>Examples</span></summary>
+            <pre>curl -H 'Authorization: Basic c2NvdHQ6dGlnZXI=' {{.Host}}/basic-auth/scott/tiger</pre>
+        </details>
+    </dd>
 
-<dt id=bearer>/bearer</dt>
-<dt id=bearer-token>/bearer/<span class=var>{expectedToken}</span></dt>
-<dd>Requires bearer authentication. Which needs an <code>Authorization</code> header in the request, that takes the form
-	<code>Bearer some-auth-token-here</code>. If no <code>expectedToken</code> is given, any token will be treated as
-	valid. If no <code>Authorization</code> header is present in the request, this results in a 401 response.</dd>
+    <dt id=bearer>/bearer</dt>
+    <dt id=bearer-token>/bearer/<span class=var>{expectedToken}</span></dt>
+    <dd>Requires bearer authentication. Which needs an <code>Authorization</code> header in the request, that takes the
+        form <code>Bearer some-auth-token-here</code>. If no <code>expectedToken</code> is given, any token will be
+        treated as valid. If no <code>Authorization</code> header is present in the request, this results in a 401
+        response.
+        <details>
+            <summary><span>Examples</span></summary>
+            <pre>curl -H 'Authorization: Bearer auth_token_here' {{.Host}}/bearer</pre>
+            <pre>curl -H 'Authorization: Bearer expected_token' {{.Host}}/bearer/expected_token</pre>
+        </details>
+    </dd>
 
-<dt id=digest-auth>/digest-auth/<span class=var>{qop}</span>/<span class=var>{username}</span>/<span class=var>{password}</span></dt>
-<dd>Digest authentication. The endpoint <code>/digest-auth/auth/scott/tiger</code> requires to be authenticated with the
-	credentials <code>scott</code> and <code>tiger</code> as username and password. The implementation is based on
-	<a href='https://en.wikipedia.org/wiki/Digest_access_authentication#Example_with_explanation' target=_blank
-		rel=noopener>this example from Wikipedia</a>. The value of <code>qop</code> is usually <code>auth</code>.</dd>
+    <dt id=digest-auth>/digest-auth/<span class=var>{qop}</span>/<span class=var>{username}</span>/<span class=var>{password}</span>
+    </dt>
+    <dd>Digest authentication. The endpoint <code>/digest-auth/auth/scott/tiger</code> requires to be authenticated with
+        the credentials <code>scott</code> and <code>tiger</code> as username and password. The implementation is based
+        on <a href='https://en.wikipedia.org/wiki/Digest_access_authentication#Example_with_explanation' target=_blank
+           rel=noopener>this example from Wikipedia</a>. The value of <code>qop</code> is usually equal to
+        <code>auth</code>.
+    </dd>
 
 </dl>
 
-<h3 id=h3-client-details>Client Details</h3>
+<h3 id=client-details>Client Details</h3>
 
 <dl>
 
-<dt id=ip>/ip</dt>
-<dd>Responds with a JSON object with a single field, <code>origin</code>, with the client's IP Address for value.</dd>
+    <dt id=ip>/ip</dt>
+    <dd>Responds with a JSON object with a single field, <code>origin</code>, with the client's IP Address for value.
+    </dd>
 
-<dt id=user-agent>/user-agent</dt>
-<dd>Responds with a JSON object with a single field, <code>user-agent</code>, with the client's user agent (as present
-	in the <code>User-Agent</code> header) for value.</dd>
+    <dt id=user-agent>/user-agent</dt>
+    <dd>Responds with a JSON object with a single field, <code>user-agent</code>, with the client's user agent (as
+        present
+        in the <code>User-Agent</code> header) for value.
+    </dd>
 
 </dl>
 
-<h3 id=h3-caching>Caching</h3>
+<h3 id=caching>Caching</h3>
 
 <dl>
 
-<dt id=cache>/cache</dt>
-<dd>If the request contains an <code>If-Modified-Since</code> or <code>If-None-Match</code> header, returns a 304
-	response. Otherwise, it behaves the same as <a href=#get><code>/get</code></a> for GET requests,
-	<a href=#post><code>/post</code></a> for POST requests, etc.</dd>
+    <dt id=cache>/cache</dt>
+    <dd>If the request contains an <code>If-Modified-Since</code> or <code>If-None-Match</code> header, returns a 304
+        response. Otherwise, it behaves the same as <a href=#get><code>/get</code></a> for GET requests,
+        <a href=#post><code>/post</code></a> for POST requests, etc.
+    </dd>
 
-<dt id=cache-aged>/cache/<span class=var>{age}</span></dt>
-<dd>Sets a <code>Cache-Control</code> header for <code>age</code> seconds.</dd>
+    <dt id=cache-aged>/cache/<span class=var>{age}</span></dt>
+    <dd>Sets a <code>Cache-Control</code> header for <code>age</code> seconds.</dd>
 
-<dt id=etag>/etag/<span class=var>{etag}</span></dt>
-<dd>Assumes the resource has the given etag and responds to
-	<a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match' target=_blank rel=noopener>If-None-Match</a>
-	and <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match' target=_blank rel=noopener>If-Match</a>
-	headers appropriately.</dd>
+    <dt id=etag>/etag/<span class=var>{etag}</span></dt>
+    <dd>Assumes the resource has the given etag and responds to
+        <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match' target=_blank rel=noopener>If-None-Match</a>
+        and <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match' target=_blank rel=noopener>If-Match</a>
+        headers appropriately.
+    </dd>
 
 </dl>
 
-<h3 id=h3-client-tuned-responses>Client Tuned Response</h3>
+<h3 id=client-tuned-responses>Client Tuned Response</h3>
 
 <dl>
 
-<dt id=status>/status/<span class=var>{codes}</span></dt>
-<dd>Responds with the HTTP status as given by <code>codes</code>. It can be a comma-separated list of multiple status
-	codes, of which a random one is chosen for the response.</dd>
+    <dt id=status>/status/<span class=var>{codes}</span></dt>
+    <dd>Responds with the HTTP status as given by <code>codes</code>. It can be a comma-separated list of multiple
+        status
+        codes, of which a random one is chosen for the response.
+    </dd>
 
-<dt id=response-headers>/response-headers</dt>
-<dd>Sends given query parameters as headers in the response. For example, in the response from
-	<code>/response-headers?one=two</code>, there is a header called <code>One</code>, whose value is <code>two</code>.
-	The response body contains all the headers again, in the form of a JSON object. (This JSON object in the response
-	should be considered deprecated, and may be removed in the future.)</dd>
+    <dt id=response-headers>/response-headers</dt>
+    <dd>Sends given query parameters as headers in the response. For example, in the response from
+        <code>/response-headers?one=two</code>, there is a header called <code>One</code>, whose value is
+        <code>two</code>.
+        The response body contains all the headers again, in the form of a JSON object. (This JSON object in the
+        response
+        should be considered deprecated, and may be removed in the future.)
+    </dd>
 
-<dt id=deny>/deny</dt>
-<dd>Returns page denied by robots.txt rules.</dd>
+    <dt id=deny>/deny</dt>
+    <dd>Returns page denied by robots.txt rules.</dd>
 
-<dt id=html>/html</dt>
-<dd>Returns a small HTML document, sans CSS, sans Javascript. The same response is returned every time.</dd>
+    <dt id=html>/html</dt>
+    <dd>Returns a small HTML document, sans CSS, sans Javascript. The same response is returned every time.</dd>
 
-<dt id=json>/json</dt>
-<dd>Returns a small JSON object. The same response is returned every time.</dd>
+    <dt id=json>/json</dt>
+    <dd>Returns a small JSON object. The same response is returned every time.</dd>
 
-<dt id=robots>/robots.txt</dt>
-<dd>Returns some robots.txt rules.</dd>
+    <dt id=robots>/robots.txt</dt>
+    <dd>Returns some robots.txt rules.</dd>
 
-<dt id=xml>/xml</dt>
-<dd>Returns a small XML document. The same response is returned every time.</dd>
+    <dt id=xml>/xml</dt>
+    <dd>Returns a small XML document. The same response is returned every time.</dd>
 
-<dt id=base64>/base64</dt>
-<dt id=base64-with-input>/base64/<span class=var>{encoded}</span></dt>
-<dd>Decodes the <code>encoded</code> text with base64 encoding scheme. Defaults to
-	<code>SFRUUEJVTiBpcyBhd2Vzb21lciE=</code>.</dd>
+    <dt id=base64>/base64</dt>
+    <dt id=base64-with-input>/base64/<span class=var>{encoded}</span></dt>
+    <dd>Decodes the <code>encoded</code> text with base64 encoding scheme. Defaults to
+        <code>SFRUUEJVTiBpcyBhd2Vzb21lciE=</code>.
+    </dd>
 
-<dt id=bytes>/bytes/<span class=var>{count}</span></dt>
-<dd>Returns <code>count</code> random bytes in the response. The <code>Content-Type</code> header is set to
-	<code>application/octet-stream</code>. The pseudo-randomness algorithem is not to be considered as cryptographically
-	secure.</dd>
+    <dt id=bytes>/bytes/<span class=var>{count}</span></dt>
+    <dd>Returns <code>count</code> random bytes in the response. The <code>Content-Type</code> header is set to
+        <code>application/octet-stream</code>. The pseudo-randomness algorithm is not to be considered as
+        cryptographically
+        secure.
+    </dd>
 
-<dt id=delay>/delay/<span class=var>{seconds}</span></dt>
-<dd>Respond with a delay of <code>seconds</code> seconds. The <code>seconds</code> parameter has to be an integer
-	currently. Fractional delays are not yet supported.</dd>
+    <dt id=delay>/delay/<span class=var>{seconds}</span></dt>
+    <dd>Respond with a delay of <code>seconds</code> seconds. The <code>seconds</code> parameter has to be an integer
+        currently. Fractional delays are not yet supported.
+    </dd>
 
-<dt id=drip>/drip</dt>
-<dt id=drip-lines>/drip-lines</dt>
-<dd>Drips data over a duration, with an interval between each piece of data. The piece of data is the <code>*</code>
-	character. The following query params can be used to configure this endpoint:
-	<ul>
-		<li><code>duration</code>: Time seconds over which to periodically drip the data. <em>Default: 2</em>.
-		<li><code>numbytes</code>: Total number of times to drip the data. <em>Default: 10</em>.
-		<li><code>code</code>: The HTTP status code to be used in ther response. <em>Default: 200</em>.
-		<li><code>delay</code>: An initial delay, in seconds. <em>Default: 2</em>.
-	</ul>
-	When using <code>/drip-lines</code>, a newline character is written after every piece of data.
-</dd>
+    <dt id=drip>/drip</dt>
+    <dt id=drip-lines>/drip-lines</dt>
+    <dd>Drips data over a duration, with an interval between each piece of data. The piece of data is the <code>*</code>
+        character. The following query params can be used to configure this endpoint:
+        <ul>
+            <li><code>duration</code>: Time seconds over which to periodically drip the data. <em>Default: 2</em>.
+            <li><code>numbytes</code>: Total number of times to drip the data. <em>Default: 10</em>.
+            <li><code>code</code>: The HTTP status code to be used in their response. <em>Default: 200</em>.
+            <li><code>delay</code>: An initial delay, in seconds. <em>Default: 2</em>.
+        </ul>
+        When using <code>/drip-lines</code>, a newline character is written after every piece of data.
+    </dd>
 
-<dt id=links>/links/<span class=var>{count}</span></dt>
-<dt id=links-offset>/links/<span class=var>{count}</span>/<span class=var>{offset}</span></dt>
-<dd>Returns an HTML document with <code>count</code> links, which in turn respond with HTML documents with links again.
-	You mostly want to use the first version (<em>i.e.</em>, without <code>offset</code>).</dd>
+    <dt id=links>/links/<span class=var>{count}</span></dt>
+    <dt id=links-offset>/links/<span class=var>{count}</span>/<span class=var>{offset}</span></dt>
+    <dd>Returns an HTML document with <code>count</code> links, which in turn respond with HTML documents with links
+        again.
+        You mostly want to use the first version (<em>i.e.</em>, without <code>offset</code>).
+    </dd>
 
-<dt id=range>/range/<span class=var>{count}</span></dt>
-<dd>Returns <code>count</code> random bytes, that are generated with the <em>same</em> random seed every time. The value
-	of <code>count</code> is capped to 1000.</dd>
+    <dt id=range>/range/<span class=var>{count}</span></dt>
+    <dd>Returns <code>count</code> random bytes, that are generated with the <em>same</em> random seed every time. The
+        value
+        of <code>count</code> is capped to 1000.
+    </dd>
 
 </dl>
 
-<h3 id=h3-cookies>Cookies</h3>
+<h3 id=cookie-data>Cookie Data</h3>
 
 <dl>
 
-<dt id=cookies>/cookies</dt>
-<dd>Returns cookie data from the request headers.</dd>
+    <dt id=cookies>/cookies</dt>
+    <dd>Returns cookie data from the request headers.</dd>
 
-<dt id=cookies-set-query>/cookies/set</dt>
-<dd>Sets cookies for all given query params.</dd>
+    <dt id=cookies-set-query>/cookies/set</dt>
+    <dd>Sets cookies for all given query params.</dd>
 
-<dt id=cookies-set-path>/cookies/set/<span class=var>{name}</span>/<span class=var>{value}</span></dt>
-<dd>Set the cookie <code>name</code> to <code>value</code>.</dd>
+    <dt id=cookies-set-path>/cookies/set/<span class=var>{name}</span>/<span class=var>{value}</span></dt>
+    <dd>Set the cookie <code>name</code> to <code>value</code>.</dd>
 
-<dt id=cookies-delete>/cookies/delete</dt>
-<dd>Returns a response that will delete cookies in the browser. Cookies to be deleted should be given as query params.
-	The values of these query params are ignored and can be empty.</dd>
+    <dt id=cookies-delete>/cookies/delete</dt>
+    <dd>Returns a response that will delete cookies in the browser. Cookies to be deleted should be given as query
+        params.
+        The values of these query params are ignored and can be empty.
+    </dd>
 
 </dl>
 
-<h3 id=h3-redirects>Redirects</h3>
+<h3 id=redirects>Redirects</h3>
 
 <dl>
 
-<dt id=redirect-to>/redirect-to</dt>
-<dd>Responds with a redirect to the URL given by the <code>url</code> query param. If a <code>status_code</code> query
-	param is also given, it is used as the HTTP Status code in the response. Otherwise, 301 is used.</dd>
+    <dt id=redirect-to>/redirect-to</dt>
+    <dd>Responds with a redirect to the URL given by the <code>url</code> query param. If a <code>status_code</code>
+        query
+        param is also given, it is used as the HTTP Status code in the response. Otherwise, 301 is used.
+    </dd>
 
-<dt id=redirect>/redirect/<span class=var>{count}</span></dt>
-<dt id=relative-redirect>/relative-redirect/<span class=var>{count}</span></dt>
-<dd>Redirect <code>count</code> times. For example, <code>/redirect/3</code> will redirect three times before settling
-	on a response. The redirect URLs specified in the <code>Location</code> header will be <em>relative</em> URLs.</dd>
+    <dt id=redirect>/redirect/<span class=var>{count}</span></dt>
+    <dt id=relative-redirect>/relative-redirect/<span class=var>{count}</span></dt>
+    <dd>Redirect <code>count</code> times. For example, <code>/redirect/3</code> will redirect three times before
+        settling
+        on a response. The redirect URLs specified in the <code>Location</code> header will be <em>relative</em> URLs.
+    </dd>
 
-<dt id=absolute-redirect>/absolute-redirect/<span class=var>{count}</span></dt>
-<dd>Redirect <code>count</code> times. For example, <code>/redirect/3</code> will redirect three times before settling
-	on a response. The redirect URLs specified in the <code>Location</code> header will be <em>absolute</em> URLs.</dd>
+    <dt id=absolute-redirect>/absolute-redirect/<span class=var>{count}</span></dt>
+    <dd>Redirect <code>count</code> times. For example, <code>/redirect/3</code> will redirect three times before
+        settling
+        on a response. The redirect URLs specified in the <code>Location</code> header will be <em>absolute</em> URLs.
+    </dd>
 
 </dl>
 
-<h3 id=h3-anything>Anything</h3>
+<h3 id=anything-accept>Anything</h3>
 
 <dl>
 
-<dt id=anything>/anything</dt>
-<dt id=anything-path>/anything/<span class=var>{...}</span></dt>
-<dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but will work with any given method.</dd>
+    <dt id=anything>/anything</dt>
+    <dt id=anything-path>/anything/<span class=var>{...}</span></dt>
+    <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but will work with any given method.</dd>
 
 </dl>
 
-<h3 id=h3-frame>Frame embedding</h3>
+<h3 id=frame>Frame embedding</h3>
 
 <dl>
 
-<dt id=iframe>/iframe?url=<span class=var>{url}</span></dt>
-<dd>Returns a small HTML page with an <code>iframe</code>, pointing to the given <code>url</code>. For example, opening
-	<code>/iframe?url=https://sharats.me</code> in the browser will show a page that tries to open
-	<code>https://sharats.me</code> in an <code>iframe</code>.</dd>
+    <dt id=iframe>/iframe?url=<span class=var>{url}</span></dt>
+    <dd>Returns a small HTML page with an <code>iframe</code>, pointing to the given <code>url</code>. For example,
+        opening
+        <code>/iframe?url=https://sharats.me</code> in the browser will show a page that tries to open
+        <code>https://sharats.me</code> in an <code>iframe</code>.
+    </dd>
 
 </dl>
 
-<h3 id=h3-oauth>OAuth</h3>
+<h3 id=oauth>OAuth</h3>
 
 <dl>
 
-<dt id=oauth-authorize>/oauth/authorize</dt>
-<dd>A dummy OAuth authorization endpoint. It can take a <code>client_id</code>, <code>scope</code>, <code>state</code>
-	etc. that are required for a typical OAuth flow, and present the user a minimal UI to approve or decline, and then
-	redirect to the URL specified by <code>redirect_uri</code> with appropriate details. You may try this out with the
-	<a href='https://oauthdebugger.com' rel=noopener>OAuthDebugger</a> to understand the flow better.</dd>
+    <dt id=oauth-authorize>/oauth/authorize</dt>
+    <dd>A dummy OAuth authorization endpoint. It can take a <code>client_id</code>, <code>scope</code>,
+        <code>state</code>
+        etc. that are required for a typical OAuth flow, and present the user a minimal UI to approve or decline, and
+        then
+        redirect to the URL specified by <code>redirect_uri</code> with appropriate details. You may try this out with
+        the
+        <a href='https://oauthdebugger.com' rel=noopener>OAuthDebugger</a> to understand the flow better.
+    </dd>
+
+</dl>
+
+<h3 id=inbox>Inbox (like requestbin) &beta;</h3>
+
+<dl>
+
+    <dt>/inbox/<span class=var>{name}</span></dt>
+    <dd>Use as a webhook, or make any requests to this endpoint, and they will be recorded and saved for ~10 minutes.
+    These collected requests can be viewed at the view endpoint described below.
+    Please do NOT post sensitive data to this endpoint.
+    </dd>
+
+    <dt>/inbox/<span class=var>{name}</span>/view</dt>
+    <dd>View all requests made to this <span class=var>{name}</span>-ed inbox. Requests are deleted after ~10 minutes.
+    Please do NOT post sensitive data to this endpoint.
+    </dd>
 
 </dl>
 
@@ -244,75 +326,87 @@ If you have Docker installed, the following command is all you need:
 
 <dl>
 
-<dt id=configuration-bind>--bind</dt>
-<dd>The network address to bind the server to. Defaults to <code>localhost:3090</code>, which configures the server to
-	listen on TCP port 3090 on localhost. It can also be set to <code>unix//var/run/httpbun.sock</code>, which
-	configures the server to listen on the <em>Unix socket</em> located at <code>/var/run/httpbun.sock</code>.<br>
-	This option can also be set with the <code>HTTPBUN_BIND</code> environment variable.</dd>
+    <dt id=configuration-bind>--bind</dt>
+    <dd>The network address to bind the server to. Defaults to <code>localhost:3090</code>, which configures the server
+        to
+        listen on TCP port 3090 on localhost. It can also be set to <code>unix//var/run/httpbun.sock</code>, which
+        configures the server to listen on the <em>Unix socket</em> located at <code>/var/run/httpbun.sock</code>.<br>
+        This option can also be set with the <code>HTTPBUN_BIND</code> environment variable.
+    </dd>
 
-<dt id=configuration-path-prefix>--path-prefix</dt>
-<dd>Sets a path prefix for <em>all</em> the paths in Httpbun. For example, if this is set to <code>/the-one</code>, then
-	Httpbun's <code>/get</code> endpoint will be available on <code>/the-one/get</code> instead. Similarly, all other
-	endpoints are also prefixed with the value of this argument.</dd>
+    <dt id=configuration-path-prefix>--path-prefix</dt>
+    <dd>Sets a path prefix for <em>all</em> the paths in Httpbun. For example, if this is set to <code>/the-one</code>,
+        then
+        Httpbun's <code>/get</code> endpoint will be available on <code>/the-one/get</code> instead. Similarly, all
+        other
+        endpoints are also prefixed with the value of this argument.
+    </dd>
 
-<dt id=configuration-allow-hosts>HTTPBUN_ALLOW_HOSTS</dt>
-<dd>A comma separated list of hosts at which this instance will accept connections. Defaults to <code>empty</code>,
-	which means it will allow any. An example: <code>httpbun.com,httpbun.org</code>.</dd>
+    <dt id=configuration-allow-hosts>HTTPBUN_ALLOW_HOSTS</dt>
+    <dd>A comma separated list of hosts at which this instance will accept connections. Defaults to <code>empty</code>,
+        which means it will allow any. An example: <code>httpbun.com,httpbun.org</code>.
+    </dd>
 
-<dt id=configuration-force-https>HTTPBUN_FORCE_HTTPS</dt>
-<dd>If set to <code>1</code>, only accept connections coming in as <code>https</code>. By default, https is not
-	forced.</dd>
+    <dt id=configuration-force-https>HTTPBUN_FORCE_HTTPS</dt>
+    <dd>If set to <code>1</code>, only accept connections coming in as <code>https</code>. By default, https is not
+        forced.
+    </dd>
 
-<dt id=configuration-info-enabled>HTTPBUN_INFO_ENABLED</dt>
-<dd>If set to <code>1</code>, the endpoint <code>/info</code> will be availble, which responds with various server
-	information. By default, <code>/info</code> returns a <code>404 Not Found</code> response.</dd>
+    <dt id=configuration-info-enabled>HTTPBUN_INFO_ENABLED</dt>
+    <dd>If set to <code>1</code>, the endpoint <code>/info</code> will be available, which responds with various server
+        information. By default, <code>/info</code> returns a <code>404 Not Found</code> response.
+    </dd>
 
 </dl>
 
-<h2 id=h2-diff-from-httpbin>Differences from Httpbin</h2>
+<h2 id=diff-from-httpbin>Differences from Httpbin</h2>
 
 <p>Not all endpoints in httpbin are yet supported by httpbun. This will change as I get to spend more time on adding
-those features to httpbun, so be sure to check back.</p>
+    those features to httpbun, so be sure to check back.</p>
 
 <p>The following though, are known incompatibilities with Httpbin, and are intended. These deviations are intentional
-and are unlikely to change (unless of course there's a compelling reason to).</p>
+    and are unlikely to change (unless of course there's a compelling reason to).</p>
 
 <ol>
-	<li>Headers are always in their canonical representation. That is, the header <code>X-One</code> is <em>always</em>
-		represented as <code>X-One</code>, and never as <code>x-one</code> or any other casing.
-	<li>Almost all endpoints work with <em>any</em> HTTP method. Notable exceptions are the method endpoints themselves,
-		<em>i.e.</em>, <code>/get</code>, <code>/post</code>, etc.
-	<li>Not all endpoints are available. This will be fixed eventually, but if you need something, please
-		<a href='https://github.com/sharat87/httpbun/issues/new' rel=noopener>open an issue on GitHub</a>.
-	<li>The bytes returned by <a href=#range>/range</a> are not the same as those from httpbin.
-	<li>HTML characters are escaped in JSON output. This shouldn't cause much affect, <em>usually</em>, but is good to
-		know. <a href='https://stackoverflow.com/a/28596225/151048' rel=noopener target=_blank>Reason and details</a>.
-	<li>Written in Go. Mostly because I wanted to learn Go, and used this project as an excuse.
+    <li>Headers are always in their canonical representation. That is, the header <code>X-One</code> is <em>always</em>
+        represented as <code>X-One</code>, and never as <code>x-one</code> or any other casing.
+    <li>Almost all endpoints work with <em>any</em> HTTP method. Notable exceptions are the method endpoints themselves,
+        <em>i.e.</em>, <code>/get</code>, <code>/post</code>, etc.
+    <li>Not all endpoints are available. This will be fixed eventually, but if you need something, please
+        <a href='https://github.com/sharat87/httpbun/issues/new' rel=noopener>open an issue on GitHub</a>.
+    <li>The bytes returned by <a href=#range>/range</a> are not the same as those from httpbin.
+    <li>HTML characters are escaped in JSON output. This shouldn't cause much affect, <em>usually</em>, but is good to
+        know. <a href='https://stackoverflow.com/a/28596225/151048' rel=noopener target=_blank>Reason and details</a>.
+    <li>Multipart-form data payloads without a boundary set, will respond with a <code>400 Bad Request</code> error,
+        instead of responding with a success, and empty body details like httpbin.
+    <li>Written in Go. Mostly because I wanted to learn Go, and used this project as an excuse.
 </ol>
 
-<h2 id=h2-license>License</h2>
+<h2 id=license>License</h2>
 
 <p>Httpbun is distributed with the Apache-2.0 License. Please refer to the
-<a href='https://github.com/sharat87/httpbun/blob/master/LICENSE' rel=noopener>LICENSE</a> and
-<a href='https://github.com/sharat87/httpbun/blob/master/NOTICE' rel=noopener>NOTICE</a> files present in the
-source distribution of this project.</p>
+    <a href='https://github.com/sharat87/httpbun/blob/master/LICENSE' rel=noopener>LICENSE</a> and
+    <a href='https://github.com/sharat87/httpbun/blob/master/NOTICE' rel=noopener>NOTICE</a> files present in the
+    source distribution of this project.</p>
 
-<h2 id=h2-credits>Credits</h2>
+<h2 id=credits>Credits</h2>
 
 <ol>
-	<li><a href='http://httpbin.org' target=_blank rel=noopener>httpbin</a>. This project might not have existed, if not for httpbin.
-	<li>Go's excellent documentation. This project might've taken a hell of a lot longer, if not for Go's docs.
+    <li><a href='http://httpbin.org' target=_blank rel=noopener>httpbin</a>. This project might not have existed, if not
+        for httpbin.
+    <li>Go's excellent documentation. This project might've taken a hell of a lot longer, if not for Go's docs.
 </ol>
 
 <p>The bun icon was generated using the following graphics from Twitter Twemoji:</p>
 
 <ul>
-	<li>Graphics Title: <code style='background:none'>1fad3.svg</code>.
-	<li>Graphics Author: <a href='https://github.com/twitter/twemoji'>Copyright 2020 Twitter, Inc and other contributors</a>.
-	<li><a href='https://github.com/twitter/twemoji/blob/master/assets/svg/1fad3.svg'>Graphics Source</a>.
-	<li>Graphics License: <a href='https://creativecommons.org/licenses/by/4.0/'>CC-BY 4.0</a>.
+    <li>Graphics Title: <code style='background:none'>1fad3.svg</code>.
+    <li>Graphics Author: <a href='https://github.com/twitter/twemoji'>Copyright 2020 Twitter, Inc and other
+        contributors</a>.
+    <li><a href='https://github.com/twitter/twemoji/blob/master/assets/svg/1fad3.svg'>Graphics Source</a>.
+    <li>Graphics License: <a href='https://creativecommons.org/licenses/by/4.0/'>CC-BY 4.0</a>.
 </ul>
 
 <footer>
-	<p>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a>.</p>
+    <p>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a>.</p>
 </footer>

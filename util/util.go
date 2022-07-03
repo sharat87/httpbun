@@ -2,7 +2,7 @@ package util
 
 import (
 	"crypto/md5"
-	crypto_rand "crypto/rand"
+	cryptoRand "crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -13,7 +13,10 @@ import (
 
 func WriteJson(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintln(w, ToJsonMust(data))
+	_, err := fmt.Fprintln(w, ToJsonMust(data))
+	if err != nil {
+		log.Printf("Error writing JSON to HTTP response %v", err)
+	}
 }
 
 func ToJsonMust(data interface{}) string {
@@ -33,7 +36,7 @@ func Md5sum(text string) string {
 func RandomBytes(n int) []byte {
 	b := make([]byte, n)
 
-	if _, err := crypto_rand.Read(b); err != nil {
+	if _, err := cryptoRand.Read(b); err != nil {
 		fmt.Println("Error: ", err)
 		return []byte{}
 	}
@@ -54,7 +57,7 @@ func Flush(w http.ResponseWriter) bool {
 }
 
 func ParseHeaderValueCsv(content string) []map[string]string {
-	data := []map[string]string{}
+	var data []map[string]string
 	if content == "" {
 		return data
 	}
@@ -62,8 +65,8 @@ func ParseHeaderValueCsv(content string) []map[string]string {
 	runes := []rune(content)
 	length := len(runes)
 	state := "key-pre"
-	key := []rune{}
-	val := []rune{}
+	var key []rune
+	var val []rune
 	isValueJustStarted := false
 	inQuotes := false
 

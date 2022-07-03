@@ -27,18 +27,34 @@ import (
 
 const MaxRedirectCount = 20
 
-func MakeBunHandler(pathPrefix string) mux.Mux {
-	m := mux.Mux{
-		PathPrefix: pathPrefix,
-		Storage:    storage.NewMemoryStorage(),
+func MakeBunHandler(pathPrefix, database string) mux.Mux {
+	var st storage.Storage
+
+	if database == "" {
+		database = "sqlite://httpbun.db?mode=memory"
 	}
 
-	m.HandleFunc("/", func(ex *exchange.Exchange) {
+	if strings.HasPrefix(database, "sqlite://") {
+		st = storage.NewSqliteStorage(strings.TrimPrefix(database, "sqlite://"))
+	} else if strings.HasPrefix(database, "mongodb+srv://") || strings.HasPrefix(database, "mongodb://") {
+		st = storage.NewMongoStorage(database)
+	} else {
+		log.Fatalf("Unsupported database: %q", database)
+	}
+
+	m := mux.Mux{
+		PathPrefix: pathPrefix,
+		Storage:    st,
+	}
+
+	m.HandleFunc(`/(index\.html)?`, func(ex *exchange.Exchange) {
 		ex.ResponseWriter.Header().Set("Content-Type", "text/html")
-		assets.Render("index.html", ex.ResponseWriter, ex.Request)
+		assets.Render("index.html", ex.ResponseWriter, map[string]string{
+			"Host": ex.URL.Host,
+		})
 	})
 
-	m.HandleFunc("/(?P<name>.+\\.(png|ico|webmanifest))", func(ex *exchange.Exchange) {
+	m.HandleFunc(`/(?P<name>.+\.(png|ico|webmanifest))`, func(ex *exchange.Exchange) {
 		assets.WriteAsset(ex.Field("name"), ex.ResponseWriter, ex.Request)
 	})
 
@@ -110,7 +126,6 @@ func handleHealth(ex *exchange.Exchange) {
 }
 
 type InfoJsonOptions struct {
-	Method   bool
 	BodyInfo bool
 }
 
@@ -124,14 +139,12 @@ func handleValidMethod(ex *exchange.Exchange) {
 
 	isNonGet := ex.Request.Method != http.MethodGet
 	sendInfoJson(ex, InfoJsonOptions{
-		Method:   false,
 		BodyInfo: isNonGet,
 	})
 }
 
 func handleAnything(ex *exchange.Exchange) {
 	sendInfoJson(ex, InfoJsonOptions{
-		Method:   true,
 		BodyInfo: true,
 	})
 }
@@ -153,14 +166,11 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 	}
 
 	result := map[string]interface{}{
+		"method":  ex.Request.Method,
 		"args":    args,
 		"headers": ex.ExposableHeadersMap(),
 		"origin":  ex.FindOrigin(),
 		"url":     ex.FullUrl(),
-	}
-
-	if options.Method {
-		result["method"] = ex.Request.Method
 	}
 
 	contentTypeHeaderValue := ex.HeaderValueLast("Content-Type")
@@ -206,7 +216,9 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 			reader := multipart.NewReader(ex.Request.Body, params["boundary"])
 			allFileData, err := reader.ReadForm(32 << 20)
 			if err != nil {
-				fmt.Println("Error reading multipart form data", err)
+				errorMessage := "Error reading multipart form data: " + err.Error()
+				ex.RespondError(http.StatusBadRequest, "multipart-read-error", errorMessage)
+				log.Println(errorMessage)
 				return
 			}
 
@@ -485,7 +497,16 @@ func handleInfo(ex *exchange.Exchange) {
 }
 
 func handleInboxPush(ex *exchange.Exchange) {
-	ex.Storage.PushRequestToInbox(ex.Field("name"), *ex.Request)
+	inboxName := ex.Field("name")
+	if len(inboxName) > 80 {
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		ex.WriteLn("Inbox name too long. Max is 80 characters.")
+		return
+	}
+
+	// Respond immediately, and have the request saved in a separate thread of execution.
+	go ex.Storage.PushRequestToInbox(inboxName, *ex.Request)
+	ex.RespondWithStatus(http.StatusOK)
 }
 
 func handleInboxView(ex *exchange.Exchange) {
