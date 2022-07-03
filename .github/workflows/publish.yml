@@ -27,7 +27,8 @@ jobs:
       - name: Get required Go version
         id: get-go-version
         run: |
-          echo '::set-output name=go_version::'"$(awk '$1 == "golang" { print $2 }' .tool-versions)"
+          set -o xtrace
+          echo '::set-output name=go_version::'"$(awk '$1 == "golang" { print $2 }' "$GITHUB_WORKSPACE/.tool-versions")"
 
       - name: Set up Go
         uses: actions/setup-go@v3
