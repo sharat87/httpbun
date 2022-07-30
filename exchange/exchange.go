@@ -15,23 +15,6 @@ import (
 	"strings"
 )
 
-var hiddenHeaders = map[string]bool{
-	"Total-Route-Time":  true,
-	"Via":               true,
-	"X-Forwarded-For":   true,
-	"X-Forwarded-Port":  true,
-	"X-Forwarded-Proto": true,
-	"X-Request-Id":      true,
-	"X-Request-Start":   true,
-	"CF-Connecting-IP":  true,
-	"True-Client-IP":    true,
-	"CF-RAY":            true,
-	"CF-IPCountry":      true,
-	"CF-Visitor":        true,
-	"CDN-Loop":          true,
-	"CF-Worker":         true,
-}
-
 type Exchange struct {
 	Request        *http.Request
 	ResponseWriter http.ResponseWriter
@@ -107,9 +90,7 @@ func (ex Exchange) HeaderValueLast(name string) string {
 func (ex Exchange) ExposableHeadersMap() map[string]string {
 	headers := make(map[string]string)
 	for name, values := range ex.Request.Header {
-		if !hiddenHeaders[name] {
-			headers[name] = strings.Join(values, ",")
-		}
+		headers[name] = strings.Join(values, ",")
 	}
 	return headers
 }

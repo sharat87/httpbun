@@ -128,11 +128,11 @@ func main() {
 		scheme = "https"
 	}
 
-	log.Printf("Version: %q, Commit: %q, Built: %q.\n", Version, Commit, Date)
+	log.Printf("Version: %q, Commit: %q, Built: %q.", Version, Commit, Date)
 
 	// To get port being used as an int: listener.Addr().(*net.TCPAddr).Port
 	log.Printf(
-		"Serving on %s://%s (set HOST / PORT environment variables to change)...\n",
+		"Serving on %s://%s (set HOST / PORT environment variables to change)...",
 		scheme,
 		listener.Addr(),
 	)
@@ -141,7 +141,7 @@ func main() {
 	if err != nil {
 		hostname = "'Error getting hostname: " + err.Error() + "'"
 	}
-	log.Printf("OS: %q, Arch: %q, Host: %q.\n", runtime.GOOS, runtime.GOARCH, hostname)
+	log.Printf("OS: %q, Arch: %q, Host: %q.", runtime.GOOS, runtime.GOARCH, hostname)
 
 	if sslCertFile == "" {
 		log.Fatal(http.Serve(listener, m))
