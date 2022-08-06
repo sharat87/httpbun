@@ -28,7 +28,7 @@ duplicating efforts. Thanks!
 
 ## Plug
 
-If you are interested in API testing and API development, you should check [Prestige](https://prestigemad.com) out. It is a text based API testing tool with Javascript templating support. It's also open source at [sharat87/prestige](https://github.com/sharat87/prestige).
+If you are interested in API testing and API development, you should check [Prestige](https://prestige.dev) out. It is a text based API testing tool with Javascript templating support. It's also open source at [sharat87/prestige](https://github.com/sharat87/prestige).
 
 ## License
 
