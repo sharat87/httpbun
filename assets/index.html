@@ -364,7 +364,7 @@ If you have Docker installed, the following command is all you need:
 <p>Not all endpoints in httpbin are yet supported by httpbun. This will change as I get to spend more time on adding
     those features to httpbun, so be sure to check back.</p>
 
-<p>The following though, are known incompatibilities with Httpbin, and are intended. These deviations are intentional
+<p>The following though, are known incompatibilities with httpbin, and are intended. These deviations are intentional
     and are unlikely to change (unless of course there's a compelling reason to).</p>
 
 <ol>
@@ -379,6 +379,10 @@ If you have Docker installed, the following command is all you need:
         know. <a href='https://stackoverflow.com/a/28596225/151048' rel=noopener target=_blank>Reason and details</a>.
     <li>Multipart-form data payloads without a boundary set, will respond with a <code>400 Bad Request</code> error,
         instead of responding with a success, and empty body details like httpbin.
+    <li>No hidden headers. <em>All headers</em> are returned in endpoints that send headers in response, like <code>/headers</code>.
+        This is a feature of httpbin, but not httpbun. See
+        <a href='https://github.com/postmanlabs/httpbin/blob/f8ec666b4d1b654e4ff6aedd356f510dcac09f83/httpbin/helpers.py'>
+        this list on httpbin</a>.
     <li>Written in Go. Mostly because I wanted to learn Go, and used this project as an excuse.
 </ol>
 
