@@ -105,8 +105,6 @@ func MakeBunHandler(pathPrefix, database string) mux.Mux {
 
 	m.HandleFunc("/anything\\b.*", handleAnything)
 
-	m.HandleFunc("/iframe", handleFrame)
-
 	m.HandleFunc("/oauth/authorize", handleOauthAuthorize)
 	m.HandleFunc("/oauth/authorize/submit", handleOauthAuthorizeSubmit)
 

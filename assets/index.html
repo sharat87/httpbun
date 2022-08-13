@@ -93,6 +93,20 @@
 
 </dl>
 
+<h3 id=oauth>OAuth2.0</h3>
+
+<dl>
+
+    <dt id=oauth-authorize>/oauth/authorize</dt>
+    <dd>A dummy OAuth2.0 authorization endpoint. It can take a <code>client_id</code>, <code>scope</code>,
+        <code>state</code> etc. that are required for a typical OAuth flow, and present the user a minimal UI to approve
+        or decline, and then redirect to the URL specified by <code>redirect_uri</code> with appropriate details. You
+        may try this out with the <a href='https://oauthdebugger.com' rel=noopener>OAuthDebugger</a> to understand the
+        flow better.
+    </dd>
+
+</dl>
+
 <h3 id=client-details>Client Details</h3>
 
 <dl>
@@ -103,8 +117,7 @@
 
     <dt id=user-agent>/user-agent</dt>
     <dd>Responds with a JSON object with a single field, <code>user-agent</code>, with the client's user agent (as
-        present
-        in the <code>User-Agent</code> header) for value.
+        present in the <code>User-Agent</code> header) for value.
     </dd>
 
 </dl>
@@ -137,8 +150,7 @@
 
     <dt id=status>/status/<span class=var>{codes}</span></dt>
     <dd>Responds with the HTTP status as given by <code>codes</code>. It can be a comma-separated list of multiple
-        status
-        codes, of which a random one is chosen for the response.
+        status codes, of which a random one is chosen for the response.
     </dd>
 
     <dt id=response-headers>/response-headers</dt>
@@ -146,8 +158,7 @@
         <code>/response-headers?one=two</code>, there is a header called <code>One</code>, whose value is
         <code>two</code>.
         The response body contains all the headers again, in the form of a JSON object. (This JSON object in the
-        response
-        should be considered deprecated, and may be removed in the future.)
+        response should be considered deprecated, and may be removed in the future.)
     </dd>
 
     <dt id=deny>/deny</dt>
@@ -174,8 +185,7 @@
     <dt id=bytes>/bytes/<span class=var>{count}</span></dt>
     <dd>Returns <code>count</code> random bytes in the response. The <code>Content-Type</code> header is set to
         <code>application/octet-stream</code>. The pseudo-randomness algorithm is not to be considered as
-        cryptographically
-        secure.
+        cryptographically secure.
     </dd>
 
     <dt id=delay>/delay/<span class=var>{seconds}</span></dt>
@@ -199,14 +209,12 @@
     <dt id=links>/links/<span class=var>{count}</span></dt>
     <dt id=links-offset>/links/<span class=var>{count}</span>/<span class=var>{offset}</span></dt>
     <dd>Returns an HTML document with <code>count</code> links, which in turn respond with HTML documents with links
-        again.
-        You mostly want to use the first version (<em>i.e.</em>, without <code>offset</code>).
+        again. You mostly want to use the first version (<em>i.e.</em>, without <code>offset</code>).
     </dd>
 
     <dt id=range>/range/<span class=var>{count}</span></dt>
     <dd>Returns <code>count</code> random bytes, that are generated with the <em>same</em> random seed every time. The
-        value
-        of <code>count</code> is capped to 1000.
+        value of <code>count</code> is capped to 1000.
     </dd>
 
 </dl>
@@ -226,8 +234,7 @@
 
     <dt id=cookies-delete>/cookies/delete</dt>
     <dd>Returns a response that will delete cookies in the browser. Cookies to be deleted should be given as query
-        params.
-        The values of these query params are ignored and can be empty.
+        params. The values of these query params are ignored and can be empty.
     </dd>
 
 </dl>
@@ -238,21 +245,20 @@
 
     <dt id=redirect-to>/redirect-to</dt>
     <dd>Responds with a redirect to the URL given by the <code>url</code> query param. If a <code>status_code</code>
-        query
-        param is also given, it is used as the HTTP Status code in the response. Otherwise, 301 is used.
+        query param is also given, it is used as the HTTP Status code in the response. Otherwise, 301 is used.
     </dd>
 
     <dt id=redirect>/redirect/<span class=var>{count}</span></dt>
     <dt id=relative-redirect>/relative-redirect/<span class=var>{count}</span></dt>
     <dd>Redirect <code>count</code> times. For example, <code>/redirect/3</code> will redirect three times before
-        settling
-        on a response. The redirect URLs specified in the <code>Location</code> header will be <em>relative</em> URLs.
+        settling on a response. The redirect URLs specified in the <code>Location</code> header will be
+        <em>relative</em> URLs.
     </dd>
 
     <dt id=absolute-redirect>/absolute-redirect/<span class=var>{count}</span></dt>
     <dd>Redirect <code>count</code> times. For example, <code>/redirect/3</code> will redirect three times before
-        settling
-        on a response. The redirect URLs specified in the <code>Location</code> header will be <em>absolute</em> URLs.
+        settling on a response. The redirect URLs specified in the <code>Location</code> header will be
+        <em>absolute</em> URLs.
     </dd>
 
 </dl>
@@ -263,36 +269,7 @@
 
     <dt id=anything>/anything</dt>
     <dt id=anything-path>/anything/<span class=var>{...}</span></dt>
-    <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but will work with any given method.</dd>
-
-</dl>
-
-<h3 id=frame>Frame embedding</h3>
-
-<dl>
-
-    <dt id=iframe>/iframe?url=<span class=var>{url}</span></dt>
-    <dd>Returns a small HTML page with an <code>iframe</code>, pointing to the given <code>url</code>. For example,
-        opening
-        <code>/iframe?url=https://sharats.me</code> in the browser will show a page that tries to open
-        <code>https://sharats.me</code> in an <code>iframe</code>.
-    </dd>
-
-</dl>
-
-<h3 id=oauth>OAuth</h3>
-
-<dl>
-
-    <dt id=oauth-authorize>/oauth/authorize</dt>
-    <dd>A dummy OAuth authorization endpoint. It can take a <code>client_id</code>, <code>scope</code>,
-        <code>state</code>
-        etc. that are required for a typical OAuth flow, and present the user a minimal UI to approve or decline, and
-        then
-        redirect to the URL specified by <code>redirect_uri</code> with appropriate details. You may try this out with
-        the
-        <a href='https://oauthdebugger.com' rel=noopener>OAuthDebugger</a> to understand the flow better.
-    </dd>
+    <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but works on any method.</dd>
 
 </dl>
 
@@ -315,12 +292,9 @@
 
 <h2 id=self-hosting>Self Hosting</h2>
 
-Running your own version of Httpbun is super-easy, particularly because it doesn't <em>require</em> any other services
-like a database or even a disk to write to.
+<p>With Docker: <code>docker run -p 8008:80 ghcr.io/sharat87/httpbun</code></p>
 
-If you have Docker installed, the following command is all you need:
-
-<pre>docker run -p 8008:80 ghcr.io/sharat87/httpbun</pre>
+<p>With source: <code>make run</code></p>
 
 <h2 id=configuration>Configuration</h2>
 
@@ -361,19 +335,13 @@ If you have Docker installed, the following command is all you need:
 
 <h2 id=diff-from-httpbin>Differences from Httpbin</h2>
 
-<p>Not all endpoints in httpbin are yet supported by httpbun. This will change as I get to spend more time on adding
-    those features to httpbun, so be sure to check back.</p>
-
-<p>The following though, are known incompatibilities with httpbin, and are intended. These deviations are intentional
-    and are unlikely to change (unless of course there's a compelling reason to).</p>
-
 <ol>
+    <li>Not all endpoints are available. If you need something, please
+        <a href='https://github.com/sharat87/httpbun/issues/new' rel=noopener>open an issue on GitHub</a>.
     <li>Headers are always in their canonical representation. That is, the header <code>X-One</code> is <em>always</em>
         represented as <code>X-One</code>, and never as <code>x-one</code> or any other casing.
     <li>Almost all endpoints work with <em>any</em> HTTP method. Notable exceptions are the method endpoints themselves,
         <em>i.e.</em>, <code>/get</code>, <code>/post</code>, etc.
-    <li>Not all endpoints are available. This will be fixed eventually, but if you need something, please
-        <a href='https://github.com/sharat87/httpbun/issues/new' rel=noopener>open an issue on GitHub</a>.
     <li>The bytes returned by <a href=#range>/range</a> are not the same as those from httpbin.
     <li>HTML characters are escaped in JSON output. This shouldn't cause much affect, <em>usually</em>, but is good to
         know. <a href='https://stackoverflow.com/a/28596225/151048' rel=noopener target=_blank>Reason and details</a>.
@@ -383,7 +351,7 @@ If you have Docker installed, the following command is all you need:
         This is a feature of httpbin, but not httpbun. See
         <a href='https://github.com/postmanlabs/httpbin/blob/f8ec666b4d1b654e4ff6aedd356f510dcac09f83/httpbin/helpers.py'>
         this list on httpbin</a>.
-    <li>Written in Go. Mostly because I wanted to learn Go, and used this project as an excuse.
+    <li>Written in Go.
 </ol>
 
 <h2 id=license>License</h2>
