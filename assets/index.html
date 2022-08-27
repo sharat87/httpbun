@@ -339,7 +339,8 @@
     <li>Not all endpoints are available. If you need something, please
         <a href='https://github.com/sharat87/httpbun/issues/new' rel=noopener>open an issue on GitHub</a>.
     <li>Headers are always in their canonical representation. That is, the header <code>X-One</code> is <em>always</em>
-        represented as <code>X-One</code>, and never as <code>x-one</code> or any other casing.
+        represented as <code>X-One</code>, and never as <code>x-one</code> or any other casing. This <em>may</em> change
+        in the future.
     <li>Almost all endpoints work with <em>any</em> HTTP method. Notable exceptions are the method endpoints themselves,
         <em>i.e.</em>, <code>/get</code>, <code>/post</code>, etc.
     <li>The bytes returned by <a href=#range>/range</a> are not the same as those from httpbin.
@@ -349,7 +350,7 @@
         instead of responding with a success, and empty body details like httpbin.
     <li>No hidden headers. <em>All headers</em> are returned in endpoints that send headers in response, like <code>/headers</code>.
         This is a feature of httpbin, but not httpbun. See
-        <a href='https://github.com/postmanlabs/httpbin/blob/f8ec666b4d1b654e4ff6aedd356f510dcac09f83/httpbin/helpers.py'>
+        <a href='https://github.com/postmanlabs/httpbin/blob/f8ec666b4d1b654e4ff6aedd356f510dcac09f83/httpbin/helpers.py#L40'>
         this list on httpbin</a>.
     <li>Written in Go.
 </ol>
