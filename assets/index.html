@@ -154,6 +154,7 @@
     </dd>
 
     <dt id=response-headers>/response-headers</dt>
+    <dt id=respond-with-headers>/respond-with-headers</dt>
     <dd>Sends given query parameters as headers in the response. For example, in the response from
         <code>/response-headers?one=two</code>, there is a header called <code>One</code>, whose value is
         <code>two</code>.
@@ -243,12 +244,13 @@
 
 <dl>
 
+    <dt id=redirect>/redirect</dt>
     <dt id=redirect-to>/redirect-to</dt>
     <dd>Responds with a redirect to the URL given by the <code>url</code> query param. If a <code>status_code</code>
         query param is also given, it is used as the HTTP Status code in the response. Otherwise, 301 is used.
     </dd>
 
-    <dt id=redirect>/redirect/<span class=var>{count}</span></dt>
+    <dt id=redirect-count>/redirect/<span class=var>{count}</span></dt>
     <dt id=relative-redirect>/relative-redirect/<span class=var>{count}</span></dt>
     <dd>Redirect <code>count</code> times. For example, <code>/redirect/3</code> will redirect three times before
         settling on a response. The redirect URLs specified in the <code>Location</code> header will be
@@ -383,3 +385,5 @@
 <footer>
     <p>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a>.</p>
 </footer>
+
+<script async defer data-website-id=4d4a9aeb-e527-4df2-95c9-5e7f4eb32e0c src='https://u.sharats.me/main.js'></script>

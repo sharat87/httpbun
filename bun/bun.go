@@ -79,7 +79,7 @@ func MakeBunHandler(pathPrefix, database string) mux.Mux {
 	m.HandleFunc("/cache", handleCache)
 	m.HandleFunc("/cache/(?P<age>\\d+)", handleCacheControl)
 	m.HandleFunc("/etag/(?P<etag>[^/]+)", handleEtag)
-	m.HandleFunc("/response-headers", handleResponseHeaders)
+	m.HandleFunc("/(response|respond-with)-headers?/?", handleResponseHeaders)
 
 	m.HandleFunc("/deny", handleSampleRobotsDeny)
 	m.HandleFunc("/html", handleSampleHtml)
@@ -99,7 +99,7 @@ func MakeBunHandler(pathPrefix, database string) mux.Mux {
 	m.HandleFunc("/cookies/delete", handleCookiesDelete)
 	m.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
 
-	m.HandleFunc("/redirect-to/?", handleRedirectTo)
+	m.HandleFunc("/redirect(-to)?/?", handleRedirectTo)
 	m.HandleFunc("/(relative-)?redirect/(?P<count>\\d+)", handleRelativeRedirect)
 	m.HandleFunc("/absolute-redirect/(?P<count>\\d+)", handleAbsoluteRedirect)
 
