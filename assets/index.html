@@ -93,20 +93,6 @@
 
 </dl>
 
-<h3 id=oauth>OAuth2.0</h3>
-
-<dl>
-
-    <dt id=oauth-authorize>/oauth/authorize</dt>
-    <dd>A dummy OAuth2.0 authorization endpoint. It can take a <code>client_id</code>, <code>scope</code>,
-        <code>state</code> etc. that are required for a typical OAuth flow, and present the user a minimal UI to approve
-        or decline, and then redirect to the URL specified by <code>redirect_uri</code> with appropriate details. You
-        may try this out with the <a href='https://oauthdebugger.com' rel=noopener>OAuthDebugger</a> to understand the
-        flow better.
-    </dd>
-
-</dl>
-
 <h3 id=client-details>Client Details</h3>
 
 <dl>
@@ -272,23 +258,6 @@
     <dt id=anything>/anything</dt>
     <dt id=anything-path>/anything/<span class=var>{...}</span></dt>
     <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but works on any method.</dd>
-
-</dl>
-
-<h3 id=inbox>Inbox (like requestbin) &beta;</h3>
-
-<dl>
-
-    <dt>/inbox/<span class=var>{name}</span></dt>
-    <dd>Use as a webhook, or make any requests to this endpoint, and they will be recorded and saved for ~10 minutes.
-    These collected requests can be viewed at the view endpoint described below.
-    Please do NOT post sensitive data to this endpoint.
-    </dd>
-
-    <dt>/inbox/<span class=var>{name}</span>/view</dt>
-    <dd>View all requests made to this <span class=var>{name}</span>-ed inbox. Requests are deleted after ~10 minutes.
-    Please do NOT post sensitive data to this endpoint.
-    </dd>
 
 </dl>
 

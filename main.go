@@ -23,7 +23,6 @@ type RunConfig struct {
 	BindProtocol string
 	BindTarget   string
 	PathPrefix   string
-	Database     string
 }
 
 func parseArgs(args []string) RunConfig {
@@ -48,13 +47,6 @@ func parseArgs(args []string) RunConfig {
 
 		} else if strings.HasPrefix(arg, "--path-prefix=") {
 			rc.PathPrefix = strings.SplitN(arg, "=", 2)[1]
-
-		} else if arg == "--db" {
-			i++
-			rc.Database = args[i]
-
-		} else if strings.HasPrefix(arg, "--db=") {
-			rc.Database = strings.SplitN(arg, "=", 2)[1]
 
 		} else {
 			log.Fatalf("Unknown argument '%v'", arg)
@@ -103,7 +95,7 @@ func main() {
 	sslCertFile := os.Getenv("HTTPBUN_SSL_CERT")
 	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
 
-	m := bun.MakeBunHandler(runConfig.PathPrefix, runConfig.Database)
+	m := bun.MakeBunHandler(runConfig.PathPrefix)
 	m.BeforeHandler = func(ex *exchange.Exchange) {
 		ip := ex.HeaderValueLast("X-Forwarded-For")
 		log.Printf("From ip=%s %s %s%s", ip, ex.Request.Method, ex.Request.Host, ex.Request.URL.String())

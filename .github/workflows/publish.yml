@@ -35,16 +35,6 @@ jobs:
       - name: Build
         run: make build-for-prod build-for-docker
 
-      - name: Upload package to S3
-        if: |
-          success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-2
-        run: |
-          make upload-package
-
       - name: Push Docker images to GHCR
         if: |
           success() && github.event_name == 'push' && github.ref == 'refs/heads/master'

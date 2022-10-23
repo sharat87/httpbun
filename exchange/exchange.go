@@ -2,7 +2,6 @@ package exchange
 
 import (
 	"fmt"
-	"github.com/sharat87/httpbun/storage"
 	"github.com/sharat87/httpbun/util"
 	"io"
 	"io/ioutil"
@@ -21,7 +20,6 @@ type Exchange struct {
 	Fields         map[string]string
 	CappedBody     io.Reader
 	Origin         *string
-	Storage        storage.Storage
 	URL            *url.URL
 }
 
@@ -112,7 +110,7 @@ func (ex Exchange) FullUrl() string {
 }
 
 // FindOrigin Find the IP address of the client that made this Exchange.
-func (ex *Exchange) FindOrigin() string {
+func (ex Exchange) FindOrigin() string {
 	if ex.Origin != nil {
 		return *ex.Origin
 	}
@@ -134,7 +132,7 @@ func (ex *Exchange) FindOrigin() string {
 		}
 	}
 
-	// Get it from Nginx's `$proxy_add_x_forwarded_for` based configuration.
+	// Get it from NGINX `$proxy_add_x_forwarded_for` based configuration.
 	// Heroku also sends the actual IP in the `X-Forwarded-For` header:
 	// <https://devcenter.heroku.com/articles/http-routing#heroku-headers>
 	// AWS' ALBs also use the same header:
@@ -152,7 +150,6 @@ func (ex *Exchange) FindOrigin() string {
 		}
 	}
 
-	ex.Origin = &ipStr
 	return ipStr
 }
 

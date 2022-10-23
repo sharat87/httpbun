@@ -3,7 +3,6 @@ package mux
 import (
 	"fmt"
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/storage"
 	"io"
 	"log"
 	"net/http"
@@ -19,7 +18,6 @@ type Mux struct {
 	PathPrefix    string
 	BeforeHandler HandlerFn
 	Routes        []route
-	Storage       storage.Storage
 }
 
 type route struct {
@@ -60,7 +58,6 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		ResponseWriter: w,
 		Fields:         make(map[string]string),
 		CappedBody:     io.LimitReader(req.Body, 10000),
-		Storage:        mux.Storage,
 		URL: &url.URL{
 			Scheme:      req.URL.Scheme,
 			Opaque:      req.URL.Opaque,

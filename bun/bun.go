@@ -7,9 +7,7 @@ import (
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/mux"
-	"github.com/sharat87/httpbun/storage"
 	"github.com/sharat87/httpbun/util"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -27,24 +25,9 @@ import (
 
 const MaxRedirectCount = 20
 
-func MakeBunHandler(pathPrefix, database string) mux.Mux {
-	var st storage.Storage
-
-	if database == "" {
-		database = "sqlite://httpbun.db?mode=memory"
-	}
-
-	if strings.HasPrefix(database, "sqlite://") {
-		st = storage.NewSqliteStorage(strings.TrimPrefix(database, "sqlite://"))
-	} else if strings.HasPrefix(database, "mongodb+srv://") || strings.HasPrefix(database, "mongodb://") {
-		st = storage.NewMongoStorage(database)
-	} else {
-		log.Fatalf("Unsupported database: %q", database)
-	}
-
+func MakeBunHandler(pathPrefix string) mux.Mux {
 	m := mux.Mux{
 		PathPrefix: pathPrefix,
-		Storage:    st,
 	}
 
 	m.HandleFunc(`/(index\.html)?`, func(ex *exchange.Exchange) {
@@ -104,13 +87,6 @@ func MakeBunHandler(pathPrefix, database string) mux.Mux {
 	m.HandleFunc("/absolute-redirect/(?P<count>\\d+)", handleAbsoluteRedirect)
 
 	m.HandleFunc("/anything\\b.*", handleAnything)
-
-	m.HandleFunc("/oauth/authorize", handleOauthAuthorize)
-	m.HandleFunc("/oauth/authorize/submit", handleOauthAuthorizeSubmit)
-
-	const inboxPat = "/inbox/(?P<name>[-_a-z0-9]+?)"
-	m.HandleFunc(inboxPat, handleInboxPush)
-	m.HandleFunc(inboxPat+"/view", handleInboxView)
 
 	if os.Getenv("HTTPBUN_INFO_ENABLED") == "1" {
 		m.HandleFunc("/info", handleInfo)
@@ -492,26 +468,4 @@ func handleInfo(ex *exchange.Exchange) {
 	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
 		"hostname": hostname,
 	})
-}
-
-func handleInboxPush(ex *exchange.Exchange) {
-	inboxName := ex.Field("name")
-	if len(inboxName) > 80 {
-		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		ex.WriteLn("Inbox name too long. Max is 80 characters.")
-		return
-	}
-
-	// Respond immediately, and have the request saved in a separate thread of execution.
-	go ex.Storage.PushRequestToInbox(inboxName, *ex.Request)
-	ex.RespondWithStatus(http.StatusOK)
-}
-
-func handleInboxView(ex *exchange.Exchange) {
-	name := ex.Field("name")
-	entries := ex.Storage.GetFromInbox(name)
-	assets.Render("inbox-view.html", ex.ResponseWriter, template.JS(util.ToJsonMust(map[string]interface{}{
-		"name":    name,
-		"entries": entries,
-	})))
 }
