@@ -82,13 +82,13 @@
         </details>
     </dd>
 
-    <dt id=digest-auth>/digest-auth/<span class=var>{qop}</span>/<span class=var>{username}</span>/<span class=var>{password}</span>
+    <dt id=digest-auth>/digest-auth/<span class=var>{username}</span>/<span class=var>{password}</span>
+    <dt id=digest-auth-qop>/digest-auth/<span class=var>{qop}</span>/<span class=var>{username}</span>/<span class=var>{password}</span>
     </dt>
     <dd>Digest authentication. The endpoint <code>/digest-auth/auth/scott/tiger</code> requires to be authenticated with
         the credentials <code>scott</code> and <code>tiger</code> as username and password. The implementation is based
         on <a href='https://en.wikipedia.org/wiki/Digest_access_authentication#Example_with_explanation' target=_blank
-           rel=noopener>this example from Wikipedia</a>. The value of <code>qop</code> is usually equal to
-        <code>auth</code>.
+           rel=noopener>this example from Wikipedia</a>. The value of <code>qop</code> defaults to <code>auth</code>.
     </dd>
 
 </dl>
@@ -98,6 +98,7 @@
 <dl>
 
     <dt id=ip>/ip</dt>
+    <dt id=ip-txt>/ip.txt</dt>
     <dd>Responds with a JSON object with a single field, <code>origin</code>, with the client's IP Address for value.
     </dd>
 

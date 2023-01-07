@@ -48,6 +48,11 @@ func handleAuthBearer(ex *exchange.Exchange) {
 
 func handleAuthDigest(ex *exchange.Exchange) {
 	expectedQop, expectedUsername, expectedPassword := ex.Field("qop"), ex.Field("user"), ex.Field("pass")
+
+	if expectedQop == "" {
+		expectedQop = "auth"
+	}
+
 	newNonce := util.RandomString()
 	opaque := util.RandomString()
 	realm := "Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"" + newNonce +

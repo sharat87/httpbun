@@ -54,9 +54,10 @@ func MakeBunHandler(pathPrefix string) mux.Mux {
 	m.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic)
 	m.HandleFunc("/bearer(/(?P<tok>\\w+))?", handleAuthBearer)
 	m.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest)
+	m.HandleFunc("/digest-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest)
 
 	m.HandleFunc("/status/(?P<codes>[\\d,]+)", handleStatus)
-	m.HandleFunc("/ip", handleIp)
+	m.HandleFunc("/ip(\\.(?P<format>txt|json))?", handleIp)
 	m.HandleFunc("/user-agent", handleUserAgent)
 
 	m.HandleFunc("/cache", handleCache)
@@ -263,9 +264,13 @@ func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce,
 }
 
 func handleIp(ex *exchange.Exchange) {
-	util.WriteJson(ex.ResponseWriter, map[string]string{
-		"origin": ex.FindOrigin(),
-	})
+	if ex.Field("format") == "txt" {
+		ex.Write(ex.FindOrigin())
+	} else {
+		util.WriteJson(ex.ResponseWriter, map[string]string{
+			"origin": ex.FindOrigin(),
+		})
+	}
 }
 
 func handleUserAgent(ex *exchange.Exchange) {
