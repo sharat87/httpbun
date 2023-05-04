@@ -241,7 +241,7 @@ func handleStatus(ex *exchange.Exchange) {
 	codeNum, _ := strconv.Atoi(code)
 	ex.ResponseWriter.WriteHeader(codeNum)
 
-	acceptHeader := ex.HeaderValueLast("accept")
+	acceptHeader := ex.HeaderValueLast("Accept")
 
 	if acceptHeader == "application/json" {
 		util.WriteJson(ex.ResponseWriter, map[string]interface{}{
@@ -249,7 +249,7 @@ func handleStatus(ex *exchange.Exchange) {
 			"description": http.StatusText(codeNum),
 		})
 
-	} else {
+	} else if acceptHeader == "text/plain" {
 		ex.WriteF("%d %s", codeNum, http.StatusText(codeNum))
 
 	}
