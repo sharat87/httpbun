@@ -364,7 +364,7 @@ func handleDecodeBase64(ex *exchange.Exchange) {
 func handleRandomBytes(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("content-type", "application/octet-stream")
 	n, _ := strconv.Atoi(ex.Field("size"))
-	ex.Write(util.RandomBytes(n))
+	ex.WriteBytes(util.RandomBytes(n))
 }
 
 func handleDelayedResponse(ex *exchange.Exchange) {
@@ -435,7 +435,7 @@ func handleLinks(ex *exchange.Exchange) {
 	ex.Write("<html><head><title>Links</title></head><body>")
 	for i := 0; i < count; i++ {
 		if offset == i {
-			ex.Write(i)
+			ex.Write(strconv.Itoa(i))
 		} else {
 			ex.WriteF("<a href='/links/%d/%d'>%d</a>", count, i, i)
 		}
@@ -460,7 +460,7 @@ func handleRange(ex *exchange.Exchange) {
 		r := rand.New(rand.NewSource(42))
 		b := make([]byte, count)
 		r.Read(b)
-		ex.Write(b)
+		ex.WriteBytes(b)
 	}
 }
 

@@ -162,16 +162,23 @@ func (ex Exchange) BodyString() string {
 	}
 }
 
-func (ex Exchange) Write(content any) {
+func (ex Exchange) Write(content string) {
 	_, err := fmt.Fprint(ex.ResponseWriter, content)
 	if err != nil {
 		log.Printf("Error writing to exchange response: %v\n", err)
 	}
 }
 
-func (ex Exchange) WriteLn(content any) {
+func (ex Exchange) WriteLn(content string) {
 	ex.Write(content)
 	ex.Write("\n")
+}
+
+func (ex Exchange) WriteBytes(content []byte) {
+	_, err := ex.ResponseWriter.Write(content)
+	if err != nil {
+		log.Printf("Error writing bytes to exchange response: %v\n", err)
+	}
 }
 
 func (ex Exchange) WriteF(content string, vars ...any) {
