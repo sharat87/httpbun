@@ -22,7 +22,7 @@ type TSuite struct {
 }
 
 func (s *TSuite) SetupSuite() {
-	s.Mux = MakeBunHandler("")
+	s.Mux = MakeBunHandler("", "", "")
 }
 
 func (s *TSuite) ExecRequest(request tu.R) (http.Response, []byte) {

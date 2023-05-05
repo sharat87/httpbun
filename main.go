@@ -95,7 +95,7 @@ func main() {
 	sslCertFile := os.Getenv("HTTPBUN_SSL_CERT")
 	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
 
-	m := bun.MakeBunHandler(runConfig.PathPrefix)
+	m := bun.MakeBunHandler(runConfig.PathPrefix, Commit, Date)
 	m.BeforeHandler = func(ex *exchange.Exchange) {
 		ip := ex.HeaderValueLast("X-Forwarded-For")
 		log.Printf("From ip=%s %s %s%s", ip, ex.Request.Method, ex.Request.Host, ex.Request.URL.String())

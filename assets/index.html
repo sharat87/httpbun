@@ -24,7 +24,7 @@
         about the request.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl {{.Host}}/get</pre>
+            <pre>curl {{ .host }}/get</pre>
         </details>
     </dd>
 
@@ -37,11 +37,11 @@
         endpoints that behave similarly.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl -X POST -d 'one=1' {{.Host}}/post</pre>
-            <pre>curl -X POST -d '{"one": 1}' -H 'content-type:application/json' {{.Host}}/post</pre>
-            <pre>curl -X PUT {{.Host}}/put</pre>
-            <pre>curl -X PATCH {{.Host}}/patch</pre>
-            <pre>curl -X DELETE {{.Host}}/delete</pre>
+            <pre>curl -X POST -d 'one=1' {{ .host }}/post</pre>
+            <pre>curl -X POST -d '{"one": 1}' -H 'content-type:application/json' {{ .host }}/post</pre>
+            <pre>curl -X PUT {{ .host }}/put</pre>
+            <pre>curl -X PATCH {{ .host }}/patch</pre>
+            <pre>curl -X DELETE {{ .host }}/delete</pre>
         </details>
     </dd>
 
@@ -51,7 +51,7 @@
         comma and treated as a single header value.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl -H 'x-custom: custom header value' {{.Host}}/headers</pre>
+            <pre>curl -H 'x-custom: custom header value' {{ .host }}/headers</pre>
         </details>
     </dd>
 
@@ -65,7 +65,7 @@
     <dd>Requires basic authentication with <code>username</code> and <code>password</code> as the credentials.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl -H 'Authorization: Basic c2NvdHQ6dGlnZXI=' {{.Host}}/basic-auth/scott/tiger</pre>
+            <pre>curl -H 'Authorization: Basic c2NvdHQ6dGlnZXI=' {{ .host }}/basic-auth/scott/tiger</pre>
         </details>
     </dd>
 
@@ -77,8 +77,8 @@
         response.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl -H 'Authorization: Bearer auth_token_here' {{.Host}}/bearer</pre>
-            <pre>curl -H 'Authorization: Bearer expected_token' {{.Host}}/bearer/expected_token</pre>
+            <pre>curl -H 'Authorization: Bearer auth_token_here' {{ .host }}/bearer</pre>
+            <pre>curl -H 'Authorization: Bearer expected_token' {{ .host }}/bearer/expected_token</pre>
         </details>
     </dd>
 
@@ -353,8 +353,11 @@
 </ul>
 
 <footer>
-    <p>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a>.</p>
+    <p>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a>.
+        {{- if .commit }}
+        Built from <a href="https://github.com/sharat87/httpbun/commit/{{.Commit}}">{{ .commitShort }}</a> on {{ .date }}.
+        {{- end }}</p>
 </footer>
 
 <script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
-<noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
+<noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade"></noscript>

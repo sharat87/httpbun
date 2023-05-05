@@ -126,3 +126,10 @@ func ParseHeaderValueCsv(content string) []map[string]string {
 
 	return data
 }
+
+func CommitHashShorten(hash string) string {
+	if len(hash) > 7 {
+		return hash[:7]
+	}
+	return hash
+}
