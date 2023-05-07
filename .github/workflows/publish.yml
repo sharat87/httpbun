@@ -39,13 +39,14 @@ jobs:
         if: |
           success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          tag=${GITHUB_REF##*/}
-          docker build -t ghcr.io/${{ github.actor }}/httpbun:$tag .
+          tag="${{ github.ref_name }}"
+          docker build -t im -t "ghcr.io/${{ github.actor }}/httpbun:$tag" .
           if [[ $tag == master ]]; then
-            docker build -t ghcr.io/${{ github.actor }}/httpbun:latest .
+            docker tag im "ghcr.io/${{ github.actor }}/httpbun:latest"
+            docker tag im "ghcr.io/${{ github.actor }}/httpbun:${{ github.sha }}"
           fi
-          docker login ghcr.io --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
-          docker push --all-tags ghcr.io/${{ github.actor }}/httpbun
+          docker login ghcr.io --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}"
+          docker push --all-tags "ghcr.io/${{ github.actor }}/httpbun"
 
       - name: "Upload artifacts to the release"
         if: |
