@@ -47,17 +47,3 @@ jobs:
           fi
           docker login ghcr.io --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}"
           docker push --all-tags "ghcr.io/${{ github.actor }}/httpbun"
-
-      - name: "Upload artifacts to the release"
-        if: |
-          success() && github.event_name == 'release'
-        run: |
-          make build-all VERSION="$(echo "${{ github.event.release.tag_name }}" | sed 's/^v//')"
-          for file in bin/httpbun-darwin-amd64 bin/httpbun-linux-amd64 bin/httpbun-windows-amd64.exe; do
-            curl --request POST \
-              --header "Content-Type: $(file -b --mime-type $file)" \
-              --header "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              --header "Accept: application/vnd.github.v3+json" \
-              --upload-file "$file" \
-              "https://uploads.${{ github.server_url }}/repos/${{ github.repository }}/releases/${{ github.event.release.id }}/assets?name=$(basename "$file")"
-          done
