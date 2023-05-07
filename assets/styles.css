@@ -119,25 +119,7 @@ footer {
 
 summary {
 	cursor: pointer;
-	display: flex;
-	justify-content: space-between;
-	margin: 6px;
-}
-
-summary > :first-child:before {
-	content: "▶";
-	margin-right: 9px;
-	font-size: .7em;
-	display: inline-block;
-	width: 12px;
-}
-
-details[open] > summary {
-	font-weight: bold;
-}
-
-details[open] > summary > :first-child:before {
-	content: "▼";
+	margin: 6px 0;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -55,6 +55,15 @@
         </details>
     </dd>
 
+    <dt id=payload>/payload</dt>
+    <dd>Responds with the same <code>Content-Type</code> header as the request and the body of the request as is.
+        <details>
+            <summary><span>Examples</span></summary>
+            <pre>curl -H 'Content-Type: text/plain' -d 'plain body' {{ .host }}/payload</pre>
+            <pre>curl -H 'Content-Type: application/json' -d '{"a": 1}' {{ .host }}/payload</pre>
+        </details>
+    </dd>
+
 </dl>
 
 <h3 id=authentication>Authentication</h3>

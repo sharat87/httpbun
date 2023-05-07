@@ -54,6 +54,8 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 
 	m.HandleFunc("/headers", handleHeaders)
 
+	m.HandleFunc("/payload", handlePayload)
+
 	m.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic)
 	m.HandleFunc("/bearer(/(?P<tok>\\w+))?", handleAuthBearer)
 	m.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest)
@@ -131,6 +133,19 @@ func handleHeaders(ex *exchange.Exchange) {
 	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
 		"headers": ex.ExposableHeadersMap(),
 	})
+}
+
+func handlePayload(ex *exchange.Exchange) {
+	if contentTypeValues, ok := ex.Request.Header["Content-Type"]; ok {
+		ex.ResponseWriter.Header().Set("Content-Type", contentTypeValues[0])
+	}
+
+	bodyBytes, err := ioutil.ReadAll(ex.CappedBody)
+	if err != nil {
+		fmt.Println("Error reading request payload", err)
+	}
+
+	ex.WriteBytes(bodyBytes)
 }
 
 func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
