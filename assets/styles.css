@@ -39,6 +39,16 @@ h2, h3 {
 	margin: 2em 0 .5em;
 }
 
+:is(h2, h3) > a {
+	display: none;
+	font-size: .5em;
+	text-decoration: none;
+}
+
+:is(h2, h3):hover > a {
+	display: initial;
+}
+
 a {
 	color: #00f;
 }

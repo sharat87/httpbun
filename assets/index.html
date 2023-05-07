@@ -325,8 +325,6 @@
     <li>Almost all endpoints work with <em>any</em> HTTP method. Notable exceptions are the method endpoints themselves,
         <em>i.e.</em>, <code>/get</code>, <code>/post</code>, etc.
     <li>The bytes returned by <a href=#range>/range</a> are not the same as those from httpbin.
-    <li>HTML characters are escaped in JSON output. This shouldn't cause much affect, <em>usually</em>, but is good to
-        know. <a href='https://stackoverflow.com/a/28596225/151048' rel=noopener target=_blank>Reason and details</a>.
     <li>Multipart-form data payloads without a boundary set, will respond with a <code>400 Bad Request</code> error,
         instead of responding with a success, and empty body details like httpbin.
     <li>No hidden headers. <em>All headers</em> are returned in endpoints that send headers in response, like <code>/headers</code>.

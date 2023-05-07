@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"crypto/md5"
 	cryptoRand "crypto/rand"
 	"encoding/hex"
@@ -13,18 +14,22 @@ import (
 
 func WriteJson(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	_, err := fmt.Fprintln(w, ToJsonMust(data))
+	_, err := w.Write(ToJsonMust(data))
 	if err != nil {
 		log.Printf("Error writing JSON to HTTP response %v", err)
 	}
 }
 
-func ToJsonMust(data interface{}) string {
-	b, err := json.MarshalIndent(data, "", "  ")
+func ToJsonMust(data interface{}) []byte {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	err := encoder.Encode(data)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return string(b)
+	return bytes.TrimSpace(buffer.Bytes())
 }
 
 func Md5sum(text string) string {

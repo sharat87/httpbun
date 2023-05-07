@@ -353,7 +353,7 @@ func handleResponseHeaders(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("Content-Type", "application/json")
 	data["Content-Type"] = "application/json"
 
-	jsonContent := ""
+	var jsonContent []byte
 
 	for {
 		jsonContent = util.ToJsonMust(data)
@@ -364,7 +364,7 @@ func handleResponseHeaders(ex *exchange.Exchange) {
 		data["Content-Length"] = newContentLength
 	}
 
-	ex.WriteLn(jsonContent)
+	ex.WriteBytes(jsonContent)
 }
 
 func handleDecodeBase64(ex *exchange.Exchange) {
