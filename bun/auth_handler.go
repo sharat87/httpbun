@@ -92,7 +92,11 @@ func handleAuthDigest(ex *exchange.Exchange) {
 			Value: newNonce,
 		})
 		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
-		ex.WriteF("Error: %q\n", err.Error())
+		errMessage := err.Error()
+		if errMessage == "http: named cookie not present" {
+			errMessage = "Missing nonce cookie"
+		}
+		ex.WriteF("Error: %q\n", errMessage)
 		return
 	}
 
