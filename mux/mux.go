@@ -33,7 +33,6 @@ func (mux *Mux) HandleFunc(pattern string, fn HandlerFn) {
 }
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	log.Printf("Headers incomind %+v", req.Header)
 	// TODO: Don't parse HTTPBUN_ALLOW_HOSTS on every request.
 	allowedHostsStr := os.Getenv("HTTPBUN_ALLOW_HOSTS")
 	if allowedHostsStr != "" {

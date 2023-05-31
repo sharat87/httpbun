@@ -112,8 +112,12 @@ type InfoJsonOptions struct {
 func handleValidMethod(ex *exchange.Exchange) {
 	allowedMethod := strings.TrimPrefix(ex.URL.Path, "/")
 	if !strings.EqualFold(ex.Request.Method, allowedMethod) {
-		ex.ResponseWriter.Header().Set("Allow", allowedMethod)
-		ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
+		allowedMethods := strings.ToUpper(allowedMethod) + ", OPTIONS"
+		ex.ResponseWriter.Header().Set("Allow", allowedMethods)
+		ex.ResponseWriter.Header().Set("Access-Control-Allow-Methods", allowedMethods)
+		if ex.Request.Method != http.MethodOptions {
+			ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
+		}
 		return
 	}
 
