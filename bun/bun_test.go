@@ -261,7 +261,7 @@ func (s *TSuite) TestIpInXForwardedFor() {
 		Method: "GET",
 		Path:   "ip",
 		Headers: map[string][]string{
-			"X-Forwarded-For": {"12.34.56.78"},
+			"X-Httpbun-Forwarded-For": {"12.34.56.78"},
 		},
 	})
 	s.Equal(200, resp.StatusCode)

@@ -166,7 +166,7 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 		"method":  ex.Request.Method,
 		"args":    args,
 		"headers": ex.ExposableHeadersMap(),
-		"origin":  ex.FindOrigin(),
+		"origin":  ex.FindIncomingIPAddress(),
 		"url":     ex.FullUrl(),
 	}
 
@@ -286,11 +286,12 @@ func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce,
 }
 
 func handleIp(ex *exchange.Exchange) {
+	origin := ex.FindIncomingIPAddress()
 	if ex.Field("format") == "txt" {
-		ex.Write(ex.FindOrigin())
+		ex.Write(origin)
 	} else {
 		util.WriteJson(ex.ResponseWriter, map[string]string{
-			"origin": ex.FindOrigin(),
+			"origin": origin,
 		})
 	}
 }

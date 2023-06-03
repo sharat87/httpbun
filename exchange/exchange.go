@@ -19,7 +19,6 @@ type Exchange struct {
 	ResponseWriter http.ResponseWriter
 	Fields         map[string]string
 	CappedBody     io.Reader
-	Origin         *string
 	URL            *url.URL
 }
 
@@ -88,13 +87,19 @@ func (ex Exchange) HeaderValueLast(name string) string {
 func (ex Exchange) ExposableHeadersMap() map[string]string {
 	headers := make(map[string]string)
 	for name, values := range ex.Request.Header {
-		headers[name] = strings.Join(values, ",")
+		if !strings.HasPrefix(name, "X-Httpbun-") {
+			headers[name] = strings.Join(values, ",")
+		}
 	}
 	return headers
 }
 
 func (ex Exchange) FindScheme() string {
-	if os.Getenv("HTTPBUN_SSL_CERT") != "" || ex.HeaderValueLast("X-Forwarded-Proto") == "https" {
+	if forwardedProto := ex.HeaderValueLast("X-Httpbun-Forwarded-Proto"); forwardedProto != "" {
+		return forwardedProto
+	}
+
+	if os.Getenv("HTTPBUN_SSL_CERT") != "" || ex.HeaderValueLast("X-Httpbun-Forwarded-Proto") == "https" {
 		return "https"
 	}
 
@@ -109,37 +114,10 @@ func (ex Exchange) FullUrl() string {
 	return ex.FindScheme() + "://" + ex.Request.Host + ex.Request.URL.String()
 }
 
-// FindOrigin Find the IP address of the client that made this Exchange.
-func (ex Exchange) FindOrigin() string {
-	if ex.Origin != nil {
-		return *ex.Origin
-	}
-
+// FindIncomingIPAddress Find the IP address of the client that made this Exchange.
+func (ex Exchange) FindIncomingIPAddress() string {
 	// Compare with <http://httpbin.org/ip> or <http://checkip.amazonaws.com/> or <http://getmyip.co.in/>.
-	ipStr := ""
-
-	// The Forwarded header is a standard that Nginx can be configured to use.
-	// Ref: <https://www.nginx.com/resources/wiki/start/topics/examples/forwarded/>.
-	forwardedHeader := ex.HeaderValueLast("Forwarded")
-	if forwardedHeader != "" {
-		specs := util.ParseHeaderValueCsv(forwardedHeader)
-		// Pick the last one among all `for` keys.
-		for i := len(specs) - 1; i >= 0; i-- {
-			ipStr = specs[i]["for"]
-			if ipStr != "" {
-				break
-			}
-		}
-	}
-
-	// Get it from NGINX `$proxy_add_x_forwarded_for` based configuration.
-	// Heroku also sends the actual IP in the `X-Forwarded-For` header:
-	// <https://devcenter.heroku.com/articles/http-routing#heroku-headers>
-	// AWS' ALBs also use the same header:
-	// <https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html#http-headers>
-	if ipStr == "" {
-		ipStr = ex.HeaderValueLast("X-Forwarded-For")
-	}
+	ipStr := ex.HeaderValueLast("X-Httpbun-Forwarded-For")
 
 	// If that's also not available, get it directly from the connection.
 	if ipStr == "" {
