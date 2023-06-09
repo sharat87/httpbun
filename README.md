@@ -4,18 +4,14 @@
   Httpbun
 </h1>
 
-Hosted version available at [httpbun.com](https://httpbun.com) and mirrored at [httpbun.org](https://httpbun.org). Run
-with docker as `docker run -p 80:80 ghcr.io/sharat87/httpbun`.
-
 This is an HTTP service with endpoints that are useful when testing any HTTP client, like a browser, a library, or any
 API developer tool. It's heavily inspired by [httpbin](https://httpbin.org).
 
-I wrote this as an attempt to learn Golang, and because I needed something like this, with a few extra features, from
-httpbin. Besides, it looks like httpbin isn't being as actively developed as it once was, and it's become _very_ slow
-for me in recent years. I was a heavy user of httpbin, so I decided to build something similar.
+Hosted at [httpbun.com](https://httpbun.com) and [httpbun.org](https://httpbun.org). Run your own with:
 
-**Why not fork/fix httpbin?**: No big reason really. I was also looking to develop something to learn Golang, so this
-was a good fit.
+```sh
+docker run -p 80:80 ghcr.io/sharat87/httpbun
+```
 
 A project by [Shri](https://sharats.me).
 
