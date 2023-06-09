@@ -493,7 +493,14 @@ func handleInfo(ex *exchange.Exchange) {
 		hostname = "Error: " + err.Error()
 	}
 
+	data := make(map[string]interface{})
+	for _, e := range os.Environ() {
+		name, value, _ := strings.Cut(e, "=")
+		data[name] = value
+	}
+
 	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
 		"hostname": hostname,
+		"env":      data,
 	})
 }
