@@ -79,7 +79,7 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 
 	m.HandleFunc("/base64(/(?P<encoded>.*))?", handleDecodeBase64)
 	m.HandleFunc("/bytes/(?P<size>\\d+)", handleRandomBytes)
-	m.HandleFunc("/delay/(?P<delay>\\d+)", handleDelayedResponse)
+	m.HandleFunc("/delay/(?P<delay>[^/]+)", handleDelayedResponse)
 	m.HandleFunc("/drip(-(?P<mode>lines))?", handleDrip)
 	m.HandleFunc("/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?", handleLinks)
 	m.HandleFunc("/range/(?P<count>\\d+)/?", handleRange)
@@ -391,8 +391,21 @@ func handleRandomBytes(ex *exchange.Exchange) {
 }
 
 func handleDelayedResponse(ex *exchange.Exchange) {
-	n, _ := strconv.Atoi(ex.Field("delay"))
-	time.Sleep(time.Duration(n) * time.Second)
+	n, err := strconv.ParseFloat(ex.Field("delay"), 32)
+
+	if err != nil {
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		ex.WriteLn("Invalid delay: " + err.Error())
+		return
+	}
+
+	if n > 20 {
+		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+		ex.WriteLn("Delay can't be greater than 20")
+		return
+	}
+
+	time.Sleep(time.Duration(n * float64(time.Second)))
 }
 
 func handleDrip(ex *exchange.Exchange) {
