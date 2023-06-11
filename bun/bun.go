@@ -380,7 +380,7 @@ func handleDecodeBase64(ex *exchange.Exchange) {
 	if decoded, err := base64.StdEncoding.DecodeString(encoded); err != nil {
 		ex.Write("Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
 	} else {
-		ex.Write(string(decoded))
+		ex.WriteBytes(decoded)
 	}
 }
 
@@ -394,14 +394,12 @@ func handleDelayedResponse(ex *exchange.Exchange) {
 	n, err := strconv.ParseFloat(ex.Field("delay"), 32)
 
 	if err != nil {
-		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		ex.WriteLn("Invalid delay: " + err.Error())
+		ex.RespondBadRequest("Invalid delay: " + err.Error())
 		return
 	}
 
 	if n > 20 {
-		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		ex.WriteLn("Delay can't be greater than 20")
+		ex.RespondBadRequest("Delay can't be greater than 20")
 		return
 	}
 
@@ -415,29 +413,25 @@ func handleDrip(ex *exchange.Exchange) {
 
 	duration, err := ex.QueryParamInt("duration", 2)
 	if err != nil {
-		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		ex.WriteLn(err.Error())
+		ex.RespondBadRequest(err.Error())
 		return
 	}
 
 	numbytes, err := ex.QueryParamInt("numbytes", 10)
 	if err != nil {
-		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		ex.WriteLn(err.Error())
+		ex.RespondBadRequest(err.Error())
 		return
 	}
 
 	code, err := ex.QueryParamInt("code", 200)
 	if err != nil {
-		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		ex.WriteLn(err.Error())
+		ex.RespondBadRequest(err.Error())
 		return
 	}
 
 	delay, err := ex.QueryParamInt("delay", 2)
 	if err != nil {
-		ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-		ex.WriteLn(err.Error())
+		ex.RespondBadRequest(err.Error())
 		return
 	}
 

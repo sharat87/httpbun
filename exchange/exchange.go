@@ -168,6 +168,11 @@ func (ex Exchange) RespondWithStatus(errorStatus int) {
 	ex.WriteLn(http.StatusText(errorStatus))
 }
 
+func (ex Exchange) RespondBadRequest(message string, vars ...any) {
+	ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
+	ex.WriteF(message, vars)
+}
+
 func (ex Exchange) RespondError(status int, code, detail string) {
 	ex.ResponseWriter.WriteHeader(status)
 	util.WriteJson(ex.ResponseWriter, map[string]any{
