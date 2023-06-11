@@ -170,7 +170,7 @@ func (ex Exchange) RespondWithStatus(errorStatus int) {
 
 func (ex Exchange) RespondBadRequest(message string, vars ...any) {
 	ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-	ex.WriteF(message, vars)
+	ex.WriteF(message, vars...)
 }
 
 func (ex Exchange) RespondError(status int, code, detail string) {
