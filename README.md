@@ -1,6 +1,5 @@
 <h1>
-  <img alt=Logo src='https://github.com/sharat87/httpbun/raw/master/assets/icon-180.png' height=90px>
-  <br>
+  <img alt=Logo src='https://github.com/sharat87/httpbun/raw/master/assets/icon-32.png'>
   Httpbun
 </h1>
 
