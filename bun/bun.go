@@ -94,6 +94,8 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 
 	m.HandleFunc("/anything\\b.*", handleAnything)
 
+	m.HandleFunc("/mix\\b(?P<conf>.*)", handleMix)
+
 	if os.Getenv("HTTPBUN_INFO_ENABLED") == "1" {
 		m.HandleFunc("/info", handleInfo)
 	}
@@ -503,4 +505,128 @@ func handleInfo(ex *exchange.Exchange) {
 	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
 		"hostname": hostname,
 	})
+}
+
+func handleMix(ex *exchange.Exchange) {
+	path := ex.Field("conf")
+	query := ex.URL.RawQuery
+
+	var source, itemSep string
+	var unescape func(string) (string, error)
+
+	if path != "" {
+		source = path
+		itemSep = "/"
+		unescape = url.PathUnescape
+	} else {
+		source = query
+		itemSep = "&"
+		unescape = url.QueryUnescape
+	}
+
+	actions := url.Values{}
+
+	for _, part := range strings.Split(source, itemSep) {
+		if part == "" {
+			continue
+		}
+		key, value, _ := strings.Cut(part, "=")
+		key, err := unescape(key)
+		if err != nil {
+			ex.RespondBadRequest(err.Error())
+			return
+		}
+		value, err = unescape(value)
+		if err != nil {
+			ex.RespondBadRequest(err.Error())
+			return
+		}
+		actions[key] = append(actions[key], value)
+	}
+
+	status := http.StatusOK
+	headers := url.Values{}
+	cookies := map[string]string{}
+	var deleteCookies []string
+	var payload []byte
+
+	if actions.Has("h") {
+		for _, headerSpec := range actions["h"] {
+			name, value, _ := strings.Cut(headerSpec, ":")
+			name = http.CanonicalHeaderKey(name)
+			headers.Add(name, value)
+		}
+	}
+
+	if actions.Has("c") {
+		for _, headerSpec := range actions["c"] {
+			name, value, isFound := strings.Cut(headerSpec, ":")
+			if isFound {
+				cookies[name] = value
+			} else {
+				deleteCookies = append(deleteCookies, name)
+			}
+		}
+	}
+
+	if actions.Has("r") {
+		status = http.StatusTemporaryRedirect
+		headers.Set("Location", actions.Get("r"))
+	}
+
+	if actions.Has("s") {
+		var err error
+		status, err = strconv.Atoi(actions.Get("s"))
+		if err != nil {
+			ex.RespondBadRequest(err.Error())
+			return
+		}
+	}
+
+	if actions.Has("d") {
+		seconds, err := strconv.ParseFloat(actions.Get("d"), 32)
+		if err != nil {
+			ex.RespondBadRequest(err.Error())
+			return
+		}
+		if seconds > 10 {
+			ex.RespondBadRequest("Delay must be less than 10 seconds.")
+			return
+		}
+		time.Sleep(time.Duration(seconds * float64(time.Second)))
+	}
+
+	if actions.Has("b64") {
+		if decoded, err := base64.StdEncoding.DecodeString(actions.Get("b64")); err != nil {
+			ex.RespondBadRequest("Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
+			return
+		} else {
+			payload = decoded
+		}
+	}
+
+	for name, value := range headers {
+		ex.ResponseWriter.Header()[name] = value
+	}
+
+	for name, value := range cookies {
+		http.SetCookie(ex.ResponseWriter, &http.Cookie{
+			Name:  name,
+			Value: value,
+			Path:  "/",
+		})
+	}
+
+	for _, name := range deleteCookies {
+		http.SetCookie(ex.ResponseWriter, &http.Cookie{
+			Name:    name,
+			Value:   "",
+			Path:    "/",
+			Expires: time.Unix(0, 0),
+			MaxAge:  -1, // This will produce `Max-Age: 0` in the cookie.
+		})
+	}
+
+	ex.ResponseWriter.WriteHeader(status)
+	ex.WriteBytes(payload)
 }

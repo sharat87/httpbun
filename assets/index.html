@@ -45,6 +45,10 @@
         </details>
     </dd>
 
+    <dt id=anything>/anything</dt>
+    <dt>/anything/<span class=var>{...}</span></dt>
+    <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but works on any method.</dd>
+
     <dt id=headers>/headers</dt>
     <dd>Responds with a JSON object with a single field, <code>headers</code> which is an object of all the headers in
         the request, as keys and values. If a header repeats in the request, then its values are concatenated with a
@@ -261,13 +265,23 @@
 
 </dl>
 
-<h3 id=anything-accept>Anything <a href="#anything">&para;</a></h3>
+<h3 id=mix>Mix <a href="#mix">&para;</a></h3>
 
 <dl>
 
-    <dt id=anything>/anything</dt>
-    <dt id=anything-path>/anything/<span class=var>{...}</span></dt>
-    <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but works on any method.</dd>
+    <dt>/mix</dt>
+    <dd><small>(Beta, subject to API changes)</small><br>
+    Combine behaviour from multiple of other endpoints, into one. For example, if we want an endpoint with some
+    response headers, as well as a specific status code, we can use:
+        <pre>/mix/s=400/h=x-custom-header:some-value</pre>
+    The <code>s=</code> and <code>h=</code> are directives that <code>/mix</code> understands. Supported directives are:
+    <ol>
+        <li><code>s</code>: HTTP response status code.
+        <li><code>h</code>: Set a response header, in the form <code>name:value</code>.
+        <li><code>c</code>: Set a cookie, in the form <code>name:value</code>.
+        <li><code>r</code>: Set a redirect URL. Uses status code 307. To change, use <code>s=</code> directive.
+    </ol>
+    </dd>
 
 </dl>
 
