@@ -240,6 +240,9 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 
 		} else {
 			data = ex.BodyBytes()
+			if utf8.Valid(data.([]byte)) {
+				data = string(data.([]byte))
+			}
 
 		}
 
