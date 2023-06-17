@@ -223,14 +223,25 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 
 			for name, fileHeaders := range allFileData.File {
 				fileHeader := fileHeaders[0]
+				var content any
 				if f, err := fileHeader.Open(); err != nil {
 					fmt.Println("Error opening fileHeader", err)
-				} else if content, err := ioutil.ReadAll(f); err != nil {
+				} else if content, err = ioutil.ReadAll(f); err != nil {
 					fmt.Println("Error reading from fileHeader", err)
-				} else if utf8.Valid(content) {
-					files[name] = string(content)
 				} else {
-					files[name] = content
+					if utf8.Valid(content.([]byte)) {
+						content = string(content.([]byte))
+					}
+					headers := map[string]string{}
+					for name, values := range fileHeader.Header {
+						headers[name] = strings.Join(values, ",")
+					}
+					files[name] = map[string]any{
+						"filename": fileHeader.Filename,
+						"size":     fileHeader.Size,
+						"headers":  headers,
+						"content":  content,
+					}
 				}
 			}
 
