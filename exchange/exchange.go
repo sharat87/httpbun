@@ -131,13 +131,17 @@ func (ex Exchange) FindIncomingIPAddress() string {
 	return ipStr
 }
 
-func (ex Exchange) BodyString() string {
+func (ex Exchange) BodyBytes() []byte {
 	if bodyBytes, err := ioutil.ReadAll(ex.CappedBody); err != nil {
 		fmt.Println("Error reading request payload", err)
-		return ""
+		return nil
 	} else {
-		return string(bodyBytes)
+		return bodyBytes
 	}
+}
+
+func (ex Exchange) BodyString() string {
+	return string(ex.BodyBytes())
 }
 
 func (ex Exchange) Write(content string) {
@@ -171,6 +175,7 @@ func (ex Exchange) RespondWithStatus(errorStatus int) {
 func (ex Exchange) RespondBadRequest(message string, vars ...any) {
 	ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
 	ex.WriteF(message, vars...)
+	ex.WriteBytes([]byte("\n"))
 }
 
 func (ex Exchange) RespondError(status int, code, detail string) {

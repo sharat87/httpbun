@@ -239,7 +239,7 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 			}
 
 		} else {
-			data = ex.BodyString()
+			data = util.JSONSafePayload(ex.BodyBytes(), contentType)
 
 		}
 

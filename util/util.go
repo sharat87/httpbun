@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"crypto/md5"
 	cryptoRand "crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"unicode/utf8"
 )
 
 func WriteJson(w http.ResponseWriter, data interface{}) {
@@ -29,7 +31,7 @@ func ToJsonMust(data interface{}) []byte {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return bytes.TrimSpace(buffer.Bytes())
+	return append(bytes.TrimSpace(buffer.Bytes()), '\n')
 }
 
 func Md5sum(text string) string {
@@ -130,6 +132,20 @@ func ParseHeaderValueCsv(content string) []map[string]string {
 	}
 
 	return data
+}
+
+func JSONSafePayload(payload []byte, contentType string) string {
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+
+	if utf8.Valid(payload) {
+		return string(payload)
+		// In httpbin, this `data` is then JSON-encoded. If that fails, we again fall back to the base64 method
+		// below. Not sure why that's necessary yet.
+	} else {
+		return "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(payload)
+	}
 }
 
 func CommitHashShorten(hash string) string {
