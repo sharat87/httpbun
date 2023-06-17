@@ -257,6 +257,10 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 
 		}
 
+		if data == nil {
+			data = ""
+		}
+
 		result["form"] = form
 		result["data"] = data
 		result["json"] = jsonData
