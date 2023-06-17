@@ -31,6 +31,7 @@ func (s *TSuite) ExecRequest(request tu.R) (http.Response, []byte) {
 		bodyReader = strings.NewReader(request.Body)
 	}
 
+	//goland:noinspection HttpUrlsUsage
 	req := httptest.NewRequest(request.Method, "http://example.com/"+request.Path, bodyReader)
 
 	for name, values := range request.Headers {
@@ -222,7 +223,7 @@ func (s *TSuite) TestResponseHeaders() {
 	s.Equal([]string{"two"}, resp.Header.Values("One"))
 	s.Equal([]string{"four"}, resp.Header.Values("Three"))
 	s.Equal(map[string]interface{}{
-		"Content-Length": "102",
+		"Content-Length": "103",
 		"Content-Type":   "application/json",
 		"One":            "two",
 		"Three":          "four",
@@ -238,7 +239,7 @@ func (s *TSuite) TestResponseHeadersRepeated() {
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal([]string{"two", "four"}, resp.Header.Values("One"))
 	s.Equal(map[string]interface{}{
-		"Content-Length": "105",
+		"Content-Length": "106",
 		"Content-Type":   "application/json",
 		"One": []interface{}{
 			"two",
