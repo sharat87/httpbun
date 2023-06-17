@@ -183,10 +183,10 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 	}
 
 	if options.BodyInfo {
-		form := make(map[string]interface{})
-		var jsonData *interface{}
-		files := make(map[string]interface{})
-		data := ""
+		form := make(map[string]any)
+		var jsonData *any
+		files := make(map[string]any)
+		var data any // string or []byte
 
 		if contentType == "application/x-www-form-urlencoded" {
 			body := ex.BodyString()
@@ -239,7 +239,7 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 			}
 
 		} else {
-			data = util.JSONSafePayload(ex.BodyBytes(), contentType)
+			data = ex.BodyBytes()
 
 		}
 
