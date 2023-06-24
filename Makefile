@@ -33,7 +33,7 @@ test:
 	for i in {1..9}; do curl --fail --silent --show-error "$$HTTPBUN_BIND" >/dev/null; sleep .5; done; \
 	HTTPBUN_ALLOW_HOSTS=example.com \
 		go test ./...; \
-	kill $$server_pid
+	kill $$server_pid || true
 
 fmt:
 	@go fmt ./...
