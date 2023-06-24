@@ -25,10 +25,15 @@ build-for-prod:
 	cd bin && tar -caf ../package.tar.gz httpbun-linux-amd64
 
 test:
-	@HTTPBUN_ALLOW_HOSTS=example.com \
-		go test ./...
-	# TODO: API tests as messed up. Need to rewrite them in Go.
-	#cd api-tests && ./run-all.sh
+	export HTTPBUN_BIND=localhost:30001; \
+	go run . &>test-server.log & \
+	server_pid="$$!"; \
+	echo "Starting server at PID $$server_pid"; \
+	sleep 2; \
+	for i in {1..9}; do curl --fail --silent --show-error "$$HTTPBUN_BIND" >/dev/null; sleep .5; done; \
+	HTTPBUN_ALLOW_HOSTS=example.com \
+		go test ./...; \
+	kill $$server_pid
 
 fmt:
 	@go fmt ./...
