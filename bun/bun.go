@@ -26,17 +26,23 @@ import (
 const MaxRedirectCount = 20
 
 func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
+	pathPrefix = strings.Trim(pathPrefix, "/")
+	if pathPrefix != "" {
+		pathPrefix = "/" + pathPrefix
+	}
+
 	m := mux.Mux{
 		PathPrefix: pathPrefix,
 	}
 
-	m.HandleFunc(`/(index\.html)?`, func(ex *exchange.Exchange) {
+	m.HandleFunc(`(/(index\.html)?)?`, func(ex *exchange.Exchange) {
 		ex.ResponseWriter.Header().Set("Content-Type", "text/html")
 		assets.Render("index.html", ex.ResponseWriter, map[string]string{
 			"host":        ex.URL.Host,
 			"commit":      commit,
 			"commitShort": util.CommitHashShorten(commit),
 			"date":        date,
+			"pathPrefix":  pathPrefix,
 		})
 	})
 
