@@ -3,7 +3,7 @@ LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$$(git rev-parse 
 run:
 	go mod tidy
 	go fmt ./...
-	@HTTPBUN_INFO_ENABLED=1 CGO_ENABLED=0 \
+	@CGO_ENABLED=0 \
 		go run $(LDFLAGS) main.go
 
 build:
@@ -26,7 +26,6 @@ build-for-prod:
 
 test:
 	@HTTPBUN_ALLOW_HOSTS=example.com \
-		HTTPBUN_INFO_ENABLED=1 \
 		go test ./...
 	# TODO: API tests as messed up. Need to rewrite them in Go.
 	#cd api-tests && ./run-all.sh

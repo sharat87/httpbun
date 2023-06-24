@@ -96,9 +96,7 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 
 	m.HandleFunc("/mix\\b(?P<conf>.*)", handleMix)
 
-	if os.Getenv("HTTPBUN_INFO_ENABLED") == "1" {
-		m.HandleFunc("/info", handleInfo)
-	}
+	m.HandleFunc("/info", handleInfo)
 
 	return m
 }
