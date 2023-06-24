@@ -90,11 +90,6 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	if ex.HeaderValueLast("X-Forwarded-Proto") == "http" && os.Getenv("HTTPBUN_FORCE_HTTPS") == "1" && ex.URL.Path == "/" {
-		ex.Redirect(w, "https://"+req.Host+req.URL.String(), true)
-		return
-	}
-
 	for _, route := range mux.Routes {
 		match := route.Pattern.FindStringSubmatch(ex.URL.Path)
 		if match != nil {
