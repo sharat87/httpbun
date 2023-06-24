@@ -20,9 +20,8 @@ var (
 )
 
 type RunConfig struct {
-	BindProtocol string
-	BindTarget   string
-	PathPrefix   string
+	BindTarget string
+	PathPrefix string
 }
 
 func parseArgs(args []string) RunConfig {
@@ -59,22 +58,11 @@ func parseArgs(args []string) RunConfig {
 	if bindTarget == "" {
 		bindTarget = os.Getenv("HTTPBUN_BIND")
 		if bindTarget == "" {
-			bindTarget = "localhost:3090"
+			bindTarget = "127.0.0.1:3090"
 		}
 	}
 
-	if strings.HasPrefix(bindTarget, "unix/") {
-		rc.BindProtocol = "unix"
-		rc.BindTarget = strings.TrimPrefix(bindTarget, "unix/")
-	} else {
-		rc.BindProtocol = "tcp"
-		rc.BindTarget = bindTarget
-	}
-
-	// Ensure the path prefix has a leading `/`.
-	if rc.PathPrefix != "" && !strings.HasPrefix(rc.PathPrefix, "/") {
-		rc.PathPrefix = "/" + rc.PathPrefix
-	}
+	rc.BindTarget = bindTarget
 
 	return *rc
 }
@@ -85,7 +73,11 @@ func main() {
 
 	rand.Seed(time.Now().Unix())
 
-	listener, err := net.Listen(runConfig.BindProtocol, runConfig.BindTarget)
+	serve(runConfig)
+}
+
+func serve(runConfig RunConfig) {
+	listener, err := net.Listen("tcp", runConfig.BindTarget)
 	if err != nil {
 		log.Fatal("Error creating listener.", err)
 	}
