@@ -12,7 +12,7 @@ import (
 //go:embed *.html *.css *.png *.svg favicon.ico site.webmanifest
 var assets embed.FS
 
-func Render(name string, w http.ResponseWriter, data interface{}) {
+func Render(name string, w http.ResponseWriter, data any) {
 	tpl, err := template.ParseFS(assets, "*")
 	if err != nil {
 		log.Fatalf("Error parsing HTML assets %v.", err)

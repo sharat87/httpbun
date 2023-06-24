@@ -60,8 +60,8 @@ func (s *TSuite) TestHeaders() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]interface{}{
-		"headers": map[string]interface{}{
+	s.Equal(map[string]any{
+		"headers": map[string]any{
 			"X-One": "custom header value",
 			"X-Two": "another custom header",
 		},
@@ -78,8 +78,8 @@ func (s *TSuite) TestHeadersRepeat() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]interface{}{
-		"headers": map[string]interface{}{
+	s.Equal(map[string]any{
+		"headers": map[string]any{
 			"X-One": "custom header value,another custom header",
 		},
 	}, tu.ParseJson(body))
@@ -92,7 +92,7 @@ func (s *TSuite) TestBasicAuthWithoutCreds() {
 	})
 	s.Equal(401, resp.StatusCode)
 	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(map[string]interface{}{
+	s.Equal(map[string]any{
 		"authenticated": false,
 		"user":          "",
 	}, tu.ParseJson(body))
@@ -108,7 +108,7 @@ func (s *TSuite) TestBasicAuthWithValidCreds() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(map[string]interface{}{
+	s.Equal(map[string]any{
 		"authenticated": true,
 		"user":          "scott",
 	}, tu.ParseJson(body))
@@ -124,7 +124,7 @@ func (s *TSuite) TestBasicAuthWithInvalidCreds() {
 	})
 	s.Equal(401, resp.StatusCode)
 	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(map[string]interface{}{
+	s.Equal(map[string]any{
 		"authenticated": false,
 		"user":          "scott",
 	}, tu.ParseJson(body))
@@ -150,7 +150,7 @@ func (s *TSuite) TestBearerAuthWithToken() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(map[string]interface{}{
+	s.Equal(map[string]any{
 		"authenticated": true,
 		"token":         "my-auth-token",
 	}, tu.ParseJson(body))
@@ -185,7 +185,7 @@ func (s *TSuite) TestDigestAuthWitCreds() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Empty(resp.Header.Get("Set-Cookie"))
-	s.Equal(map[string]interface{}{
+	s.Equal(map[string]any{
 		"authenticated": true,
 		"user":          "dave",
 	}, tu.ParseJson(body))
@@ -222,7 +222,7 @@ func (s *TSuite) TestResponseHeaders() {
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal([]string{"two"}, resp.Header.Values("One"))
 	s.Equal([]string{"four"}, resp.Header.Values("Three"))
-	s.Equal(map[string]interface{}{
+	s.Equal(map[string]any{
 		"Content-Length": "103",
 		"Content-Type":   "application/json",
 		"One":            "two",
@@ -238,10 +238,10 @@ func (s *TSuite) TestResponseHeadersRepeated() {
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal([]string{"two", "four"}, resp.Header.Values("One"))
-	s.Equal(map[string]interface{}{
+	s.Equal(map[string]any{
 		"Content-Length": "106",
 		"Content-Type":   "application/json",
-		"One": []interface{}{
+		"One": []any{
 			"two",
 			"four",
 		},
@@ -267,7 +267,7 @@ func (s *TSuite) TestIpInXForwardedFor() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]interface{}{
+	s.Equal(map[string]any{
 		"origin": "12.34.56.78",
 	}, tu.ParseJson(body))
 }

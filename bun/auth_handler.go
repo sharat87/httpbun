@@ -12,7 +12,7 @@ func handleAuthBasic(ex *exchange.Exchange) {
 	givenUsername, givenPassword, ok := ex.Request.BasicAuth()
 
 	if ok && givenUsername == ex.Field("user") && givenPassword == ex.Field("pass") {
-		util.WriteJson(ex.ResponseWriter, map[string]interface{}{
+		util.WriteJson(ex.ResponseWriter, map[string]any{
 			"authenticated": true,
 			"user":          givenUsername,
 		})
@@ -20,7 +20,7 @@ func handleAuthBasic(ex *exchange.Exchange) {
 	} else {
 		ex.ResponseWriter.Header().Set("WWW-Authenticate", "Basic realm=\"Fake Realm\"")
 		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
-		util.WriteJson(ex.ResponseWriter, map[string]interface{}{
+		util.WriteJson(ex.ResponseWriter, map[string]any{
 			"authenticated": false,
 			"user":          givenUsername,
 		})
@@ -40,7 +40,7 @@ func handleAuthBearer(ex *exchange.Exchange) {
 
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 
-	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
+	util.WriteJson(ex.ResponseWriter, map[string]any{
 		"authenticated": token != "" && (expectedToken == "" || expectedToken == token),
 		"token":         token,
 	})
@@ -135,7 +135,7 @@ func handleAuthDigest(ex *exchange.Exchange) {
 		return
 	}
 
-	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
+	util.WriteJson(ex.ResponseWriter, map[string]any{
 		"authenticated": true,
 		"user":          expectedUsername,
 	})

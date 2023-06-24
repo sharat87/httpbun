@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func WriteJson(w http.ResponseWriter, data interface{}) {
+func WriteJson(w http.ResponseWriter, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	_, err := w.Write(ToJsonMust(data))
 	if err != nil {
@@ -20,7 +20,7 @@ func WriteJson(w http.ResponseWriter, data interface{}) {
 	}
 }
 
-func ToJsonMust(data interface{}) []byte {
+func ToJsonMust(data any) []byte {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
 	encoder.SetEscapeHTML(false)

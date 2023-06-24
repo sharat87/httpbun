@@ -134,7 +134,7 @@ func handleAnything(ex *exchange.Exchange) {
 }
 
 func handleHeaders(ex *exchange.Exchange) {
-	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
+	util.WriteJson(ex.ResponseWriter, map[string]any{
 		"headers": ex.ExposableHeadersMap(),
 	})
 }
@@ -153,7 +153,7 @@ func handlePayload(ex *exchange.Exchange) {
 }
 
 func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
-	args := make(map[string]interface{})
+	args := make(map[string]any)
 	for name, values := range ex.Request.URL.Query() {
 		if len(values) > 1 {
 			args[name] = values
@@ -162,7 +162,7 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 		}
 	}
 
-	result := map[string]interface{}{
+	result := map[string]any{
 		"method":  ex.Request.Method,
 		"args":    args,
 		"headers": ex.ExposableHeadersMap(),
@@ -202,7 +202,7 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 
 		} else if contentType == "application/json" {
 			body := ex.BodyString()
-			var result interface{}
+			var result any
 			if json.Unmarshal([]byte(body), &result) == nil {
 				jsonData = &result
 			}
@@ -284,7 +284,7 @@ func handleStatus(ex *exchange.Exchange) {
 	acceptHeader := ex.HeaderValueLast("Accept")
 
 	if acceptHeader == "application/json" {
-		util.WriteJson(ex.ResponseWriter, map[string]interface{}{
+		util.WriteJson(ex.ResponseWriter, map[string]any{
 			"code":        codeNum,
 			"description": http.StatusText(codeNum),
 		})
@@ -359,7 +359,7 @@ func handleEtag(ex *exchange.Exchange) {
 }
 
 func handleResponseHeaders(ex *exchange.Exchange) {
-	data := make(map[string]interface{})
+	data := make(map[string]any)
 
 	for name, values := range ex.Request.URL.Query() {
 		name = http.CanonicalHeaderKey(name)
@@ -518,13 +518,13 @@ func handleInfo(ex *exchange.Exchange) {
 		hostname = "Error: " + err.Error()
 	}
 
-	data := make(map[string]interface{})
+	data := make(map[string]any)
 	for _, e := range os.Environ() {
 		name, value, _ := strings.Cut(e, "=")
 		data[name] = value
 	}
 
-	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
+	util.WriteJson(ex.ResponseWriter, map[string]any{
 		"hostname": hostname,
 		"env":      data,
 	})

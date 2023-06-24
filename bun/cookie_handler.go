@@ -12,7 +12,7 @@ func handleCookies(ex *exchange.Exchange) {
 	for _, cookie := range ex.Request.Cookies() {
 		items[cookie.Name] = cookie.Value
 	}
-	util.WriteJson(ex.ResponseWriter, map[string]interface{}{
+	util.WriteJson(ex.ResponseWriter, map[string]any{
 		"cookies": items,
 	})
 }

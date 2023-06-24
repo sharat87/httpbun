@@ -11,8 +11,8 @@ type R struct {
 	Headers map[string][]string
 }
 
-func ParseJson(raw []byte) map[string]interface{} {
-	var data map[string]interface{}
+func ParseJson(raw []byte) map[string]any {
+	var data map[string]any
 	if err := json.Unmarshal(raw, &data); err != nil {
 		panic(err)
 	}
