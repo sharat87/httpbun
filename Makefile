@@ -31,8 +31,7 @@ test:
 	echo "Starting server at PID $$server_pid"; \
 	sleep 2; \
 	for i in {1..9}; do curl --fail --silent --show-error "$$HTTPBUN_BIND" >/dev/null; sleep .5; done; \
-	HTTPBUN_ALLOW_HOSTS=example.com \
-		go test ./...; \
+	go test ./...; \
 	kill $$server_pid || true
 
 fmt:

@@ -1,13 +1,11 @@
 package mux
 
 import (
-	"fmt"
 	"github.com/sharat87/httpbun/exchange"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"strings"
 )
@@ -33,20 +31,6 @@ func (mux *Mux) HandleFunc(pattern string, fn HandlerFn) {
 }
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// TODO: Don't parse HTTPBUN_ALLOW_HOSTS on every request.
-	allowedHostsStr := os.Getenv("HTTPBUN_ALLOW_HOSTS")
-	if allowedHostsStr != "" {
-		allowedHosts := strings.Split(allowedHostsStr, ",")
-		if !contains(allowedHosts, req.Host) {
-			w.WriteHeader(http.StatusForbidden)
-			_, err := fmt.Fprintf(w, "%d host %q not allowed", http.StatusForbidden, req.Host)
-			if err != nil {
-				log.Printf("Error writing disallow hosts message %v", err)
-			}
-			return
-		}
-	}
-
 	if !strings.HasPrefix(req.URL.Path, mux.PathPrefix) {
 		http.NotFound(w, req)
 		return
