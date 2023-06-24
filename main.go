@@ -73,10 +73,12 @@ func main() {
 
 	rand.Seed(time.Now().Unix())
 
-	serve(runConfig)
+	ch := make(chan error, 1)
+	go serve(runConfig, ch)
+	log.Fatal(<-ch)
 }
 
-func serve(runConfig RunConfig) {
+func serve(runConfig RunConfig, ch chan error) {
 	listener, err := net.Listen("tcp", runConfig.BindTarget)
 	if err != nil {
 		log.Fatal("Error creating listener.", err)
@@ -128,8 +130,8 @@ func serve(runConfig RunConfig) {
 	log.Printf("OS: %q, Arch: %q, Host: %q.", runtime.GOOS, runtime.GOARCH, hostname)
 
 	if sslCertFile == "" {
-		log.Fatal(http.Serve(listener, m))
+		ch <- http.Serve(listener, m)
 	} else {
-		log.Fatal(http.ServeTLS(listener, m, sslCertFile, sslKeyFile))
+		ch <- http.ServeTLS(listener, m, sslCertFile, sslKeyFile)
 	}
 }
