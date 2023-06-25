@@ -16,12 +16,8 @@ func main() {
 
 	rand.Seed(time.Now().Unix())
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = "'Error getting hostname: " + err.Error() + "'"
-	}
-	log.Printf("OS: %q, Arch: %q, Host: %q.", runtime.GOOS, runtime.GOARCH, hostname)
-	log.Printf("Version: %q, Commit: %q, Built: %q.", info.Version, info.Commit, info.Date)
+	log.Printf("OS: %q, Arch: %q.", runtime.GOOS, runtime.GOARCH)
+	log.Printf("Commit: %q, Built: %q.", info.Commit, info.Date)
 
 	s := server.StartNew(config)
 	log.Printf("Serving on %s", s.Addr)

@@ -1,4 +1,4 @@
-LDFLAGS := -ldflags "-X github.com/sharat87/httpbun/info.Version=$(VERSION) -X github.com/sharat87/httpbun/info.Commit=$$(git rev-parse HEAD) -X github.com/sharat87/httpbun/info.Date=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+LDFLAGS := -ldflags "-X github.com/sharat87/httpbun/info.Commit=$$(git rev-parse HEAD) -X github.com/sharat87/httpbun/info.Date=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 run:
 	go mod tidy

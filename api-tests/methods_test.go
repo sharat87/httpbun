@@ -13,7 +13,7 @@ func TestGet(t *testing.T) {
 		Path:   "get",
 	})
 	s.Equal(200, resp.StatusCode)
-	s.Equal("httpbun//", resp.Header.Get("X-Powered-By"))
+	s.Equal("httpbun/", resp.Header.Get("X-Powered-By"))
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal("185", resp.Header.Get("Content-Length"))
 	s.JSONEq(`{

@@ -76,7 +76,7 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		ex.ResponseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
 	}
 
-	ex.ResponseWriter.Header().Set("X-Powered-By", "httpbun/"+info.Version+"/"+info.Commit)
+	ex.ResponseWriter.Header().Set("X-Powered-By", "httpbun/"+info.Commit)
 
 	for _, route := range mux.routes {
 		match := route.pat.FindStringSubmatch(ex.URL.Path)
