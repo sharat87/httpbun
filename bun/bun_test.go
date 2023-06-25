@@ -3,7 +3,6 @@ package bun
 import (
 	tu "github.com/sharat87/httpbun/test_utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,20 +11,7 @@ import (
 	"testing"
 )
 
-func TestRunSuite(t *testing.T) {
-	suite.Run(t, new(TSuite))
-}
-
-type TSuite struct {
-	suite.Suite
-	Mux http.Handler
-}
-
-func (s *TSuite) SetupSuite() {
-	s.Mux = MakeBunHandler("", "", "")
-}
-
-func (s *TSuite) ExecRequest(request tu.R) (http.Response, []byte) {
+func ExecTestRequest(request tu.R) (http.Response, string) {
 	var bodyReader io.Reader
 	if request.Body != "" {
 		bodyReader = strings.NewReader(request.Body)
@@ -41,16 +27,17 @@ func (s *TSuite) ExecRequest(request tu.R) (http.Response, []byte) {
 	}
 
 	w := httptest.NewRecorder()
-	s.Mux.ServeHTTP(w, req)
+	BunHandler.ServeHTTP(w, req)
 
 	resp := w.Result()
 	responseBody, _ := io.ReadAll(resp.Body)
 
-	return *resp, responseBody
+	return *resp, string(responseBody)
 }
 
-func (s *TSuite) TestHeaders() {
-	resp, body := s.ExecRequest(tu.R{
+func TestHeaders(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "headers",
 		Headers: map[string][]string{
@@ -60,16 +47,17 @@ func (s *TSuite) TestHeaders() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]any{
-		"headers": map[string]any{
+	s.JSONEq(`{
+		"headers": {
 			"X-One": "custom header value",
-			"X-Two": "another custom header",
-		},
-	}, tu.ParseJson(body))
+			"X-Two": "another custom header"
+		}
+	}`, body)
 }
 
-func (s *TSuite) TestHeadersRepeat() {
-	resp, body := s.ExecRequest(tu.R{
+func TestHeadersRepeat(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "headers",
 		Headers: map[string][]string{
@@ -78,28 +66,30 @@ func (s *TSuite) TestHeadersRepeat() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]any{
-		"headers": map[string]any{
-			"X-One": "custom header value,another custom header",
-		},
-	}, tu.ParseJson(body))
+	s.JSONEq(`{
+		"headers": {
+			"X-One": "custom header value,another custom header"
+		}
+	}`, body)
 }
 
-func (s *TSuite) TestBasicAuthWithoutCreds() {
-	resp, body := s.ExecRequest(tu.R{
+func TestBasicAuthWithoutCreds(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "basic-auth/scott/tiger",
 	})
 	s.Equal(401, resp.StatusCode)
 	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(map[string]any{
+	s.JSONEq(`{
 		"authenticated": false,
-		"user":          "",
-	}, tu.ParseJson(body))
+		"user": ""
+	}`, body)
 }
 
-func (s *TSuite) TestBasicAuthWithValidCreds() {
-	resp, body := s.ExecRequest(tu.R{
+func TestBasicAuthWithValidCreds(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "basic-auth/scott/tiger",
 		Headers: map[string][]string{
@@ -108,14 +98,15 @@ func (s *TSuite) TestBasicAuthWithValidCreds() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(map[string]any{
+	s.JSONEq(`{
 		"authenticated": true,
-		"user":          "scott",
-	}, tu.ParseJson(body))
+		"user": "scott"
+	}`, body)
 }
 
-func (s *TSuite) TestBasicAuthWithInvalidCreds() {
-	resp, body := s.ExecRequest(tu.R{
+func TestBasicAuthWithInvalidCreds(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "basic-auth/scott/tiger",
 		Headers: map[string][]string{
@@ -124,24 +115,26 @@ func (s *TSuite) TestBasicAuthWithInvalidCreds() {
 	})
 	s.Equal(401, resp.StatusCode)
 	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(map[string]any{
+	s.JSONEq(`{
 		"authenticated": false,
-		"user":          "scott",
-	}, tu.ParseJson(body))
+		"user": "scott"
+	}`, body)
 }
 
-func (s *TSuite) TestBearerAuthWithoutToken() {
-	resp, body := s.ExecRequest(tu.R{
+func TestBearerAuthWithoutToken(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "bearer",
 	})
 	s.Equal(401, resp.StatusCode)
 	s.Equal("Bearer", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(len(body), 0)
+	s.Equal(0, len(body))
 }
 
-func (s *TSuite) TestBearerAuthWithToken() {
-	resp, body := s.ExecRequest(tu.R{
+func TestBearerAuthWithToken(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "bearer",
 		Headers: map[string][]string{
@@ -150,14 +143,15 @@ func (s *TSuite) TestBearerAuthWithToken() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("", resp.Header.Get("WWW-Authenticate"))
-	s.Equal(map[string]any{
+	s.JSONEq(`{
 		"authenticated": true,
-		"token":         "my-auth-token",
-	}, tu.ParseJson(body))
+		"token": "my-auth-token"
+	}`, body)
 }
 
-func (s *TSuite) TestDigestAuthWithoutCreds() {
-	resp, body := s.ExecRequest(tu.R{
+func TestDigestAuthWithoutCreds(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "digest-auth/auth/dave/diamond",
 	})
@@ -171,11 +165,12 @@ func (s *TSuite) TestDigestAuthWithoutCreds() {
 		"Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", nonce=\"" + nonce + "\", opaque=\"[a-z0-9]+\", algorithm=MD5, stale=FALSE",
 	).FindString(resp.Header.Get("WWW-Authenticate"))
 	s.NotEmpty(m, "Unexpected value for WWW-Authenticate")
-	s.Equal(len(body), 0)
+	s.Equal(0, len(body))
 }
 
-func (s *TSuite) TestDigestAuthWitCreds() {
-	resp, body := s.ExecRequest(tu.R{
+func TestDigestAuthWitCreds(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "digest-auth/auth/dave/diamond",
 		Headers: map[string][]string{
@@ -185,14 +180,15 @@ func (s *TSuite) TestDigestAuthWitCreds() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Empty(resp.Header.Get("Set-Cookie"))
-	s.Equal(map[string]any{
+	s.JSONEq(`{
 		"authenticated": true,
-		"user":          "dave",
-	}, tu.ParseJson(body))
+		"user": "dave"
+	}`, body)
 }
 
-func (s *TSuite) TestDigestAuthWitIncorrectUser() {
-	resp, _ := s.ExecRequest(tu.R{
+func TestDigestAuthWitIncorrectUser(t *testing.T) {
+	s := assert.New(t)
+	resp, _ := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "digest-auth/auth/dave/diamond",
 		Headers: map[string][]string{
@@ -213,8 +209,9 @@ func (s *TSuite) TestDigestAuthWitIncorrectUser() {
 	// s.Equal(string(body), "")
 }
 
-func (s *TSuite) TestResponseHeaders() {
-	resp, body := s.ExecRequest(tu.R{
+func TestResponseHeaders(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "response-headers?one=two&three=four",
 	})
@@ -222,43 +219,46 @@ func (s *TSuite) TestResponseHeaders() {
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal([]string{"two"}, resp.Header.Values("One"))
 	s.Equal([]string{"four"}, resp.Header.Values("Three"))
-	s.Equal(map[string]any{
+	s.JSONEq(`{
 		"Content-Length": "103",
-		"Content-Type":   "application/json",
-		"One":            "two",
-		"Three":          "four",
-	}, tu.ParseJson(body))
+		"Content-Type": "application/json",
+		"One": "two",
+		"Three": "four"
+	}`, body)
 }
 
-func (s *TSuite) TestResponseHeadersRepeated() {
-	resp, body := s.ExecRequest(tu.R{
+func TestResponseHeadersRepeated(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "response-headers?one=two&one=four",
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal([]string{"two", "four"}, resp.Header.Values("One"))
-	s.Equal(map[string]any{
+	s.JSONEq(`{
 		"Content-Length": "106",
-		"Content-Type":   "application/json",
-		"One": []any{
+		"Content-Type": "application/json",
+		"One": [
 			"two",
-			"four",
-		},
-	}, tu.ParseJson(body))
+			"four"
+		]
+	}`, body)
 }
 
-func (s *TSuite) TestDrip() {
-	resp, body := s.ExecRequest(tu.R{
+func TestDrip(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "drip?duration=1&delay=0",
 	})
 	s.Equal(200, resp.StatusCode)
-	s.Equal(strings.Repeat("*", 10), string(body))
+	s.Equal(strings.Repeat("*", 10), body)
 }
 
-func (s *TSuite) TestIpInXForwardedFor() {
-	resp, body := s.ExecRequest(tu.R{
+func TestIpInXForwardedFor(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecTestRequest(tu.R{
 		Method: "GET",
 		Path:   "ip",
 		Headers: map[string][]string{
@@ -267,9 +267,9 @@ func (s *TSuite) TestIpInXForwardedFor() {
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
-	s.Equal(map[string]any{
-		"origin": "12.34.56.78",
-	}, tu.ParseJson(body))
+	s.JSONEq(`{
+		"origin": "12.34.56.78"
+	}`, body)
 }
 
 func TestComputeDigestAuthResponse(t *testing.T) {

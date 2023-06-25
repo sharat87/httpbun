@@ -2,10 +2,13 @@ package api_tests
 
 import (
 	tu "github.com/sharat87/httpbun/test_utils"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-func (s *TSuite) TestGet() {
-	resp, body := s.ExecRequest(tu.R{
+func TestGet(t *testing.T) {
+	s := assert.New(t)
+	resp, body := tu.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "get",
 	})
@@ -13,65 +16,68 @@ func (s *TSuite) TestGet() {
 	s.Equal("httpbun//", resp.Header.Get("X-Powered-By"))
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal("185", resp.Header.Get("Content-Length"))
-	s.Equal(map[string]any{
-		"args": map[string]any{},
-		"headers": map[string]any{
+	s.JSONEq(`{
+		"args": {},
+		"headers": {
 			"Accept-Encoding": "gzip",
-			"User-Agent":      "httpbun-tests",
+			"User-Agent": "httpbun-tests"
 		},
 		"method": "GET",
 		"origin": "127.0.0.1",
-		"url":    "http://127.0.0.1:30001/get",
-	}, parseJSON(body))
+		"url": "http://127.0.0.1:30001/get"
+	}`, body)
 }
 
-func (s *TSuite) TestGetNameSherlock() {
-	resp, body := s.ExecRequest(tu.R{
+func TestGetNameSherlock(t *testing.T) {
+	s := assert.New(t)
+	resp, body := tu.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "get?name=Sherlock",
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal("225", resp.Header.Get("Content-Length"))
-	s.Equal(map[string]any{
-		"args": map[string]any{
-			"name": "Sherlock",
+	s.JSONEq(`{
+		"args": {
+			"name": "Sherlock"
 		},
-		"headers": map[string]any{
+		"headers": {
 			"Accept-Encoding": "gzip",
-			"User-Agent":      "httpbun-tests",
+			"User-Agent": "httpbun-tests"
 		},
 		"method": "GET",
 		"origin": "127.0.0.1",
-		"url":    "http://127.0.0.1:30001/get?name=Sherlock",
-	}, parseJSON(body))
+		"url": "http://127.0.0.1:30001/get?name=Sherlock"
+	}`, body)
 }
 
-func (s *TSuite) TestGetFirstSherlockLastHolmes() {
-	resp, body := s.ExecRequest(tu.R{
+func TestGetFirstSherlockLastHolmes(t *testing.T) {
+	s := assert.New(t)
+	resp, body := tu.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "get?first=Sherlock&last=Holmes",
 	})
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal("261", resp.Header.Get("Content-Length"))
-	s.Equal(map[string]any{
-		"args": map[string]any{
+	s.JSONEq(`{
+		"args": {
 			"first": "Sherlock",
-			"last":  "Holmes",
+			"last":  "Holmes"
 		},
-		"headers": map[string]any{
+		"headers": {
 			"Accept-Encoding": "gzip",
-			"User-Agent":      "httpbun-tests",
+			"User-Agent": "httpbun-tests"
 		},
 		"method": "GET",
 		"origin": "127.0.0.1",
-		"url":    "http://127.0.0.1:30001/get?first=Sherlock&last=Holmes",
-	}, parseJSON(body))
+		"url": "http://127.0.0.1:30001/get?first=Sherlock&last=Holmes"
+	}`, body)
 }
 
-func (s *TSuite) TestGetWithCustomHeader() {
-	resp, body := s.ExecRequest(tu.R{
+func TestGetWithCustomHeader(t *testing.T) {
+	s := assert.New(t)
+	resp, body := tu.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "get",
 		Headers: map[string][]string{
@@ -81,21 +87,22 @@ func (s *TSuite) TestGetWithCustomHeader() {
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal("217", resp.Header.Get("Content-Length"))
-	s.Equal(map[string]any{
-		"args": map[string]any{},
-		"headers": map[string]any{
+	s.JSONEq(`{
+		"args": {},
+		"headers": {
 			"Accept-Encoding": "gzip",
-			"User-Agent":      "httpbun-tests",
-			"X-Custom":        "first-custom",
+			"User-Agent": "httpbun-tests",
+			"X-Custom": "first-custom"
 		},
 		"method": "GET",
 		"origin": "127.0.0.1",
-		"url":    "http://127.0.0.1:30001/get",
-	}, parseJSON(body))
+		"url": "http://127.0.0.1:30001/get"
+	}`, body)
 }
 
-func (s *TSuite) TestGetWithTwoCustomHeader() {
-	resp, body := s.ExecRequest(tu.R{
+func TestGetWithTwoCustomHeader(t *testing.T) {
+	s := assert.New(t)
+	resp, body := tu.ExecRequest(tu.R{
 		Method: "GET",
 		Path:   "get",
 		Headers: map[string][]string{
@@ -106,16 +113,16 @@ func (s *TSuite) TestGetWithTwoCustomHeader() {
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.Equal("249", resp.Header.Get("Content-Length"))
-	s.Equal(map[string]any{
-		"args": map[string]any{},
-		"headers": map[string]any{
+	s.JSONEq(`{
+		"args": {},
+		"headers": {
 			"Accept-Encoding": "gzip",
-			"User-Agent":      "httpbun-tests",
-			"X-First":         "first-custom",
-			"X-Second":        "second-custom",
+			"User-Agent": "httpbun-tests",
+			"X-First": "first-custom",
+			"X-Second": "second-custom"
 		},
 		"method": "GET",
 		"origin": "127.0.0.1",
-		"url":    "http://127.0.0.1:30001/get",
-	}, parseJSON(body))
+		"url": "http://127.0.0.1:30001/get"
+	}`, body)
 }

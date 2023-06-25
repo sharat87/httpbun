@@ -1,7 +1,9 @@
 package test_utils
 
-import (
-	"encoding/json"
+//goland:noinspection HttpUrlsUsage
+const (
+	BindTarget = "127.0.0.1:30001"
+	baseURL    = "http://" + BindTarget + "/"
 )
 
 type R struct {
@@ -9,12 +11,4 @@ type R struct {
 	Path    string
 	Body    string
 	Headers map[string][]string
-}
-
-func ParseJson(raw []byte) map[string]any {
-	var data map[string]any
-	if err := json.Unmarshal(raw, &data); err != nil {
-		panic(err)
-	}
-	return data
 }

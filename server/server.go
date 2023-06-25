@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -19,16 +18,14 @@ type Config struct {
 }
 
 type Server struct {
-	httpServer  *http.Server
-	Addr        net.Addr
-	sslCertFile string
-	sslKeyFile  string
-	closeCh     chan error
+	httpServer *http.Server
+	Addr       net.Addr
+	closeCh    chan error
 }
 
 func ParseArgs(args []string) Config {
 	rc := &Config{}
-	bindTarget := ""
+	bindTarget := os.Getenv("HTTPBUN_BIND")
 
 	i := 0
 
@@ -39,15 +36,9 @@ func ParseArgs(args []string) Config {
 			i++
 			bindTarget = args[i]
 
-		} else if strings.HasPrefix(arg, "--bind=") {
-			bindTarget = strings.SplitN(arg, "=", 2)[1]
-
 		} else if arg == "--path-prefix" {
 			i++
 			rc.PathPrefix = args[i]
-
-		} else if strings.HasPrefix(arg, "--path-prefix=") {
-			rc.PathPrefix = strings.SplitN(arg, "=", 2)[1]
 
 		} else {
 			log.Fatalf("Unknown argument '%v'", arg)
@@ -58,10 +49,7 @@ func ParseArgs(args []string) Config {
 	}
 
 	if bindTarget == "" {
-		bindTarget = os.Getenv("HTTPBUN_BIND")
-		if bindTarget == "" {
-			bindTarget = ":3090"
-		}
+		bindTarget = ":3090"
 	}
 
 	rc.BindTarget = bindTarget
@@ -113,11 +101,9 @@ func StartNew(config Config) Server {
 	}()
 
 	return Server{
-		httpServer:  server,
-		Addr:        listener.Addr(),
-		sslCertFile: sslCertFile,
-		sslKeyFile:  sslKeyFile,
-		closeCh:     closeCh,
+		httpServer: server,
+		Addr:       listener.Addr(),
+		closeCh:    closeCh,
 	}
 }
 
