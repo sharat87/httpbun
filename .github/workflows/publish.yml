@@ -24,10 +24,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Get versions
+        id: versions
+        run:
+          sed 's/ /=/' .tool-versions | tee -a "$GITHUB_OUTPUT"
+
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18.3
+          go-version: ${{ steps.versions.outputs.golang }}
 
       - name: Test
         run: make test
