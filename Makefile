@@ -9,7 +9,7 @@ build:
 	@go build $(LDFLAGS) -v -o bin/httpbun
 
 docker:
-	GOOS=linux go build $(LDFLAGS) -v -o bin/httpbun-docker .
+	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -a -installsuffix cgo -o bin/httpbun-docker .
 	docker build -t httpbun .
 
 test:
