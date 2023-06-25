@@ -2,6 +2,7 @@ package mux
 
 import (
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/info"
 	"io"
 	"log"
 	"net/http"
@@ -13,20 +14,19 @@ import (
 type HandlerFn func(ex *exchange.Exchange)
 
 type Mux struct {
-	PathPrefix    string
-	BeforeHandler HandlerFn
-	Routes        []route
+	PathPrefix string
+	routes     []route
 }
 
 type route struct {
-	Pattern regexp.Regexp
-	Fn      HandlerFn
+	pat regexp.Regexp
+	fn  HandlerFn
 }
 
 func (mux *Mux) HandleFunc(pattern string, fn HandlerFn) {
-	mux.Routes = append(mux.Routes, route{
-		Pattern: *regexp.MustCompile("^" + pattern + "$"),
-		Fn:      fn,
+	mux.routes = append(mux.routes, route{
+		pat: *regexp.MustCompile("^" + pattern + "$"),
+		fn:  fn,
 	})
 }
 
@@ -55,54 +55,44 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		},
 	}
 
-	if ex.URL.Scheme == "" {
-		// Other headers: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Proto#examples>.
-		if forwardedProto := ex.HeaderValueLast("X-Forwarded-Proto"); forwardedProto != "" {
-			ex.URL.Scheme = forwardedProto
-		} else if req.TLS == nil {
-			ex.URL.Scheme = "http"
-		} else {
-			ex.URL.Scheme = "https"
-		}
+	if ex.URL.Host == "" && req.Host != "" {
+		ex.URL.Host = req.Host
 	}
 
-	if ex.URL.Host == "" {
-		if req.Host != "" {
-			ex.URL.Host = req.Host
-		} else if forwardedHost := ex.HeaderValueLast("X-Forwarded-Host"); forwardedHost != "" {
-			ex.URL.Host = forwardedHost
-		}
+	incomingIP := ex.FindIncomingIPAddress()
+	log.Printf(
+		"From ip=%s %s %s%s",
+		incomingIP,
+		req.Method,
+		req.Host,
+		req.URL.String(),
+	)
+
+	// Need to set the exact origin, since `*` won't work if request includes credentials.
+	// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
+	originHeader := ex.HeaderValueLast("Origin")
+	if originHeader != "" {
+		ex.ResponseWriter.Header().Set("Access-Control-Allow-Origin", originHeader)
+		ex.ResponseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
 	}
 
-	for _, route := range mux.Routes {
-		match := route.Pattern.FindStringSubmatch(ex.URL.Path)
+	ex.ResponseWriter.Header().Set("X-Powered-By", "httpbun/"+info.Version+"/"+info.Commit)
+
+	for _, route := range mux.routes {
+		match := route.pat.FindStringSubmatch(ex.URL.Path)
 		if match != nil {
-			names := route.Pattern.SubexpNames()
+			names := route.pat.SubexpNames()
 			for i, name := range names {
 				if name != "" {
 					ex.Fields[name] = match[i]
 				}
 			}
 
-			if mux.BeforeHandler != nil {
-				mux.BeforeHandler(ex)
-			}
-
-			route.Fn(ex)
+			route.fn(ex)
 			return
 		}
 	}
 
-	ip := ex.HeaderValueLast("X-Forwarded-For")
-	log.Printf("NotFound ip=%s %s %s", ip, req.Method, req.URL.String())
+	log.Printf("NotFound ip=%s %s %s", incomingIP, req.Method, req.URL.String())
 	http.NotFound(w, req)
-}
-
-func contains(haystack []string, needle string) bool {
-	for _, item := range haystack {
-		if item == needle {
-			return true
-		}
-	}
-	return false
 }

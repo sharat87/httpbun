@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"github.com/sharat87/httpbun/bun"
-	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/info"
 	"log"
 	"net"
@@ -58,26 +57,10 @@ func ParseArgs(args []string) Config {
 }
 
 func StartNew(config Config) Server {
-	poweredBy := "httpbun/" + info.Version + "/" + info.Commit
-
 	sslCertFile := os.Getenv("HTTPBUN_SSL_CERT")
 	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
 
 	m := bun.MakeBunHandler(config.PathPrefix, info.Commit, info.Date)
-	m.BeforeHandler = func(ex *exchange.Exchange) {
-		ip := ex.HeaderValueLast("X-Httpbun-Forwarded-For")
-		log.Printf("From ip=%s %s %s%s", ip, ex.Request.Method, ex.Request.Host, ex.Request.URL.String())
-
-		// Need to set the exact origin, since `*` won't work if request includes credentials.
-		// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
-		originHeader := ex.HeaderValueLast("Origin")
-		if originHeader != "" {
-			ex.ResponseWriter.Header().Set("Access-Control-Allow-Origin", originHeader)
-			ex.ResponseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
-		}
-
-		ex.ResponseWriter.Header().Set("X-Powered-By", poweredBy)
-	}
 
 	server := &http.Server{
 		Addr:    config.BindTarget,
