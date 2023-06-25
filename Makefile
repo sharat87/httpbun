@@ -1,4 +1,4 @@
-LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$$(git rev-parse HEAD) -X main.Date=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+LDFLAGS := -ldflags "-X info.Version=$(VERSION) -X info.Commit=$$(git rev-parse HEAD) -X info.Date=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 run:
 	go mod tidy
@@ -25,14 +25,7 @@ build-for-prod:
 	cd bin && tar -caf ../package.tar.gz httpbun-linux-amd64
 
 test:
-	export HTTPBUN_BIND=localhost:30001; \
-	go run . &>test-server.log & \
-	server_pid="$$!"; \
-	echo "Starting server at PID $$server_pid"; \
-	sleep 2; \
-	for i in {1..9}; do curl --fail --silent --show-error "$$HTTPBUN_BIND" >/dev/null; sleep .5; done; \
-	go test ./...; \
-	kill $$server_pid || true
+	@go test ./...
 
 fmt:
 	@go fmt ./...
