@@ -33,17 +33,17 @@ jobs:
         run: make test
 
       - name: Build
-        run: make build-for-prod build-for-docker
+        run: make docker
 
       - name: Push Docker images to GHCR
         if: |
           success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
           tag="${{ github.ref_name }}"
-          docker build -t im -t "ghcr.io/${{ github.actor }}/httpbun:$tag" .
+          docker tag httpbun "ghcr.io/${{ github.actor }}/httpbun:$tag"
           if [[ $tag == master ]]; then
-            docker tag im "ghcr.io/${{ github.actor }}/httpbun:latest"
-            docker tag im "ghcr.io/${{ github.actor }}/httpbun:${{ github.sha }}"
+            docker tag httpbun "ghcr.io/${{ github.actor }}/httpbun:latest"
+            docker tag httpbun "ghcr.io/${{ github.actor }}/httpbun:${{ github.sha }}"
           fi
           docker login ghcr.io --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}"
           docker push --all-tags "ghcr.io/${{ github.actor }}/httpbun"
