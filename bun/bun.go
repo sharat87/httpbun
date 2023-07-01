@@ -104,6 +104,8 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 
 	m.HandleFunc("/info", handleInfo)
 
+	m.HandleFunc("/(?P<hook>hooks.slack.com/services/.*)", handleSlack)
+
 	return m
 }
 
