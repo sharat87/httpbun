@@ -526,15 +526,19 @@ func handleInfo(ex *exchange.Exchange) {
 		hostname = "Error: " + err.Error()
 	}
 
-	data := make(map[string]any)
+	env := make(map[string]any)
 	for _, e := range os.Environ() {
 		name, value, _ := strings.Cut(e, "=")
-		data[name] = value
+		// These env variables get auto-set when run in Docker, so we set marker values in the _image_, and if they're
+		// not set for the _container_, we'll just not include them in the output.
+		if value != "___httpbun_unset_marker" || (name != "PATH" && name != "HOME" && name != "HOSTNAME") {
+			env[name] = value
+		}
 	}
 
 	util.WriteJson(ex.ResponseWriter, map[string]any{
 		"hostname": hostname,
-		"env":      data,
+		"env":      env,
 	})
 }
 
