@@ -9,13 +9,24 @@ build:
 	@go build $(LDFLAGS) -v -o bin/httpbun
 
 docker:
+	make patch
 	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -a -installsuffix cgo -o bin/httpbun-docker .
 	docker build -t httpbun .
+	make unpatch
 
 test:
 	@go test -count=1 -vet=all ./...
 
 fmt:
 	@go fmt ./...
+
+# We patch the Go stdlib to remove the code that removes the Host header from incoming requests.
+patch:
+	sed 's:\(delete(req.Header, "Host")\)$$://\1:' "$$(go env GOROOT)/src/net/http/server.go" > x
+	mv x "$$(go env GOROOT)/src/net/http/server.go"
+
+unpatch:
+	sed 's://\(delete(req.Header, "Host")\)$$:\1:' "$$(go env GOROOT)/src/net/http/server.go" > x
+	mv x "$$(go env GOROOT)/src/net/http/server.go"
 
 .PHONY: run build docker test fmt
