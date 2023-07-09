@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/util"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -16,7 +16,7 @@ func handleSlack(ex *exchange.Exchange) {
 	}
 	message += "\n"
 
-	incomingBody, err := ioutil.ReadAll(ex.Request.Body)
+	incomingBody, err := io.ReadAll(ex.Request.Body)
 	if err == nil {
 		if len(incomingBody) > 0 {
 			message += "```\n" + string(incomingBody) + "\n```"
@@ -35,7 +35,7 @@ func handleSlack(ex *exchange.Exchange) {
 		return
 	}
 
-	responseBody, err := ioutil.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		ex.WriteLn("Error reading response from Slack: " + err.Error())
 		return

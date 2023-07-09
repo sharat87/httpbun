@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/sharat87/httpbun/util"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -132,7 +131,7 @@ func (ex Exchange) FindIncomingIPAddress() string {
 }
 
 func (ex Exchange) BodyBytes() []byte {
-	if bodyBytes, err := ioutil.ReadAll(ex.CappedBody); err != nil {
+	if bodyBytes, err := io.ReadAll(ex.CappedBody); err != nil {
 		fmt.Println("Error reading request payload", err)
 		return nil
 	} else {

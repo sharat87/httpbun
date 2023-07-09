@@ -8,7 +8,7 @@ import (
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/mux"
 	"github.com/sharat87/httpbun/util"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"mime"
@@ -152,7 +152,7 @@ func handlePayload(ex *exchange.Exchange) {
 		ex.ResponseWriter.Header().Set("Content-Type", contentTypeValues[0])
 	}
 
-	bodyBytes, err := ioutil.ReadAll(ex.CappedBody)
+	bodyBytes, err := io.ReadAll(ex.CappedBody)
 	if err != nil {
 		fmt.Println("Error reading request payload", err)
 	}
@@ -232,7 +232,7 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 				var content any
 				if f, err := fileHeader.Open(); err != nil {
 					fmt.Println("Error opening fileHeader", err)
-				} else if content, err = ioutil.ReadAll(f); err != nil {
+				} else if content, err = io.ReadAll(f); err != nil {
 					fmt.Println("Error reading from fileHeader", err)
 				} else {
 					if utf8.Valid(content.([]byte)) {
