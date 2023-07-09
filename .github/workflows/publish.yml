@@ -30,7 +30,7 @@ jobs:
           sed 's/ /=/' .tool-versions | tee -a "$GITHUB_OUTPUT"
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: ${{ steps.versions.outputs.golang }}
 
