@@ -6,13 +6,15 @@ run:
 	go run $(LDFLAGS) main.go
 
 build:
+	make patch
 	@go build $(LDFLAGS) -v -o bin/httpbun
+	make unpatch
 
 docker:
 	make patch
 	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -a -installsuffix cgo -o bin/httpbun-docker .
-	docker build -t httpbun .
 	make unpatch
+	docker build -t httpbun .
 
 test:
 	@go test -count=1 -vet=all ./...

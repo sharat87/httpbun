@@ -14,6 +14,14 @@ docker run -p 80:80 ghcr.io/sharat87/httpbun
 
 A project by [Shri](https://sharats.me).
 
+## Building
+
+We patch Go's standard lib a little. There's a line in `net/http/server.go` that delets the `Host` header in all incoming requests. We comment that line out during build, and uncomment it again to restore it.
+
+So, if you're using the same Go installation for this and other projects _at the same time_, you may see unexpected behaviour.
+
+The patching and unpatching is in `make patch` and `make unpatch` targets.
+
 ## Contributing
 
 Contributions to httpbun are welcome, for the most part. However, I strongly urge you to open an issue to discuss
