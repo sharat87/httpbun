@@ -142,9 +142,7 @@ func handleAnything(ex *exchange.Exchange) {
 }
 
 func handleHeaders(ex *exchange.Exchange) {
-	util.WriteJson(ex.ResponseWriter, map[string]any{
-		"headers": ex.ExposableHeadersMap(),
-	})
+	util.WriteJson(ex.ResponseWriter, ex.ExposableHeadersMap())
 }
 
 func handlePayload(ex *exchange.Exchange) {
