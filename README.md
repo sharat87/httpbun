@@ -9,7 +9,7 @@ API developer tool. It's heavily inspired by [httpbin](https://httpbin.org).
 Hosted at [httpbun.com](https://httpbun.com) and [httpbun.org](https://httpbun.org). Run your own with:
 
 ```sh
-docker run -p 80:80 ghcr.io/sharat87/httpbun
+docker run -p 80:80 sharat87/httpbun
 ```
 
 A project by [Shri](https://sharats.me).
