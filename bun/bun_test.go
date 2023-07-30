@@ -48,10 +48,8 @@ func TestHeaders(t *testing.T) {
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.JSONEq(`{
-		"headers": {
-			"X-One": "custom header value",
-			"X-Two": "another custom header"
-		}
+		"X-One": "custom header value",
+		"X-Two": "another custom header"
 	}`, body)
 }
 
@@ -67,9 +65,7 @@ func TestHeadersRepeat(t *testing.T) {
 	s.Equal(200, resp.StatusCode)
 	s.Equal("application/json", resp.Header.Get("Content-Type"))
 	s.JSONEq(`{
-		"headers": {
-			"X-One": "custom header value,another custom header"
-		}
+		"X-One": "custom header value,another custom header"
 	}`, body)
 }
 
