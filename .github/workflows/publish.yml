@@ -40,15 +40,20 @@ jobs:
       - name: Build
         run: make docker
 
-      - name: Push Docker images to GHCR
+      - name: Push Docker images to GHCR and DockerHub
         if: |
           success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
           tag="${{ github.ref_name }}"
           docker tag httpbun "ghcr.io/${{ github.actor }}/httpbun:$tag"
+          docker tag httpbun "${{ secrets.DOCKER_HUB_USERNAME }}/httpbun:$tag"
           if [[ $tag == master ]]; then
             docker tag httpbun "ghcr.io/${{ github.actor }}/httpbun:latest"
             docker tag httpbun "ghcr.io/${{ github.actor }}/httpbun:${{ github.sha }}"
+            docker tag httpbun "ghcr.io/${{ secrets.DOCKER_HUB_USERNAME }}/httpbun:latest"
+            docker tag httpbun "ghcr.io/${{ secrets.DOCKER_HUB_USERNAME }}/httpbun:${{ github.sha }}"
           fi
           docker login ghcr.io --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}"
+          docker login --username "${{ secrets.DOCKER_HUB_USERNAME }}" --password "${{ secrets.DOCKER_HUB_PASSWORD }}"
           docker push --all-tags "ghcr.io/${{ github.actor }}/httpbun"
+          docker push --all-tags "${{ secrets.DOCKER_HUB_USERNAME }}/httpbun"
