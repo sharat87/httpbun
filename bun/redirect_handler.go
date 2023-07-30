@@ -32,26 +32,19 @@ func handleRedirectTo(ex *exchange.Exchange) {
 	ex.ResponseWriter.WriteHeader(statusCode)
 }
 
-func handleAbsoluteRedirect(ex *exchange.Exchange) {
+func handleRedirectCount(ex *exchange.Exchange) {
+	mode := ex.Field("mode")
 	n, _ := strconv.Atoi(ex.Field("count"))
 
 	if n > MaxRedirectCount {
 		ex.RespondBadRequest("No more than %v redirects allowed.", MaxRedirectCount)
 	} else if n > 1 {
-		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.Request.URL.String(), "/"+fmt.Sprint(n-1)), false)
+		target := ex.URL.Path
+		if mode == "absolute-" {
+			target = ex.Request.URL.String()
+		}
+		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(target, "/"+fmt.Sprint(n-1)))
 	} else {
-		ex.Redirect(ex.ResponseWriter, "/anything", false)
-	}
-}
-
-func handleRelativeRedirect(ex *exchange.Exchange) {
-	n, _ := strconv.Atoi(ex.Field("count"))
-
-	if n > MaxRedirectCount {
-		ex.RespondBadRequest("No more than %v redirects allowed.", MaxRedirectCount)
-	} else if n > 1 {
-		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(ex.URL.Path, "/"+fmt.Sprint(n-1)), true)
-	} else {
-		ex.Redirect(ex.ResponseWriter, "/anything", true)
+		ex.Redirect(ex.ResponseWriter, "/anything")
 	}
 }

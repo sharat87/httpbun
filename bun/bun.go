@@ -95,8 +95,8 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 	m.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
 
 	m.HandleFunc("/redirect(-to)?/?", handleRedirectTo)
-	m.HandleFunc("/(relative-)?redirect/(?P<count>\\d+)", handleRelativeRedirect)
-	m.HandleFunc("/absolute-redirect/(?P<count>\\d+)", handleAbsoluteRedirect)
+	m.HandleFunc("/(?P<mode>relative-)?redirect/(?P<count>\\d+)", handleRedirectCount)
+	m.HandleFunc("/(?P<mode>absolute-)redirect/(?P<count>\\d+)", handleRedirectCount)
 
 	m.HandleFunc("/anything\\b.*", handleAnything)
 

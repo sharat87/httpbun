@@ -28,7 +28,7 @@ func handleCookiesDelete(ex *exchange.Exchange) {
 		})
 	}
 
-	ex.Redirect(ex.ResponseWriter, "/cookies", true)
+	ex.Redirect(ex.ResponseWriter, "/cookies")
 }
 
 func handleCookiesSet(ex *exchange.Exchange) {
@@ -50,5 +50,5 @@ func handleCookiesSet(ex *exchange.Exchange) {
 
 	}
 
-	ex.Redirect(ex.ResponseWriter, "/cookies", true)
+	ex.Redirect(ex.ResponseWriter, "/cookies")
 }
