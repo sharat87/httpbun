@@ -98,7 +98,7 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 	m.HandleFunc("/(?P<mode>relative-)?redirect/(?P<count>\\d+)", handleRedirectCount)
 	m.HandleFunc("/(?P<mode>absolute-)redirect/(?P<count>\\d+)", handleRedirectCount)
 
-	m.HandleFunc("/anything\\b.*", handleAnything)
+	m.HandleFunc("/any(thing)?\\b.*", handleAnything)
 
 	m.HandleFunc("/mix\\b(?P<conf>.*)", handleMix)
 
