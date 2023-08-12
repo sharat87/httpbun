@@ -132,6 +132,30 @@ summary {
 	margin: 6px 0;
 }
 
+.ghost {
+	position: fixed;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 500;
+	font-weight: bold;
+	cursor: default;
+	pointer-events: none;
+	animation: ghost-up 1s ease-out;
+	page-break-inside: avoid;
+}
+
+@keyframes ghost-up {
+	from {
+		opacity: 1;
+		transform: translateY(-.5em) scale(1.5);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-5em) scale(2.5);
+	}
+}
+
 @media (prefers-color-scheme: dark) {
 	html {
 		color: #eee;

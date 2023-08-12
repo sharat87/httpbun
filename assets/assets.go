@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"embed"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -13,7 +15,15 @@ import (
 var assets embed.FS
 
 func Render(name string, w http.ResponseWriter, data any) {
-	tpl, err := template.ParseFS(assets, "*")
+	w.Header().Set("Content-Type", "text/html")
+
+	var assetsFS fs.FS = assets
+	_, err := os.Stat("assets")
+	if err == nil {
+		assetsFS = os.DirFS("assets")
+	}
+
+	tpl, err := template.ParseFS(assetsFS, "*")
 	if err != nil {
 		log.Fatalf("Error parsing HTML assets %v.", err)
 	}

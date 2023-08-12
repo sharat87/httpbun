@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sharat87/httpbun/assets"
+	"github.com/sharat87/httpbun/bun/mix"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/mux"
 	"github.com/sharat87/httpbun/util"
@@ -36,7 +37,6 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 	}
 
 	m.HandleFunc(`(/(index\.html)?)?`, func(ex *exchange.Exchange) {
-		ex.ResponseWriter.Header().Set("Content-Type", "text/html")
 		assets.Render("index.html", ex.ResponseWriter, map[string]string{
 			"host":        ex.URL.Host,
 			"commit":      commit,
@@ -83,7 +83,7 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 	m.HandleFunc("/xml", handleSampleXml)
 	m.HandleFunc("/image/svg", handleImageSvg)
 
-	m.HandleFunc("/base64(/(?P<encoded>.*))?", handleDecodeBase64)
+	m.HandleFunc("/b(ase)?64(/(?P<encoded>.*))?", handleDecodeBase64)
 	m.HandleFunc("/bytes/(?P<size>\\d+)", handleRandomBytes)
 	m.HandleFunc("/delay/(?P<delay>[^/]+)", handleDelayedResponse)
 	m.HandleFunc("/drip(-(?P<mode>lines))?", handleDrip)
@@ -100,7 +100,10 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 
 	m.HandleFunc("/any(thing)?\\b.*", handleAnything)
 
-	m.HandleFunc("/mix\\b(?P<conf>.*)", handleMix)
+	m.HandleFunc("/mix\\b(?P<conf>.*)", mix.HandleMix)
+	m.HandleFunc("/mixer\\b(?P<conf>.*)", func(ex *exchange.Exchange) {
+		mix.HandleMixer(ex, pathPrefix)
+	})
 
 	m.HandleFunc("/info", handleInfo)
 
@@ -538,128 +541,4 @@ func handleInfo(ex *exchange.Exchange) {
 		"hostname": hostname,
 		"env":      env,
 	})
-}
-
-func handleMix(ex *exchange.Exchange) {
-	path := ex.Field("conf")
-	query := ex.URL.RawQuery
-
-	var source, itemSep string
-	var unescape func(string) (string, error)
-
-	if path != "" {
-		source = path
-		itemSep = "/"
-		unescape = url.PathUnescape
-	} else {
-		source = query
-		itemSep = "&"
-		unescape = url.QueryUnescape
-	}
-
-	actions := url.Values{}
-
-	for _, part := range strings.Split(source, itemSep) {
-		if part == "" {
-			continue
-		}
-		key, value, _ := strings.Cut(part, "=")
-		key, err := unescape(key)
-		if err != nil {
-			ex.RespondBadRequest(err.Error())
-			return
-		}
-		value, err = unescape(value)
-		if err != nil {
-			ex.RespondBadRequest(err.Error())
-			return
-		}
-		actions[key] = append(actions[key], value)
-	}
-
-	status := http.StatusOK
-	headers := url.Values{}
-	cookies := map[string]string{}
-	var deleteCookies []string
-	var payload []byte
-
-	if actions.Has("h") {
-		for _, headerSpec := range actions["h"] {
-			name, value, _ := strings.Cut(headerSpec, ":")
-			name = http.CanonicalHeaderKey(name)
-			headers.Add(name, value)
-		}
-	}
-
-	if actions.Has("c") {
-		for _, headerSpec := range actions["c"] {
-			name, value, isFound := strings.Cut(headerSpec, ":")
-			if isFound {
-				cookies[name] = value
-			} else {
-				deleteCookies = append(deleteCookies, name)
-			}
-		}
-	}
-
-	if actions.Has("r") {
-		status = http.StatusTemporaryRedirect
-		headers.Set("Location", actions.Get("r"))
-	}
-
-	if actions.Has("s") {
-		var err error
-		status, err = strconv.Atoi(actions.Get("s"))
-		if err != nil {
-			ex.RespondBadRequest(err.Error())
-			return
-		}
-	}
-
-	if actions.Has("d") {
-		seconds, err := strconv.ParseFloat(actions.Get("d"), 32)
-		if err != nil {
-			ex.RespondBadRequest(err.Error())
-			return
-		}
-		if seconds > 10 {
-			ex.RespondBadRequest("Delay must be less than 10 seconds.")
-			return
-		}
-		time.Sleep(time.Duration(seconds * float64(time.Second)))
-	}
-
-	if actions.Has("b64") {
-		if decoded, err := base64.StdEncoding.DecodeString(actions.Get("b64")); err != nil {
-			ex.RespondBadRequest("Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
-			return
-		} else {
-			payload = decoded
-		}
-	}
-
-	for name, value := range headers {
-		ex.ResponseWriter.Header()[name] = value
-	}
-
-	for name, value := range cookies {
-		http.SetCookie(ex.ResponseWriter, &http.Cookie{
-			Name:  name,
-			Value: value,
-			Path:  "/",
-		})
-	}
-
-	for _, name := range deleteCookies {
-		http.SetCookie(ex.ResponseWriter, &http.Cookie{
-			Name:    name,
-			Value:   "",
-			Path:    "/",
-			Expires: time.Unix(0, 0),
-			MaxAge:  -1, // This will produce `Max-Age: 0` in the cookie.
-		})
-	}
-
-	ex.ResponseWriter.WriteHeader(status)
-	ex.WriteBytes(payload)
 }
