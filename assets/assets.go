@@ -4,26 +4,18 @@ import (
 	"bytes"
 	"embed"
 	"html/template"
-	"io/fs"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 )
 
-//go:embed *.html *.css *.png *.svg favicon.ico site.webmanifest
+//go:embed *.html *.css *.js *.png *.svg favicon.ico site.webmanifest
 var assets embed.FS
 
 func Render(name string, w http.ResponseWriter, data any) {
 	w.Header().Set("Content-Type", "text/html")
 
-	var assetsFS fs.FS = assets
-	_, err := os.Stat("assets")
-	if err == nil {
-		assetsFS = os.DirFS("assets")
-	}
-
-	tpl, err := template.ParseFS(assetsFS, "*")
+	tpl, err := template.ParseFS(assets, "*")
 	if err != nil {
 		log.Fatalf("Error parsing HTML assets %v.", err)
 	}
