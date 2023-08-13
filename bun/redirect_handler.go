@@ -4,18 +4,22 @@ import (
 	"fmt"
 	"github.com/sharat87/httpbun/exchange"
 	"net/http"
-	"regexp"
 	"strconv"
 )
 
 func handleRedirectTo(ex *exchange.Exchange) {
-	urls := ex.Request.URL.Query()["url"]
+	query := ex.Request.URL.Query()
+	urls := query["url"]
 	if len(urls) < 1 || urls[0] == "" {
 		ex.RespondBadRequest("Need url parameter")
 		return
 	}
 
-	statusCodes := ex.Request.URL.Query()["status_code"]
+	statusCodes := query["status_code"]
+	if statusCodes == nil {
+		statusCodes = query["status"]
+	}
+
 	statusCode := http.StatusFound
 	if statusCodes != nil {
 		var err error
@@ -38,13 +42,16 @@ func handleRedirectCount(ex *exchange.Exchange) {
 
 	if n > MaxRedirectCount {
 		ex.RespondBadRequest("No more than %v redirects allowed.", MaxRedirectCount)
+
 	} else if n > 1 {
-		target := ex.URL.Path
+		target := fmt.Sprint(n - 1)
 		if mode == "absolute-" {
-			target = ex.Request.URL.String()
+			target = "/absolute-redirect/" + target
 		}
-		ex.Redirect(ex.ResponseWriter, regexp.MustCompile("/\\d+$").ReplaceAllLiteralString(target, "/"+fmt.Sprint(n-1)))
+		ex.Redirect(ex.ResponseWriter, target)
+
 	} else {
 		ex.Redirect(ex.ResponseWriter, "/anything")
+
 	}
 }

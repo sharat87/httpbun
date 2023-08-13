@@ -29,7 +29,7 @@ func (ex Exchange) Field(name string) string {
 
 func (ex Exchange) Redirect(w http.ResponseWriter, path string) {
 	if strings.HasPrefix(path, "/") {
-		path = strings.Repeat("../", strings.Count(ex.URL.Path, "/")-1) + strings.TrimPrefix(path, "/")
+		path = ex.ServerSpec.PathPrefix + path
 	}
 
 	w.Header().Set("Location", path)

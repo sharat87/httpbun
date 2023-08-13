@@ -57,7 +57,6 @@ func MakeBunHandler(spec spec.Spec) mux.Mux {
 
 	m.HandleFunc("/status/(?P<codes>[\\d,]+)", handleStatus)
 	m.HandleFunc("/ip(\\.(?P<format>txt|json))?", handleIp)
-	m.HandleFunc("/user-agent", handleUserAgent)
 
 	m.HandleFunc("/cache", handleCache)
 	m.HandleFunc("/cache/(?P<age>\\d+)", handleCacheControl)
@@ -66,9 +65,7 @@ func MakeBunHandler(spec spec.Spec) mux.Mux {
 
 	m.HandleFunc("/deny", handleSampleRobotsDeny)
 	m.HandleFunc("/html", handleSampleHtml)
-	m.HandleFunc("/json", handleSampleJson)
 	m.HandleFunc("/robots.txt", handleSampleRobotsTxt)
-	m.HandleFunc("/xml", handleSampleXml)
 	m.HandleFunc("/image/svg", handleImageSvg)
 
 	m.HandleFunc("/b(ase)?64(/(?P<encoded>.*))?", handleDecodeBase64)
@@ -313,12 +310,6 @@ func handleIp(ex *exchange.Exchange) {
 			"origin": origin,
 		})
 	}
-}
-
-func handleUserAgent(ex *exchange.Exchange) {
-	util.WriteJson(ex.ResponseWriter, map[string]string{
-		"user-agent": ex.HeaderValueLast("User-Agent"),
-	})
 }
 
 func handleCache(ex *exchange.Exchange) {
