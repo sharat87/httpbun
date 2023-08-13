@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"fmt"
+	"github.com/sharat87/httpbun/server/spec"
 	"github.com/sharat87/httpbun/util"
 	"io"
 	"log"
@@ -19,6 +20,7 @@ type Exchange struct {
 	Fields         map[string]string
 	CappedBody     io.Reader
 	URL            *url.URL
+	ServerSpec     spec.Spec
 }
 
 func (ex Exchange) Field(name string) string {

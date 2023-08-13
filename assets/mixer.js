@@ -103,7 +103,6 @@ function loadFromURL() {
 }
 
 function recomputeURL() {
-	console.log("recomputeURL")
 	const url = new URL(location.href)
 	url.search = url.hash = ""
 	const currentURLPath = url.pathname
@@ -142,7 +141,7 @@ function recomputeURL() {
 	urlEl.innerText = url.toString()
 
 	urlMismatchMessageEl.style.display =
-		url.pathname.replace("/mix/", "/mixer/") !== currentURLPath ? "" : "none"
+		currentURLPath !== "/mixer" && url.pathname !== currentURLPath.replace("/mixer", "/mix") ? "" : "none"
 }
 
 function checkAddButtons() {

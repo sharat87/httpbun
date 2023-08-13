@@ -8,6 +8,7 @@ import (
 	"github.com/sharat87/httpbun/bun/mix"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/mux"
+	"github.com/sharat87/httpbun/server/spec"
 	"github.com/sharat87/httpbun/util"
 	"io"
 	"log"
@@ -26,25 +27,12 @@ import (
 
 const MaxRedirectCount = 20
 
-func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
-	pathPrefix = strings.Trim(pathPrefix, "/")
-	if pathPrefix != "" {
-		pathPrefix = "/" + pathPrefix
-	}
-
+func MakeBunHandler(spec spec.Spec) mux.Mux {
 	m := mux.Mux{
-		PathPrefix: pathPrefix,
+		ServerSpec: spec,
 	}
 
-	m.HandleFunc(`(/(index\.html)?)?`, func(ex *exchange.Exchange) {
-		assets.Render("index.html", ex.ResponseWriter, map[string]string{
-			"host":        ex.URL.Host,
-			"commit":      commit,
-			"commitShort": util.CommitHashShorten(commit),
-			"date":        date,
-			"pathPrefix":  pathPrefix,
-		})
-	})
+	m.HandleFunc(`(/(index\.html)?)?`, handleIndex)
 
 	m.HandleFunc(`/(?P<name>.+\.(png|ico|webmanifest))`, func(ex *exchange.Exchange) {
 		assets.WriteAsset(ex.Field("name"), ex.ResponseWriter, ex.Request)
@@ -101,15 +89,19 @@ func MakeBunHandler(pathPrefix, commit, date string) mux.Mux {
 	m.HandleFunc("/any(thing)?\\b.*", handleAnything)
 
 	m.HandleFunc("/mix\\b(?P<conf>.*)", mix.HandleMix)
-	m.HandleFunc("/mixer\\b(?P<conf>.*)", func(ex *exchange.Exchange) {
-		mix.HandleMixer(ex, pathPrefix)
-	})
+	m.HandleFunc("/mixer\\b(?P<conf>.*)", mix.HandleMixer)
 
 	m.HandleFunc("/info", handleInfo)
 
 	m.HandleFunc("/(?P<hook>hooks.slack.com/services/.*)", handleSlack)
 
 	return m
+}
+
+func handleIndex(ex *exchange.Exchange) {
+	assets.Render("index.html", *ex, map[string]any{
+		"host": ex.URL.Host,
+	})
 }
 
 func handleHealth(ex *exchange.Exchange) {

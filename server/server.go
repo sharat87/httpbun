@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"github.com/sharat87/httpbun/bun"
-	"github.com/sharat87/httpbun/info"
+	"github.com/sharat87/httpbun/server/spec"
 	"log"
 	"net"
 	"net/http"
@@ -11,76 +11,35 @@ import (
 	"time"
 )
 
-type Config struct {
-	BindTarget string
-	PathPrefix string
-}
-
 type Server struct {
 	httpServer *http.Server
 	Addr       net.Addr
 	closeCh    chan error
 }
 
-func ParseArgs(args []string) Config {
-	rc := &Config{}
-	bindTarget := os.Getenv("HTTPBUN_BIND")
-
-	i := 0
-
-	for i < len(args) {
-		arg := args[i]
-
-		if arg == "--bind" {
-			i++
-			bindTarget = args[i]
-
-		} else if arg == "--path-prefix" {
-			i++
-			rc.PathPrefix = args[i]
-
-		} else {
-			log.Fatalf("Unknown argument '%v'", arg)
-
-		}
-
-		i++
-	}
-
-	if bindTarget == "" {
-		bindTarget = ":3090"
-	}
-
-	rc.BindTarget = bindTarget
-
-	return *rc
-}
-
-func StartNew(config Config) Server {
+func StartNew(spec spec.Spec) Server {
 	sslCertFile := os.Getenv("HTTPBUN_SSL_CERT")
 	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
 
-	m := bun.MakeBunHandler(config.PathPrefix, info.Commit, info.Date)
-
 	server := &http.Server{
-		Addr:    config.BindTarget,
-		Handler: m,
+		Addr:    spec.BindTarget,
+		Handler: bun.MakeBunHandler(spec),
 	}
 
-	listener, err := net.Listen("tcp", config.BindTarget)
+	listener, err := net.Listen("tcp", spec.BindTarget)
 	if err != nil {
-		log.Fatalf("Error listening on %q: %v", config.BindTarget, err)
+		log.Fatalf("Error listening on %q: %v", spec.BindTarget, err)
 	}
 
 	closeCh := make(chan error, 1)
 
 	go func() {
+		defer close(closeCh)
 		if sslCertFile == "" {
 			closeCh <- server.Serve(listener)
 		} else {
 			closeCh <- server.ServeTLS(listener, sslCertFile, sslKeyFile)
 		}
-		close(closeCh)
 	}()
 
 	return Server{

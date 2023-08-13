@@ -2,7 +2,7 @@ package mux
 
 import (
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/info"
+	"github.com/sharat87/httpbun/server/spec"
 	"io"
 	"log"
 	"net/http"
@@ -14,8 +14,8 @@ import (
 type HandlerFn func(ex *exchange.Exchange)
 
 type Mux struct {
-	PathPrefix string
 	routes     []route
+	ServerSpec spec.Spec
 }
 
 type route struct {
@@ -31,7 +31,7 @@ func (mux *Mux) HandleFunc(pattern string, fn HandlerFn) {
 }
 
 func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if !strings.HasPrefix(req.URL.Path, mux.PathPrefix) {
+	if !strings.HasPrefix(req.URL.Path, mux.ServerSpec.PathPrefix) {
 		http.NotFound(w, req)
 		return
 	}
@@ -46,13 +46,14 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			Opaque:      req.URL.Opaque,
 			User:        req.URL.User,
 			Host:        req.URL.Host,
-			Path:        strings.TrimPrefix(req.URL.Path, mux.PathPrefix),
+			Path:        strings.TrimPrefix(req.URL.Path, mux.ServerSpec.PathPrefix),
 			RawPath:     req.URL.RawPath,
 			ForceQuery:  req.URL.ForceQuery,
 			RawQuery:    req.URL.RawQuery,
 			Fragment:    req.URL.Fragment,
 			RawFragment: req.URL.RawFragment,
 		},
+		ServerSpec: mux.ServerSpec,
 	}
 
 	if ex.URL.Host == "" && req.Host != "" {
@@ -76,7 +77,7 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		ex.ResponseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
 	}
 
-	ex.ResponseWriter.Header().Set("X-Powered-By", "httpbun/"+info.Commit)
+	ex.ResponseWriter.Header().Set("X-Powered-By", "httpbun/"+mux.ServerSpec.Commit)
 
 	for _, route := range mux.routes {
 		match := route.pat.FindStringSubmatch(ex.URL.Path)

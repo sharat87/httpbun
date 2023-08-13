@@ -177,15 +177,14 @@ func HandleMix(ex *exchange.Exchange) {
 	ex.WriteBytes(payload)
 }
 
-func HandleMixer(ex *exchange.Exchange, pathPrefix string) {
+func HandleMixer(ex *exchange.Exchange) {
 	entries, err := computeMixEntries(ex)
 	if err != nil {
 		ex.RespondBadRequest(err.Error())
 		return
 	}
 
-	assets.Render("mixer.html", ex.ResponseWriter, map[string]any{
+	assets.Render("mixer.html", *ex, map[string]any{
 		"mixEntries": entries,
-		"pathPrefix": pathPrefix,
 	})
 }

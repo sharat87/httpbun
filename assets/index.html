@@ -6,17 +6,17 @@
 
 <meta name=viewport content="width=device-width">
 
-<link rel=apple-touch-icon sizes=180x180 href="{{.pathPrefix}}/icon-180.png">
-<link rel=icon type=image/png sizes=32x32 href="{{.pathPrefix}}/icon-32.png">
-<link rel=icon type=image/png sizes=16x16 href="{{.pathPrefix}}/icon-16.png">
-<link rel=manifest href="{{.pathPrefix}}/site.webmanifest">
+<link rel=apple-touch-icon sizes=180x180 href="{{.serverSpec.PathPrefix}}/icon-180.png">
+<link rel=icon type=image/png sizes=32x32 href="{{.serverSpec.PathPrefix}}/icon-32.png">
+<link rel=icon type=image/png sizes=16x16 href="{{.serverSpec.PathPrefix}}/icon-16.png">
+<link rel=manifest href="{{.serverSpec.PathPrefix}}/site.webmanifest">
 
 <link rel=preconnect href="https://fonts.gstatic.com">
 <link rel=stylesheet href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Source+Sans+Pro:ital,wght@0,400;0,700;1,400;1,700&display=swap">
 
 <style>{{template "styles.css"}}</style>
 
-<h1><img alt=Logo src='{{.pathPrefix}}/icon-180.png'> Httpbun</h1>
+<h1><img alt=Logo src='{{.serverSpec.PathPrefix}}/icon-180.png'> Httpbun</h1>
 
 <p>This is a service to help easily test the behaviour of HTTP clients like browsers, libraries, developer tools or
     anything else. Inspired by <a href='http://httpbin.org' target=_blank rel=noopener>httpbin</a>.</p>
@@ -37,7 +37,7 @@
         about the request.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl {{ .host }}/get</pre>
+            <pre>curl {{.host}}/get</pre>
         </details>
     </dd>
 
@@ -50,11 +50,11 @@
         endpoints that behave similarly.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl -X POST -d 'one=1' {{ .host }}/post</pre>
-            <pre>curl -X POST -d '{"one": 1}' -H 'content-type:application/json' {{ .host }}/post</pre>
-            <pre>curl -X PUT {{ .host }}/put</pre>
-            <pre>curl -X PATCH {{ .host }}/patch</pre>
-            <pre>curl -X DELETE {{ .host }}/delete</pre>
+            <pre>curl -X POST -d 'one=1' {{.host}}/post</pre>
+            <pre>curl -X POST -d '{"one": 1}' -H 'content-type:application/json' {{.host}}/post</pre>
+            <pre>curl -X PUT {{.host}}/put</pre>
+            <pre>curl -X PATCH {{.host}}/patch</pre>
+            <pre>curl -X DELETE {{.host}}/delete</pre>
         </details>
     </dd>
 
@@ -68,7 +68,7 @@
         comma and treated as a single header value.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl -H 'x-custom: custom header value' {{ .host }}/headers</pre>
+            <pre>curl -H 'x-custom: custom header value' {{.host}}/headers</pre>
         </details>
     </dd>
 
@@ -76,8 +76,8 @@
     <dd>Responds with the same <code>Content-Type</code> header as the request and the body of the request as is.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl -H 'Content-Type: text/plain' -d 'plain body' {{ .host }}/payload</pre>
-            <pre>curl -H 'Content-Type: application/json' -d '{"a": 1}' {{ .host }}/payload</pre>
+            <pre>curl -H 'Content-Type: text/plain' -d 'plain body' {{.host}}/payload</pre>
+            <pre>curl -H 'Content-Type: application/json' -d '{"a": 1}' {{.host}}/payload</pre>
         </details>
     </dd>
 
@@ -91,7 +91,7 @@
     <dd>Requires basic authentication with <code>username</code> and <code>password</code> as the credentials.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl -H 'Authorization: Basic c2NvdHQ6dGlnZXI=' {{ .host }}/basic-auth/scott/tiger</pre>
+            <pre>curl -H 'Authorization: Basic c2NvdHQ6dGlnZXI=' {{.host}}/basic-auth/scott/tiger</pre>
         </details>
     </dd>
 
@@ -103,8 +103,8 @@
         response.
         <details>
             <summary><span>Examples</span></summary>
-            <pre>curl -H 'Authorization: Bearer auth_token_here' {{ .host }}/bearer</pre>
-            <pre>curl -H 'Authorization: Bearer expected_token' {{ .host }}/bearer/expected_token</pre>
+            <pre>curl -H 'Authorization: Bearer auth_token_here' {{.host}}/bearer</pre>
+            <pre>curl -H 'Authorization: Bearer expected_token' {{.host}}/bearer/expected_token</pre>
         </details>
     </dd>
 
@@ -370,9 +370,9 @@
 
 <footer>
     <p>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a>.
-        {{- if .commit }}
-        Built from <a href="https://github.com/sharat87/httpbun/tree/{{.commit}}">{{ .commitShort }}</a> on {{ .date }}.
-        {{- end }}</p>
+        {{- if .serverSpec.Commit}}
+        Built from <a href="https://github.com/sharat87/httpbun/tree/{{.serverSpec.Commit}}">{{.serverSpec.CommitShort}}</a> on {{.serverSpec.Date}}.
+        {{- end}}</p>
 </footer>
 
 <script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>

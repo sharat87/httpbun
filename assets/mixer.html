@@ -46,9 +46,9 @@ const URL_MIX_ENTRIES = {{.mixEntries}}
 
 <footer>
     <p>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a>.
-        {{- if .commit }}
-        Built from <a href="https://github.com/sharat87/httpbun/tree/{{.commit}}">{{ .commitShort }}</a> on {{ .date }}.
-        {{- end }}</p>
+        {{- if .serverSpec.Commit}}
+        Built from <a href="https://github.com/sharat87/httpbun/tree/{{.serverSpec.Commit}}">{{.serverSpec.CommitShort}}</a> on {{.serverSpec.Date}}.
+        {{- end}}</p>
 </footer>
 
 <script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>

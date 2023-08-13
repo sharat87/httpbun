@@ -3,6 +3,7 @@ package assets
 import (
 	"bytes"
 	"embed"
+	"github.com/sharat87/httpbun/exchange"
 	"html/template"
 	"log"
 	"net/http"
@@ -12,8 +13,10 @@ import (
 //go:embed *.html *.css *.js *.png *.svg favicon.ico site.webmanifest
 var assets embed.FS
 
-func Render(name string, w http.ResponseWriter, data any) {
-	w.Header().Set("Content-Type", "text/html")
+func Render(name string, ex exchange.Exchange, data map[string]any) {
+	data["serverSpec"] = ex.ServerSpec
+
+	ex.ResponseWriter.Header().Set("Content-Type", "text/html")
 
 	tpl, err := template.ParseFS(assets, "*")
 	if err != nil {
@@ -25,7 +28,7 @@ func Render(name string, w http.ResponseWriter, data any) {
 		log.Fatalf("Error executing %q template %v.", name, err)
 	}
 
-	_, err = w.Write(rendered.Bytes())
+	_, err = ex.ResponseWriter.Write(rendered.Bytes())
 	if err != nil {
 		log.Printf("Error writing rendered template %v", err)
 	}
