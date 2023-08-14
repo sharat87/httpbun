@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sharat87/httpbun/assets"
+	"github.com/sharat87/httpbun/bun/auth"
 	"github.com/sharat87/httpbun/bun/mix"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/mux"
@@ -50,10 +51,10 @@ func MakeBunHandler(spec spec.Spec) mux.Mux {
 
 	m.HandleFunc("/payload", handlePayload)
 
-	m.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthBasic)
-	m.HandleFunc("/bearer(/(?P<tok>\\w+))?", handleAuthBearer)
-	m.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest)
-	m.HandleFunc("/digest-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", handleAuthDigest)
+	m.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", auth.HandleAuthBasic)
+	m.HandleFunc("/bearer(/(?P<tok>\\w+))?", auth.HandleAuthBearer)
+	m.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", auth.HandleAuthDigest)
+	m.HandleFunc("/digest-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", auth.HandleAuthDigest)
 
 	m.HandleFunc("/status/(?P<codes>[\\d,]+)", handleStatus)
 	m.HandleFunc("/ip(\\.(?P<format>txt|json))?", handleIp)
@@ -138,8 +139,8 @@ func handleHeaders(ex *exchange.Exchange) {
 }
 
 func handlePayload(ex *exchange.Exchange) {
-	if contentTypeValues, ok := ex.Request.Header["Content-Type"]; ok {
-		ex.ResponseWriter.Header().Set("Content-Type", contentTypeValues[0])
+	if contentTypeValues, ok := ex.Request.Header[ContentType]; ok {
+		ex.ResponseWriter.Header().Set(ContentType, contentTypeValues[0])
 	}
 
 	bodyBytes, err := io.ReadAll(ex.CappedBody)
@@ -168,13 +169,13 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 		"url":     ex.FullUrl(),
 	}
 
-	contentTypeHeaderValue := ex.HeaderValueLast("Content-Type")
+	contentTypeHeaderValue := ex.HeaderValueLast(ContentType)
 	if contentTypeHeaderValue == "" {
 		contentTypeHeaderValue = "text/plain"
 	}
 	contentType, params, err := mime.ParseMediaType(contentTypeHeaderValue)
 	if err != nil {
-		log.Printf("Error parsing content type %q %v.", ex.HeaderValueLast("Content-Type"), err)
+		log.Printf("Error parsing content type %q %v.", ex.HeaderValueLast(ContentType), err)
 		return
 	}
 
@@ -293,14 +294,6 @@ func handleStatus(ex *exchange.Exchange) {
 	}
 }
 
-// Digest auth response computer.
-func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce, qop, method, path string) string {
-	// Source: <https://en.wikipedia.org/wiki/Digest_access_authentication>.
-	ha1 := util.Md5sum(username + ":" + "testrealm@host.com" + ":" + password)
-	ha2 := util.Md5sum(method + ":" + path)
-	return util.Md5sum(ha1 + ":" + serverNonce + ":" + nc + ":" + clientNonce + ":" + qop + ":" + ha2)
-}
-
 func handleIp(ex *exchange.Exchange) {
 	origin := ex.FindIncomingIPAddress()
 	if ex.Field("format") == "txt" {
@@ -365,8 +358,8 @@ func handleResponseHeaders(ex *exchange.Exchange) {
 		}
 	}
 
-	ex.ResponseWriter.Header().Set("Content-Type", "application/json")
-	data["Content-Type"] = "application/json"
+	ex.ResponseWriter.Header().Set(ContentType, "application/json")
+	data[ContentType] = "application/json"
 
 	var jsonContent []byte
 
@@ -450,7 +443,7 @@ func handleDrip(ex *exchange.Exchange) {
 	}
 
 	ex.ResponseWriter.Header().Set("Cache-Control", "no-cache")
-	ex.ResponseWriter.Header().Set("Content-Type", "text/event-stream")
+	ex.ResponseWriter.Header().Set(ContentType, "text/event-stream")
 	ex.ResponseWriter.WriteHeader(code)
 
 	interval := time.Duration(float32(time.Second) * float32(duration) / float32(numbytes))
