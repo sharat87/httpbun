@@ -1,0 +1,9 @@
+<footer>
+    <p>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a>.
+        {{- if .serverSpec.Commit}}
+        Built from <a href="https://github.com/sharat87/httpbun/tree/{{.serverSpec.Commit}}">{{.serverSpec.CommitShort}}</a> on {{.serverSpec.Date}}.
+        {{- end}}</p>
+</footer>
+
+<script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+<noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade"></noscript>

@@ -1,20 +1,4 @@
-<!doctype html>
-<html lang=en>
-<meta charset=utf-8>
-<title>Httpbun</title>
-<link rel=canonical href="https://httpbun.com">
-
-<meta name=viewport content="width=device-width">
-
-<link rel=apple-touch-icon sizes=180x180 href="{{.serverSpec.PathPrefix}}/icon-180.png">
-<link rel=icon type=image/png sizes=32x32 href="{{.serverSpec.PathPrefix}}/icon-32.png">
-<link rel=icon type=image/png sizes=16x16 href="{{.serverSpec.PathPrefix}}/icon-16.png">
-<link rel=manifest href="{{.serverSpec.PathPrefix}}/site.webmanifest">
-
-<link rel=preconnect href="https://fonts.gstatic.com">
-<link rel=stylesheet href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Source+Sans+Pro:ital,wght@0,400;0,700;1,400;1,700&display=swap">
-
-<style>{{template "styles.css"}}</style>
+{{template "_head.html" .}}
 
 <h1><img alt=Logo src='{{.serverSpec.PathPrefix}}/icon-180.png'> Httpbun</h1>
 
@@ -361,12 +345,4 @@
     <li>Graphics License: <a href='https://creativecommons.org/licenses/by/4.0/'>CC-BY 4.0</a>.
 </ul>
 
-<footer>
-    <p>A project by <a href='https://sharats.me' target=_blank rel=noopener>Shri</a>.
-        {{- if .serverSpec.Commit}}
-        Built from <a href="https://github.com/sharat87/httpbun/tree/{{.serverSpec.Commit}}">{{.serverSpec.CommitShort}}</a> on {{.serverSpec.Date}}.
-        {{- end}}</p>
-</footer>
-
-<script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
-<noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade"></noscript>
+{{template "_foot.html" .}}
