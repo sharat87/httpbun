@@ -60,7 +60,7 @@ func handleRedirectCount(ex *exchange.Exchange) {
 		if isAbsolute {
 			target = "/absolute-redirect/" + target
 		}
-		ex.Redirect(ex.ResponseWriter, target)
+		ex.Redirect(target)
 
 	} else {
 		var target string
@@ -69,7 +69,7 @@ func handleRedirectCount(ex *exchange.Exchange) {
 		} else {
 			target = "../anything"
 		}
-		ex.Redirect(ex.ResponseWriter, target)
+		ex.Redirect(target)
 
 	}
 }

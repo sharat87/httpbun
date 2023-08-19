@@ -27,19 +27,19 @@ func (ex Exchange) Field(name string) string {
 	return ex.Fields[name]
 }
 
-func (ex Exchange) Redirect(w http.ResponseWriter, path string) {
-	if strings.HasPrefix(path, "/") {
-		path = ex.ServerSpec.PathPrefix + path
+func (ex Exchange) Redirect(target string) {
+	if strings.HasPrefix(target, "/") {
+		target = ex.ServerSpec.PathPrefix + target
 	}
 
-	w.Header().Set("Location", path)
-	w.WriteHeader(http.StatusFound)
+	ex.ResponseWriter.Header().Set("Location", target)
+	ex.ResponseWriter.WriteHeader(http.StatusFound)
 
-	_, err := fmt.Fprintf(w, `<!doctype html>
+	_, err := fmt.Fprintf(ex.ResponseWriter, `<!doctype html>
 <title>Redirecting...</title>
 <h1>Redirecting...</h1>
-<p>You should be redirected automatically to target URL: <a href=%q>%q</a>.  If not click the link.</p>
-`, path, path)
+<p>You should be redirected automatically to target URL: <a href=%q>%s</a>.  If not click the link.</p>
+`, target, target)
 	if err != nil {
 		log.Printf("Error writing redirect HTML to HTTP response %v", err)
 	}
@@ -47,9 +47,9 @@ func (ex Exchange) Redirect(w http.ResponseWriter, path string) {
 
 func (ex Exchange) QueryParamInt(name string, value int) (int, error) {
 	args := ex.Request.URL.Query()
-	var err error
 
 	if len(args[name]) > 0 {
+		var err error
 		value, err = strconv.Atoi(args[name][0])
 		if err != nil {
 			return 0, fmt.Errorf("%s must be an integer", name)
