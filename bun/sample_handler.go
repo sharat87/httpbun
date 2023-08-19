@@ -8,7 +8,7 @@ import (
 
 func handleImageSvg(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set(c.ContentType, "image/svg+xml")
-	assets.WriteAsset("svg-logo.svg", ex.ResponseWriter, ex.Request)
+	assets.WriteAsset("svg-logo.svg", *ex)
 }
 
 func handleSampleRobotsTxt(ex *exchange.Exchange) {

@@ -37,6 +37,9 @@ func TestHeadersRepeat(t *testing.T) {
 	s.Equal(c.ApplicationJSON, resp.Header.Get(c.ContentType))
 	s.JSONEq(`{
 		"Accept-Encoding": "gzip",
-		"X-One": "custom header value,another custom header"
+		"X-One": [
+			"custom header value",
+			"another custom header"
+		]
 	}`, body)
 }

@@ -178,7 +178,10 @@ func TestGetWithMultipleHeaderValues(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
-			"X-One": "first one,second one"
+			"X-One": [
+				"first one",
+				"second one"
+			]
 		},
 		"data": "",
 		"files": {},

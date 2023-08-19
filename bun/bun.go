@@ -33,7 +33,7 @@ func MakeBunHandler(spec spec.Spec) mux.Mux {
 	m.HandleFunc(`(/(index\.html)?)?`, handleIndex)
 
 	m.HandleFunc(`/(?P<name>.+\.(png|ico|webmanifest))`, func(ex *exchange.Exchange) {
-		assets.WriteAsset(ex.Field("name"), ex.ResponseWriter, ex.Request)
+		assets.WriteAsset(ex.Field("name"), *ex)
 	})
 
 	m.HandleFunc("/health", handleHealth)

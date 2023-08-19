@@ -17,15 +17,15 @@ import (
 )
 
 type Info struct {
-	Method  string            `json:"method"`
-	Args    map[string]any    `json:"args"`
-	Headers map[string]string `json:"headers"`
-	Origin  string            `json:"origin"`
-	Url     string            `json:"url"`
-	Form    map[string]any    `json:"form"`
-	Data    any               `json:"data"` // string or []byte
-	Json    *any              `json:"json"`
-	Files   map[string]any    `json:"files"`
+	Method  string         `json:"method"`
+	Args    map[string]any `json:"args"`
+	Headers map[string]any `json:"headers"`
+	Origin  string         `json:"origin"`
+	Url     string         `json:"url"`
+	Form    map[string]any `json:"form"`
+	Data    any            `json:"data"` // string or []byte
+	Json    *any           `json:"json"`
+	Files   map[string]any `json:"files"`
 }
 
 func InfoJSON(ex *exchange.Exchange) {

@@ -35,11 +35,11 @@ func Render(name string, ex exchange.Exchange, data map[string]any) {
 	}
 }
 
-func WriteAsset(name string, w http.ResponseWriter, req *http.Request) {
+func WriteAsset(name string, ex exchange.Exchange) {
 	file, err := assets.Open(name)
 	if err != nil {
 		if strings.HasSuffix(err.Error(), " file does not exist") {
-			http.NotFound(w, req)
+			http.NotFound(ex.ResponseWriter, ex.Request)
 		} else {
 			log.Printf("Error opening asset file %v", err)
 		}
@@ -52,9 +52,8 @@ func WriteAsset(name string, w http.ResponseWriter, req *http.Request) {
 		}
 	}(file)
 
-	_, err = io.Copy(w, file)
+	_, err = io.Copy(ex.ResponseWriter, file)
 	if err != nil {
 		log.Printf("Error writing asset content %v", err)
-		return
 	}
 }

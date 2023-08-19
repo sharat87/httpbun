@@ -85,13 +85,19 @@ func (ex Exchange) HeaderValueLast(name string) string {
 	return ""
 }
 
-func (ex Exchange) ExposableHeadersMap() map[string]string {
-	headers := make(map[string]string)
+func (ex Exchange) ExposableHeadersMap() map[string]any {
+	headers := map[string]any{}
+
 	for name, values := range ex.Request.Header {
 		if !strings.HasPrefix(name, "X-Httpbun-") {
-			headers[name] = strings.Join(values, ",")
+			if len(values) > 1 {
+				headers[name] = values
+			} else {
+				headers[name] = values[0]
+			}
 		}
 	}
+
 	return headers
 }
 
