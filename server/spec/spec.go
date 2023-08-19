@@ -1,8 +1,8 @@
 package spec
 
 import (
+	"flag"
 	"github.com/sharat87/httpbun/util"
-	"log"
 	"os"
 	"strings"
 )
@@ -20,41 +20,20 @@ type Spec struct {
 	Date        string
 }
 
-func ParseArgs(args []string) Spec {
+func ParseArgs() Spec {
 	spec := &Spec{
 		Commit:      Commit,
 		CommitShort: util.CommitHashShorten(Commit),
 		Date:        Date,
 	}
 
-	bindTarget := os.Getenv("HTTPBUN_BIND")
+	flag.StringVar(&spec.BindTarget, "bind", os.Getenv("HTTPBUN_BIND"), "Bind target for the server to listen on")
+	flag.StringVar(&spec.PathPrefix, "path-prefix", "", "Prefix at which to serve the httpbun APIs")
+	flag.Parse()
 
-	i := 0
-
-	for i < len(args) {
-		arg := args[i]
-
-		if arg == "--bind" {
-			i++
-			bindTarget = args[i]
-
-		} else if arg == "--path-prefix" {
-			i++
-			spec.PathPrefix = args[i]
-
-		} else {
-			log.Fatalf("Unknown argument '%v'", arg)
-
-		}
-
-		i++
+	if spec.BindTarget == "" {
+		spec.BindTarget = ":3090"
 	}
-
-	if bindTarget == "" {
-		bindTarget = ":3090"
-	}
-
-	spec.BindTarget = bindTarget
 
 	spec.PathPrefix = strings.Trim(spec.PathPrefix, "/")
 	if spec.PathPrefix != "" {

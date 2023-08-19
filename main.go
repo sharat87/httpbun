@@ -4,12 +4,11 @@ import (
 	"github.com/sharat87/httpbun/server"
 	"github.com/sharat87/httpbun/server/spec"
 	"log"
-	"os"
 	"runtime"
 )
 
 func main() {
-	c := spec.ParseArgs(os.Args[1:])
+	c := spec.ParseArgs()
 	log.Printf("Starting with %+v", c)
 
 	log.Printf("OS: %q, Arch: %q.", runtime.GOOS, runtime.GOARCH)
