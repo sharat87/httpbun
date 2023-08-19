@@ -2,12 +2,12 @@ package bun
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/bun/auth"
 	"github.com/sharat87/httpbun/bun/mix"
 	"github.com/sharat87/httpbun/bun/redirect"
+	"github.com/sharat87/httpbun/bun/responses"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/mux"
@@ -17,16 +17,12 @@ import (
 	"log"
 	"maps"
 	"math/rand"
-	"mime"
-	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 )
 
 func MakeBunHandler(spec spec.Spec) mux.Mux {
@@ -105,14 +101,10 @@ func handleHealth(ex *exchange.Exchange) {
 	ex.WriteLn("ok")
 }
 
-type InfoJsonOptions struct {
-	BodyInfo bool
-}
-
 func handleValidMethod(ex *exchange.Exchange) {
-	allowedMethod := strings.TrimPrefix(ex.URL.Path, "/")
-	if !strings.EqualFold(ex.Request.Method, allowedMethod) {
-		allowedMethods := strings.ToUpper(allowedMethod) + ", OPTIONS"
+	allowedMethod := strings.ToUpper(strings.TrimPrefix(ex.URL.Path, "/"))
+	if ex.Request.Method != allowedMethod {
+		allowedMethods := allowedMethod + ", " + http.MethodOptions
 		ex.ResponseWriter.Header().Set("Allow", allowedMethods)
 		ex.ResponseWriter.Header().Set("Access-Control-Allow-Methods", allowedMethods)
 		if ex.Request.Method != http.MethodOptions {
@@ -121,15 +113,11 @@ func handleValidMethod(ex *exchange.Exchange) {
 		return
 	}
 
-	sendInfoJson(ex, InfoJsonOptions{
-		BodyInfo: true,
-	})
+	responses.InfoJSON(ex)
 }
 
 func handleAnything(ex *exchange.Exchange) {
-	sendInfoJson(ex, InfoJsonOptions{
-		BodyInfo: true,
-	})
+	responses.InfoJSON(ex)
 }
 
 func handleHeaders(ex *exchange.Exchange) {
@@ -137,132 +125,11 @@ func handleHeaders(ex *exchange.Exchange) {
 }
 
 func handlePayload(ex *exchange.Exchange) {
-	if contentTypeValues, ok := ex.Request.Header[c.ContentType]; ok {
-		ex.ResponseWriter.Header().Set(c.ContentType, contentTypeValues[0])
-	}
-
-	bodyBytes, err := io.ReadAll(ex.CappedBody)
+	ex.ResponseWriter.Header()[c.ContentType] = ex.Request.Header[c.ContentType]
+	_, err := io.Copy(ex.ResponseWriter, ex.CappedBody)
 	if err != nil {
 		fmt.Println("Error reading request payload", err)
 	}
-
-	ex.WriteBytes(bodyBytes)
-}
-
-func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
-	args := make(map[string]any)
-	for name, values := range ex.Request.URL.Query() {
-		if len(values) > 1 {
-			args[name] = values
-		} else {
-			args[name] = values[0]
-		}
-	}
-
-	result := map[string]any{
-		"method":  ex.Request.Method,
-		"args":    args,
-		"headers": ex.ExposableHeadersMap(),
-		"origin":  ex.FindIncomingIPAddress(),
-		"url":     ex.FullUrl(),
-	}
-
-	contentTypeHeaderValue := ex.HeaderValueLast(c.ContentType)
-	if contentTypeHeaderValue == "" {
-		contentTypeHeaderValue = "text/plain"
-	}
-	contentType, params, err := mime.ParseMediaType(contentTypeHeaderValue)
-	if err != nil {
-		log.Printf("Error parsing content type %q %v.", ex.HeaderValueLast(c.ContentType), err)
-		return
-	}
-
-	if options.BodyInfo {
-		form := make(map[string]any)
-		var jsonData *any
-		files := make(map[string]any)
-		var data any // string or []byte
-
-		if contentType == "application/x-www-form-urlencoded" {
-			body := ex.BodyString()
-			if parsed, err := url.ParseQuery(body); err != nil {
-				data = body
-			} else {
-				for name, values := range parsed {
-					if len(values) > 1 {
-						form[name] = values
-					} else {
-						form[name] = values[0]
-					}
-				}
-			}
-
-		} else if contentType == c.ApplicationJSON {
-			body := ex.BodyString()
-			var result any
-			if json.Unmarshal([]byte(body), &result) == nil {
-				jsonData = &result
-			}
-			data = body
-
-		} else if contentType == "multipart/form-data" {
-			// This might work for `multipart/mixed` as well. Confirm.
-			reader := multipart.NewReader(ex.Request.Body, params["boundary"])
-			allFileData, err := reader.ReadForm(32 << 20)
-			if err != nil {
-				errorMessage := "Error reading multipart form data: " + err.Error()
-				ex.RespondError(http.StatusBadRequest, "multipart-read-error", errorMessage)
-				log.Println(errorMessage)
-				return
-			}
-
-			for name, fileHeaders := range allFileData.File {
-				fileHeader := fileHeaders[0]
-				var content any
-				if f, err := fileHeader.Open(); err != nil {
-					fmt.Println("Error opening fileHeader", err)
-				} else if content, err = io.ReadAll(f); err != nil {
-					fmt.Println("Error reading from fileHeader", err)
-				} else {
-					if utf8.Valid(content.([]byte)) {
-						content = string(content.([]byte))
-					}
-					headers := map[string]string{}
-					for name, values := range fileHeader.Header {
-						headers[name] = strings.Join(values, ",")
-					}
-					files[name] = map[string]any{
-						"filename": fileHeader.Filename,
-						"size":     fileHeader.Size,
-						"headers":  headers,
-						"content":  content,
-					}
-				}
-			}
-
-			for name, valueInfo := range allFileData.Value {
-				form[name] = valueInfo[0]
-			}
-
-		} else {
-			data = ex.BodyBytes()
-			if utf8.Valid(data.([]byte)) {
-				data = string(data.([]byte))
-			}
-
-		}
-
-		if data == nil {
-			data = ""
-		}
-
-		result["form"] = form
-		result["data"] = data
-		result["json"] = jsonData
-		result["files"] = files
-	}
-
-	util.WriteJson(ex.ResponseWriter, result)
 }
 
 func handleStatus(ex *exchange.Exchange) {
@@ -286,7 +153,7 @@ func handleStatus(ex *exchange.Exchange) {
 			"description": http.StatusText(codeNum),
 		})
 
-	} else if acceptHeader == "text/plain" {
+	} else if acceptHeader == c.TextPlain {
 		ex.WriteF("%d %s", codeNum, http.StatusText(codeNum))
 
 	}
@@ -309,10 +176,7 @@ func handleCache(ex *exchange.Exchange) {
 			ex.HeaderValueLast("If-None-Match") == ""
 
 	if shouldSendData {
-		isNonGet := ex.Request.Method != http.MethodGet
-		sendInfoJson(ex, InfoJsonOptions{
-			BodyInfo: isNonGet,
-		})
+		responses.InfoJSON(ex)
 	} else {
 		ex.ResponseWriter.WriteHeader(http.StatusNotModified)
 	}
@@ -320,10 +184,7 @@ func handleCache(ex *exchange.Exchange) {
 
 func handleCacheControl(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("Cache-Control", "public, max-age="+ex.Field("age"))
-	isNonGet := ex.Request.Method != http.MethodGet
-	sendInfoJson(ex, InfoJsonOptions{
-		BodyInfo: isNonGet,
-	})
+	responses.InfoJSON(ex)
 }
 
 func handleEtag(ex *exchange.Exchange) {
@@ -334,10 +195,7 @@ func handleEtag(ex *exchange.Exchange) {
 	if etagInUrl == etagInHeader {
 		ex.ResponseWriter.WriteHeader(http.StatusNotModified)
 	} else {
-		isNonGet := ex.Request.Method != http.MethodGet
-		sendInfoJson(ex, InfoJsonOptions{
-			BodyInfo: isNonGet,
-		})
+		responses.InfoJSON(ex)
 	}
 }
 
