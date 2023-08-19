@@ -1,42 +1,44 @@
 package auth
 
 import (
+	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/mux"
 	"github.com/sharat87/httpbun/util"
 	"net/http"
 	"regexp"
 	"strings"
 )
 
-const WWWAuthenticate = "WWW-Authenticate"
-
-func HandleAuthBasic(ex *exchange.Exchange) {
-	givenUsername, givenPassword, ok := ex.Request.BasicAuth()
-
-	if ok && givenUsername == ex.Field("user") && givenPassword == ex.Field("pass") {
-		util.WriteJson(ex.ResponseWriter, map[string]any{
-			"authenticated": true,
-			"user":          givenUsername,
-		})
-
-	} else {
-		ex.ResponseWriter.Header().Set(WWWAuthenticate, "Basic realm=\"Fake Realm\"")
-		ex.ResponseWriter.Header().Set("Content-Type", "application/json")
-		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
-		util.WriteJson(ex.ResponseWriter, map[string]any{
-			"authenticated": false,
-			"user":          givenUsername,
-		})
-
-	}
+var Routes = map[string]mux.HandlerFn{
+	"/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?":                 handleAuthBasic,
+	"/bearer(/(?P<tok>\\w+))?":                                      handleAuthBearer,
+	"/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?": handleAuthDigest,
+	"/digest-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?":                handleAuthDigest,
 }
 
-func HandleAuthBearer(ex *exchange.Exchange) {
+func handleAuthBasic(ex *exchange.Exchange) {
+	givenUsername, givenPassword, ok := ex.Request.BasicAuth()
+	isAuthenticated := ok && givenUsername == ex.Field("user") && givenPassword == ex.Field("pass")
+
+	if !isAuthenticated {
+		ex.ResponseWriter.Header().Set(c.WWWAuthenticate, "Basic realm=\"Fake Realm\"")
+		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	util.WriteJson(ex.ResponseWriter, map[string]any{
+		"authenticated": isAuthenticated,
+		"user":          givenUsername,
+	})
+}
+
+func handleAuthBearer(ex *exchange.Exchange) {
 	expectedToken := ex.Field("tok")
 
 	authHeader := ex.HeaderValueLast("Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
-		ex.ResponseWriter.Header().Set(WWWAuthenticate, "Bearer")
+		ex.ResponseWriter.Header().Set(c.WWWAuthenticate, "Bearer")
 		ex.ResponseWriter.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -49,7 +51,7 @@ func HandleAuthBearer(ex *exchange.Exchange) {
 	})
 }
 
-func HandleAuthDigest(ex *exchange.Exchange) {
+func handleAuthDigest(ex *exchange.Exchange) {
 	expectedQop, expectedUsername, expectedPassword := ex.Field("qop"), ex.Field("user"), ex.Field("pass")
 
 	if expectedQop == "" {
@@ -65,7 +67,7 @@ func HandleAuthDigest(ex *exchange.Exchange) {
 	if vals := ex.Request.Header["Authorization"]; vals != nil && len(vals) == 1 {
 		authHeader = vals[0]
 	} else {
-		ex.ResponseWriter.Header().Set(WWWAuthenticate, realm)
+		ex.ResponseWriter.Header().Set(c.WWWAuthenticate, realm)
 		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:  "nonce",
 			Value: newNonce,
@@ -89,7 +91,7 @@ func HandleAuthDigest(ex *exchange.Exchange) {
 
 	expectedNonce, err := ex.Request.Cookie("nonce")
 	if err != nil {
-		ex.ResponseWriter.Header().Set(WWWAuthenticate, realm)
+		ex.ResponseWriter.Header().Set(c.WWWAuthenticate, realm)
 		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:  "nonce",
 			Value: newNonce,
@@ -104,7 +106,7 @@ func HandleAuthDigest(ex *exchange.Exchange) {
 	}
 
 	if givenNonce != expectedNonce.Value {
-		ex.ResponseWriter.Header().Set(WWWAuthenticate, realm)
+		ex.ResponseWriter.Header().Set(c.WWWAuthenticate, realm)
 		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:  "nonce",
 			Value: newNonce,
@@ -128,7 +130,7 @@ func HandleAuthDigest(ex *exchange.Exchange) {
 	givenResponseCode := givenDetails["response"]
 
 	if expectedResponseCode != givenResponseCode {
-		ex.ResponseWriter.Header().Set(WWWAuthenticate, realm)
+		ex.ResponseWriter.Header().Set(c.WWWAuthenticate, realm)
 		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:  "nonce",
 			Value: newNonce,

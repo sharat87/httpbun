@@ -2,21 +2,22 @@ package bun
 
 import (
 	"github.com/sharat87/httpbun/assets"
+	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
 )
 
 func handleImageSvg(ex *exchange.Exchange) {
-	ex.ResponseWriter.Header().Set(ContentType, "image/svg+xml")
+	ex.ResponseWriter.Header().Set(c.ContentType, "image/svg+xml")
 	assets.WriteAsset("svg-logo.svg", ex.ResponseWriter, ex.Request)
 }
 
 func handleSampleRobotsTxt(ex *exchange.Exchange) {
-	ex.ResponseWriter.Header().Set(ContentType, "text/plain")
+	ex.ResponseWriter.Header().Set(c.ContentType, c.TextPlain)
 	ex.WriteLn("User-agent: *\nDisallow: /deny")
 }
 
 func handleSampleRobotsDeny(ex *exchange.Exchange) {
-	ex.ResponseWriter.Header().Set(ContentType, "text/plain")
+	ex.ResponseWriter.Header().Set(c.ContentType, c.TextPlain)
 	ex.WriteLn(`
           .-''''''-.
         .' _      _ '.
@@ -31,7 +32,7 @@ func handleSampleRobotsDeny(ex *exchange.Exchange) {
 }
 
 func handleSampleHtml(ex *exchange.Exchange) {
-	ex.ResponseWriter.Header().Set(ContentType, "text/html")
+	ex.ResponseWriter.Header().Set(c.ContentType, c.TextHTML)
 	ex.WriteLn(`<!DOCTYPE html>
 <html>
 <title>Httpbun sample</title>

@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/mux"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,12 +12,17 @@ import (
 	"time"
 )
 
-type Entry struct {
+type entry struct {
 	dir  string
 	args []string
 }
 
-func computeMixEntries(ex *exchange.Exchange) ([]Entry, error) {
+var Routes = map[string]mux.HandlerFn{
+	`/mix\b(?P<conf>.*)`:   handleMix,
+	`/mixer\b(?P<conf>.*)`: handleMixer,
+}
+
+func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
 	path := ex.Field("conf")
 	query := ex.URL.RawQuery
 
@@ -33,7 +39,7 @@ func computeMixEntries(ex *exchange.Exchange) ([]Entry, error) {
 		unescape = url.QueryUnescape
 	}
 
-	var entries []Entry
+	var entries []entry
 
 	for _, part := range strings.Split(source, itemSep) {
 		if part == "" {
@@ -48,27 +54,27 @@ func computeMixEntries(ex *exchange.Exchange) ([]Entry, error) {
 		switch directive {
 
 		case "s":
-			entries = append(entries, Entry{"s", []string{value}})
+			entries = append(entries, entry{"s", []string{value}})
 
 		case "h":
 			headerKey, headerValue, _ := strings.Cut(value, ":")
-			entries = append(entries, Entry{"h", []string{headerKey, headerValue}})
+			entries = append(entries, entry{"h", []string{headerKey, headerValue}})
 
 		case "c":
 			cookieName, cookieValue, _ := strings.Cut(value, ":")
-			entries = append(entries, Entry{"c", []string{cookieName, cookieValue}})
+			entries = append(entries, entry{"c", []string{cookieName, cookieValue}})
 
 		case "cd":
-			entries = append(entries, Entry{"cd", []string{value}})
+			entries = append(entries, entry{"cd", []string{value}})
 
 		case "r":
-			entries = append(entries, Entry{"r", []string{value}})
+			entries = append(entries, entry{"r", []string{value}})
 
 		case "b64":
-			entries = append(entries, Entry{"b64", []string{value}})
+			entries = append(entries, entry{"b64", []string{value}})
 
 		case "d":
-			entries = append(entries, Entry{"d", []string{value}})
+			entries = append(entries, entry{"d", []string{value}})
 
 		}
 
@@ -77,7 +83,7 @@ func computeMixEntries(ex *exchange.Exchange) ([]Entry, error) {
 	return entries, nil
 }
 
-func HandleMix(ex *exchange.Exchange) {
+func handleMix(ex *exchange.Exchange) {
 	entries, err := computeMixEntries(ex)
 	if err != nil {
 		ex.RespondBadRequest(err.Error())
@@ -177,7 +183,7 @@ func HandleMix(ex *exchange.Exchange) {
 	ex.WriteBytes(payload)
 }
 
-func HandleMixer(ex *exchange.Exchange) {
+func handleMixer(ex *exchange.Exchange) {
 	entries, err := computeMixEntries(ex)
 	if err != nil {
 		ex.RespondBadRequest(err.Error())

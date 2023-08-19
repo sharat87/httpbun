@@ -7,10 +7,6 @@ on:
     branches:
       - "master"
 
-  release:
-    types:
-      - published
-
   pull_request:
     branches:
       - "master"

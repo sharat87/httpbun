@@ -1,11 +1,20 @@
-package bun
+package redirect
 
 import (
 	"fmt"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/mux"
 	"net/http"
 	"strconv"
 )
+
+const MaxRedirectCount = 20
+
+var Routes = map[string]mux.HandlerFn{
+	`/redirect(-to)?/?`:                            handleRedirectTo,
+	`/(?P<mode>relative-)?redirect/(?P<count>\d+)`: handleRedirectCount,
+	`/(?P<mode>absolute-)redirect/(?P<count>\d+)`:  handleRedirectCount,
+}
 
 func handleRedirectTo(ex *exchange.Exchange) {
 	query := ex.Request.URL.Query()
@@ -37,21 +46,30 @@ func handleRedirectTo(ex *exchange.Exchange) {
 }
 
 func handleRedirectCount(ex *exchange.Exchange) {
-	mode := ex.Field("mode")
+	isAbsolute := ex.Field("mode") == "absolute-"
 	n, _ := strconv.Atoi(ex.Field("count"))
 
-	if n > MaxRedirectCount {
-		ex.RespondBadRequest("No more than %v redirects allowed.", MaxRedirectCount)
+	if n < 0 {
+		ex.RespondBadRequest("count must be a non-negative integer")
+
+	} else if n > MaxRedirectCount {
+		ex.RespondBadRequest("count cannot be greater than %v", MaxRedirectCount)
 
 	} else if n > 1 {
 		target := fmt.Sprint(n - 1)
-		if mode == "absolute-" {
+		if isAbsolute {
 			target = "/absolute-redirect/" + target
 		}
 		ex.Redirect(ex.ResponseWriter, target)
 
 	} else {
-		ex.Redirect(ex.ResponseWriter, "/anything")
+		var target string
+		if isAbsolute {
+			target = "/anything"
+		} else {
+			target = "../anything"
+		}
+		ex.Redirect(ex.ResponseWriter, target)
 
 	}
 }

@@ -7,12 +7,15 @@ import (
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/bun/auth"
 	"github.com/sharat87/httpbun/bun/mix"
+	"github.com/sharat87/httpbun/bun/redirect"
+	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/mux"
 	"github.com/sharat87/httpbun/server/spec"
 	"github.com/sharat87/httpbun/util"
 	"io"
 	"log"
+	"maps"
 	"math/rand"
 	"mime"
 	"mime/multipart"
@@ -25,8 +28,6 @@ import (
 	"time"
 	"unicode/utf8"
 )
-
-const MaxRedirectCount = 20
 
 func MakeBunHandler(spec spec.Spec) mux.Mux {
 	m := mux.Mux{
@@ -50,11 +51,6 @@ func MakeBunHandler(spec spec.Spec) mux.Mux {
 	m.HandleFunc("/headers", handleHeaders)
 
 	m.HandleFunc("/payload", handlePayload)
-
-	m.HandleFunc("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", auth.HandleAuthBasic)
-	m.HandleFunc("/bearer(/(?P<tok>\\w+))?", auth.HandleAuthBearer)
-	m.HandleFunc("/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", auth.HandleAuthDigest)
-	m.HandleFunc("/digest-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?", auth.HandleAuthDigest)
 
 	m.HandleFunc("/status/(?P<codes>[\\d,]+)", handleStatus)
 	m.HandleFunc("/ip(\\.(?P<format>txt|json))?", handleIp)
@@ -80,18 +76,21 @@ func MakeBunHandler(spec spec.Spec) mux.Mux {
 	m.HandleFunc("/cookies/delete", handleCookiesDelete)
 	m.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
 
-	m.HandleFunc("/redirect(-to)?/?", handleRedirectTo)
-	m.HandleFunc("/(?P<mode>relative-)?redirect/(?P<count>\\d+)", handleRedirectCount)
-	m.HandleFunc("/(?P<mode>absolute-)redirect/(?P<count>\\d+)", handleRedirectCount)
-
 	m.HandleFunc("/any(thing)?\\b.*", handleAnything)
-
-	m.HandleFunc("/mix\\b(?P<conf>.*)", mix.HandleMix)
-	m.HandleFunc("/mixer\\b(?P<conf>.*)", mix.HandleMixer)
 
 	m.HandleFunc("/info", handleInfo)
 
 	m.HandleFunc("/(?P<hook>hooks.slack.com/services/.*)", handleSlack)
+
+	allRoutes := map[string]mux.HandlerFn{}
+
+	maps.Copy(allRoutes, auth.Routes)
+	maps.Copy(allRoutes, redirect.Routes)
+	maps.Copy(allRoutes, mix.Routes)
+
+	for pat, fn := range allRoutes {
+		m.HandleFunc(pat, fn)
+	}
 
 	return m
 }
@@ -122,9 +121,8 @@ func handleValidMethod(ex *exchange.Exchange) {
 		return
 	}
 
-	isNonGet := ex.Request.Method != http.MethodGet
 	sendInfoJson(ex, InfoJsonOptions{
-		BodyInfo: isNonGet,
+		BodyInfo: true,
 	})
 }
 
@@ -139,8 +137,8 @@ func handleHeaders(ex *exchange.Exchange) {
 }
 
 func handlePayload(ex *exchange.Exchange) {
-	if contentTypeValues, ok := ex.Request.Header[ContentType]; ok {
-		ex.ResponseWriter.Header().Set(ContentType, contentTypeValues[0])
+	if contentTypeValues, ok := ex.Request.Header[c.ContentType]; ok {
+		ex.ResponseWriter.Header().Set(c.ContentType, contentTypeValues[0])
 	}
 
 	bodyBytes, err := io.ReadAll(ex.CappedBody)
@@ -169,13 +167,13 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 		"url":     ex.FullUrl(),
 	}
 
-	contentTypeHeaderValue := ex.HeaderValueLast(ContentType)
+	contentTypeHeaderValue := ex.HeaderValueLast(c.ContentType)
 	if contentTypeHeaderValue == "" {
 		contentTypeHeaderValue = "text/plain"
 	}
 	contentType, params, err := mime.ParseMediaType(contentTypeHeaderValue)
 	if err != nil {
-		log.Printf("Error parsing content type %q %v.", ex.HeaderValueLast(ContentType), err)
+		log.Printf("Error parsing content type %q %v.", ex.HeaderValueLast(c.ContentType), err)
 		return
 	}
 
@@ -199,7 +197,7 @@ func sendInfoJson(ex *exchange.Exchange, options InfoJsonOptions) {
 				}
 			}
 
-		} else if contentType == "application/json" {
+		} else if contentType == c.ApplicationJSON {
 			body := ex.BodyString()
 			var result any
 			if json.Unmarshal([]byte(body), &result) == nil {
@@ -282,7 +280,7 @@ func handleStatus(ex *exchange.Exchange) {
 
 	acceptHeader := ex.HeaderValueLast("Accept")
 
-	if acceptHeader == "application/json" {
+	if acceptHeader == c.ApplicationJSON {
 		util.WriteJson(ex.ResponseWriter, map[string]any{
 			"code":        codeNum,
 			"description": http.StatusText(codeNum),
@@ -358,8 +356,8 @@ func handleResponseHeaders(ex *exchange.Exchange) {
 		}
 	}
 
-	ex.ResponseWriter.Header().Set(ContentType, "application/json")
-	data[ContentType] = "application/json"
+	ex.ResponseWriter.Header().Set(c.ContentType, c.ApplicationJSON)
+	data[c.ContentType] = c.ApplicationJSON
 
 	var jsonContent []byte
 
@@ -443,7 +441,7 @@ func handleDrip(ex *exchange.Exchange) {
 	}
 
 	ex.ResponseWriter.Header().Set("Cache-Control", "no-cache")
-	ex.ResponseWriter.Header().Set(ContentType, "text/event-stream")
+	ex.ResponseWriter.Header().Set(c.ContentType, "text/event-stream")
 	ex.ResponseWriter.WriteHeader(code)
 
 	interval := time.Duration(float32(time.Second) * float32(duration) / float32(numbytes))
