@@ -1,10 +1,12 @@
 package assets
 
 import (
-	"bytes"
 	"embed"
+	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
 	"html/template"
+	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"strings"
@@ -13,36 +15,46 @@ import (
 //go:embed *.html *.css *.js *.png *.svg favicon.ico site.webmanifest
 var assets embed.FS
 
-func Render(name string, ex exchange.Exchange, data map[string]any) {
-	data["serverSpec"] = ex.ServerSpec
+var assetsTemplate = prepare()
 
-	ex.ResponseWriter.Header().Set("Content-Type", "text/html")
-
-	tpl, err := template.ParseFS(assets, "*")
+func prepare() template.Template {
+	t, err := template.ParseFS(assets, "*")
 	if err != nil {
 		log.Fatalf("Error parsing HTML assets %v.", err)
 	}
+	return *t
+}
 
-	var rendered bytes.Buffer
-	if err := tpl.ExecuteTemplate(&rendered, name, data); err != nil {
+func Render(name string, ex exchange.Exchange, data map[string]any) {
+	data["serverSpec"] = ex.ServerSpec
+
+	ex.ResponseWriter.Header().Set(c.ContentType, c.TextHTML)
+
+	if err := assetsTemplate.ExecuteTemplate(ex.ResponseWriter, name, data); err != nil {
 		log.Fatalf("Error executing %q template %v.", name, err)
-	}
-
-	_, err = ex.ResponseWriter.Write(rendered.Bytes())
-	if err != nil {
-		log.Printf("Error writing rendered template %v", err)
 	}
 }
 
 func WriteAsset(name string, w http.ResponseWriter, req *http.Request) {
-	if content, err := assets.ReadFile(name); err == nil {
-		_, err := w.Write(content)
-		if err != nil {
-			log.Printf("Error writing asset content %v", err)
+	file, err := assets.Open(name)
+	if err != nil {
+		if strings.HasSuffix(err.Error(), " file does not exist") {
+			http.NotFound(w, req)
+		} else {
+			log.Printf("Error opening asset file %v", err)
 		}
-	} else if strings.HasSuffix(err.Error(), " file does not exist") {
-		http.NotFound(w, req)
-	} else {
-		log.Printf("Error %v", err)
+		return
+	}
+	defer func(file fs.File) {
+		err := file.Close()
+		if err != nil {
+			log.Printf("Error closing asset file %v", err)
+		}
+	}(file)
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		log.Printf("Error writing asset content %v", err)
+		return
 	}
 }
