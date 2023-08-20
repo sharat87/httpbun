@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/bun/auth"
+	"github.com/sharat87/httpbun/bun/cache"
+	"github.com/sharat87/httpbun/bun/headers"
+	"github.com/sharat87/httpbun/bun/method"
 	"github.com/sharat87/httpbun/bun/mix"
 	"github.com/sharat87/httpbun/bun/redirect"
-	"github.com/sharat87/httpbun/bun/responses"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/mux"
@@ -38,23 +40,10 @@ func MakeBunHandler(spec spec.Spec) mux.Mux {
 
 	m.HandleFunc("/health", handleHealth)
 
-	m.HandleFunc("/get", handleValidMethod)
-	m.HandleFunc("/post", handleValidMethod)
-	m.HandleFunc("/put", handleValidMethod)
-	m.HandleFunc("/patch", handleValidMethod)
-	m.HandleFunc("/delete", handleValidMethod)
-
-	m.HandleFunc("/headers", handleHeaders)
-
 	m.HandleFunc("/payload", handlePayload)
 
 	m.HandleFunc("/status/(?P<codes>[\\d,]+)", handleStatus)
 	m.HandleFunc("/ip(\\.(?P<format>txt|json))?", handleIp)
-
-	m.HandleFunc("/cache", handleCache)
-	m.HandleFunc("/cache/(?P<age>\\d+)", handleCacheControl)
-	m.HandleFunc("/etag/(?P<etag>[^/]+)", handleEtag)
-	m.HandleFunc("/(response|respond-with)-headers?/?", handleResponseHeaders)
 
 	m.HandleFunc("/deny", handleSampleRobotsDeny)
 	m.HandleFunc("/html", handleSampleHtml)
@@ -72,14 +61,15 @@ func MakeBunHandler(spec spec.Spec) mux.Mux {
 	m.HandleFunc("/cookies/delete", handleCookiesDelete)
 	m.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
 
-	m.HandleFunc("/any(thing)?\\b.*", responses.InfoJSON)
-
 	m.HandleFunc("/info", handleInfo)
 
 	m.HandleFunc("/(?P<hook>hooks.slack.com/services/.*)", handleSlack)
 
 	allRoutes := map[string]mux.HandlerFn{}
 
+	maps.Copy(allRoutes, method.Routes)
+	maps.Copy(allRoutes, headers.Routes)
+	maps.Copy(allRoutes, cache.Routes)
 	maps.Copy(allRoutes, auth.Routes)
 	maps.Copy(allRoutes, redirect.Routes)
 	maps.Copy(allRoutes, mix.Routes)
@@ -99,25 +89,6 @@ func handleIndex(ex *exchange.Exchange) {
 
 func handleHealth(ex *exchange.Exchange) {
 	ex.WriteLn("ok")
-}
-
-func handleValidMethod(ex *exchange.Exchange) {
-	allowedMethod := strings.ToUpper(strings.TrimPrefix(ex.URL.Path, "/"))
-	if ex.Request.Method != allowedMethod {
-		allowedMethods := allowedMethod + ", " + http.MethodOptions
-		ex.ResponseWriter.Header().Set("Allow", allowedMethods)
-		ex.ResponseWriter.Header().Set("Access-Control-Allow-Methods", allowedMethods)
-		if ex.Request.Method != http.MethodOptions {
-			ex.ResponseWriter.WriteHeader(http.StatusMethodNotAllowed)
-		}
-		return
-	}
-
-	responses.InfoJSON(ex)
-}
-
-func handleHeaders(ex *exchange.Exchange) {
-	util.WriteJson(ex.ResponseWriter, ex.ExposableHeadersMap())
 }
 
 func handlePayload(ex *exchange.Exchange) {
@@ -164,67 +135,6 @@ func handleIp(ex *exchange.Exchange) {
 			"origin": origin,
 		})
 	}
-}
-
-func handleCache(ex *exchange.Exchange) {
-	shouldSendData :=
-		ex.HeaderValueLast("If-Modified-Since") == "" &&
-			ex.HeaderValueLast("If-None-Match") == ""
-
-	if shouldSendData {
-		responses.InfoJSON(ex)
-	} else {
-		ex.ResponseWriter.WriteHeader(http.StatusNotModified)
-	}
-}
-
-func handleCacheControl(ex *exchange.Exchange) {
-	ex.ResponseWriter.Header().Set("Cache-Control", "public, max-age="+ex.Field("age"))
-	responses.InfoJSON(ex)
-}
-
-func handleEtag(ex *exchange.Exchange) {
-	// TODO: Handle If-Match header in etag endpoint: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match>.
-	etagInUrl := ex.Field("etag")
-	etagInHeader := ex.HeaderValueLast("If-None-Match")
-
-	if etagInUrl == etagInHeader {
-		ex.ResponseWriter.WriteHeader(http.StatusNotModified)
-	} else {
-		responses.InfoJSON(ex)
-	}
-}
-
-func handleResponseHeaders(ex *exchange.Exchange) {
-	data := make(map[string]any)
-
-	for name, values := range ex.Request.URL.Query() {
-		name = http.CanonicalHeaderKey(name)
-		for _, value := range values {
-			ex.ResponseWriter.Header().Add(name, value)
-		}
-		if len(values) > 1 {
-			data[name] = values
-		} else {
-			data[name] = values[0]
-		}
-	}
-
-	ex.ResponseWriter.Header().Set(c.ContentType, c.ApplicationJSON)
-	data[c.ContentType] = c.ApplicationJSON
-
-	var jsonContent []byte
-
-	for {
-		jsonContent = util.ToJsonMust(data)
-		newContentLength := fmt.Sprint(len(jsonContent))
-		if data["Content-Length"] == newContentLength {
-			break
-		}
-		data["Content-Length"] = newContentLength
-	}
-
-	ex.WriteBytes(jsonContent)
 }
 
 func handleDecodeBase64(ex *exchange.Exchange) {
