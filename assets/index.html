@@ -4,8 +4,9 @@
 
 <p>This is a service to help easily test the behaviour of HTTP clients like browsers, libraries, developer tools or
     anything else. Inspired by <a href='http://httpbin.org' target=_blank rel=noopener>httpbin</a>. I made this because
-    httpbin lacked some things I needed, like the <a href=#mix>/mix endpoint</a>, not ignore request body in
-    <a href=#get>/get</a>, accepting <i>any</i> method in most endpoints,
+    httpbin lacked some things I needed, like the <a href=#mix>/mix endpoint</a>, the
+    <a href=#payload>/payload endpoint</a>, not ignore request body in <a href=#get>/get</a>, accepting <i>any</i>
+    method in most endpoints,
     <a href='https://github.com/postmanlabs/httpbin/blob/f8ec666b4d1b654e4ff6aedd356f510dcac09f83/httpbin/helpers.py#L40'
        target="_blank">not hiding some headers</a>, etc.</p>
 
@@ -46,9 +47,10 @@
         </details>
     </dd>
 
-    <dt id=anything>/anything</dt>
-    <dt>/anything/<span class=var>{...}</span></dt>
-    <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but works on any method.</dd>
+    <dt id=any>/any</dt>
+    <dt>/any/<span class=var>{...}</span></dt>
+    <dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but works on any method, and any extra path after
+        <code>/any</code> is also accepted.</dd>
 
     <dt id=headers>/headers</dt>
     <dd>Responds with a JSON object with a single field, <code>headers</code> which is an object of all the headers in

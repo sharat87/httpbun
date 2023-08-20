@@ -72,7 +72,7 @@ func MakeBunHandler(spec spec.Spec) mux.Mux {
 	m.HandleFunc("/cookies/delete", handleCookiesDelete)
 	m.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
 
-	m.HandleFunc("/any(thing)?\\b.*", handleAnything)
+	m.HandleFunc("/any(thing)?\\b.*", responses.InfoJSON)
 
 	m.HandleFunc("/info", handleInfo)
 
@@ -113,10 +113,6 @@ func handleValidMethod(ex *exchange.Exchange) {
 		return
 	}
 
-	responses.InfoJSON(ex)
-}
-
-func handleAnything(ex *exchange.Exchange) {
 	responses.InfoJSON(ex)
 }
 

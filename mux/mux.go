@@ -3,10 +3,8 @@ package mux
 import (
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/server/spec"
-	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 )
@@ -36,29 +34,7 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ex := &exchange.Exchange{
-		Request:        req,
-		ResponseWriter: w,
-		Fields:         make(map[string]string),
-		CappedBody:     io.LimitReader(req.Body, 10000),
-		URL: &url.URL{
-			Scheme:      req.URL.Scheme,
-			Opaque:      req.URL.Opaque,
-			User:        req.URL.User,
-			Host:        req.URL.Host,
-			Path:        strings.TrimPrefix(req.URL.Path, mux.ServerSpec.PathPrefix),
-			RawPath:     req.URL.RawPath,
-			ForceQuery:  req.URL.ForceQuery,
-			RawQuery:    req.URL.RawQuery,
-			Fragment:    req.URL.Fragment,
-			RawFragment: req.URL.RawFragment,
-		},
-		ServerSpec: mux.ServerSpec,
-	}
-
-	if ex.URL.Host == "" && req.Host != "" {
-		ex.URL.Host = req.Host
-	}
+	ex := exchange.New(w, req, mux.ServerSpec)
 
 	incomingIP := ex.FindIncomingIPAddress()
 	log.Printf(
@@ -69,26 +45,8 @@ func (mux Mux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		req.URL.String(),
 	)
 
-	// Need to set the exact origin, since `*` won't work if request includes credentials.
-	// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
-	originHeader := ex.HeaderValueLast("Origin")
-	if originHeader != "" {
-		ex.ResponseWriter.Header().Set("Access-Control-Allow-Origin", originHeader)
-		ex.ResponseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
-	}
-
-	ex.ResponseWriter.Header().Set("X-Powered-By", "httpbun/"+mux.ServerSpec.Commit)
-
 	for _, route := range mux.routes {
-		match := route.pat.FindStringSubmatch(ex.URL.Path)
-		if match != nil {
-			names := route.pat.SubexpNames()
-			for i, name := range names {
-				if name != "" {
-					ex.Fields[name] = match[i]
-				}
-			}
-
+		if ex.MatchAndLoadFields(route.pat) {
 			route.fn(ex)
 			return
 		}

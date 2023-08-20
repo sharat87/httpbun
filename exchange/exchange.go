@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -21,6 +22,58 @@ type Exchange struct {
 	CappedBody     io.Reader
 	URL            *url.URL
 	ServerSpec     spec.Spec
+}
+
+func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchange {
+	ex := &Exchange{
+		Request:        req,
+		ResponseWriter: w,
+		Fields:         map[string]string{},
+		CappedBody:     io.LimitReader(req.Body, 10000),
+		URL: &url.URL{
+			Scheme:      req.URL.Scheme,
+			Opaque:      req.URL.Opaque,
+			User:        req.URL.User,
+			Host:        req.URL.Host,
+			Path:        strings.TrimPrefix(req.URL.Path, serverSpec.PathPrefix),
+			RawPath:     req.URL.RawPath,
+			ForceQuery:  req.URL.ForceQuery,
+			RawQuery:    req.URL.RawQuery,
+			Fragment:    req.URL.Fragment,
+			RawFragment: req.URL.RawFragment,
+		},
+		ServerSpec: serverSpec,
+	}
+
+	if ex.URL.Host == "" && req.Host != "" {
+		ex.URL.Host = req.Host
+	}
+
+	// Need to set the exact origin, since `*` won't work if request includes credentials.
+	// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
+	originHeader := ex.HeaderValueLast("Origin")
+	if originHeader != "" {
+		ex.ResponseWriter.Header().Set("Access-Control-Allow-Origin", originHeader)
+		ex.ResponseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
+	}
+
+	ex.ResponseWriter.Header().Set("X-Powered-By", "httpbun/"+serverSpec.Commit)
+
+	return ex
+}
+
+func (ex Exchange) MatchAndLoadFields(routePat regexp.Regexp) bool {
+	match := routePat.FindStringSubmatch(ex.URL.Path)
+	if match != nil {
+		names := routePat.SubexpNames()
+		for i, name := range names {
+			if name != "" {
+				ex.Fields[name] = match[i]
+			}
+		}
+		return true
+	}
+	return false
 }
 
 func (ex Exchange) Field(name string) string {
