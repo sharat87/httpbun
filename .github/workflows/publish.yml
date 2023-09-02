@@ -37,6 +37,8 @@ jobs:
         if: |
           success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
+          docker buildx create --use
+
           tag_name="$(echo "${{ github.ref_name }}" | sed 's/^master$/latest/')"
 
           declare -a tags
