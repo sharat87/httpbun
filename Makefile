@@ -12,9 +12,9 @@ build:
 
 docker:
 	make patch
-	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -a -installsuffix cgo -o bin/httpbun-docker .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -a -installsuffix cgo -o bin/httpbun-docker-amd64 .
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -a -installsuffix cgo -o bin/httpbun-docker-arm64 .
 	make unpatch
-	docker build -t httpbun .
 
 test:
 	@go test -count=1 -vet=all ./...

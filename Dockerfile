@@ -2,7 +2,8 @@ FROM scratch
 
 MAINTAINER shrikantsharat.k@gmail.com
 
-ADD bin/httpbun-docker /
+ARG TARGETARCH
+ADD bin/httpbun-docker-$TARGETARCH /
 
 ENV PATH="___httpbun_unset_marker"
 ENV HOME="___httpbun_unset_marker"
