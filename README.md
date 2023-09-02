@@ -16,11 +16,18 @@ A project by [Shri](https://sharats.me).
 
 ## Building
 
+There's a `Taskfile.dist.yml` included in the project, which is a [Taskfile](https://taskfile.dev). Once you have `task` installed, running `task run` will start a local server from source. There's also:
+
+1. `task build` to build the binary
+2. `task test` to run tests
+3. `task fmt` to format code
+4. `task docker` to build binaries for building Docker image
+
 We patch Go's standard lib a little. There's a line in `net/http/server.go` that delets the `Host` header in all incoming requests. We comment that line out during build, and uncomment it again to restore it.
 
 So, if you're using the same Go installation for this and other projects _at the same time_, you may see unexpected behaviour.
 
-The patching and unpatching is in `make patch` and `make unpatch` targets.
+The patching and unpatching is in `task patch` and `task unpatch` targets.
 
 ## Contributing
 

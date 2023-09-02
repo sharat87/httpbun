@@ -27,11 +27,16 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Get task
+        run: |
+          curl --silent --show-error --location 'https://github.com/go-task/task/releases/download/v3.29.1/task_linux_amd64.tar.gz' \
+            | tar -xzf - -C /usr/local/bin task
+
       - name: Test
-        run: make test
+        run: task test
 
       - name: Build binaries
-        run: make docker
+        run: task docker
 
       - name: Build and Push Docker images to GHCR and DockerHub
         if: |

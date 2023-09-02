@@ -1,0 +1,48 @@
+version: "3"
+
+
+vars:
+  LD_FLAGS:
+    sh: |
+      echo -ldflags \
+        "'" \
+        "-X github.com/sharat87/httpbun/server/spec.Commit=$(git rev-parse HEAD)" \
+        "-X github.com/sharat87/httpbun/server/spec.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        "'"
+
+
+tasks:
+  run:
+    cmds:
+      - task: fmt
+      - go mod tidy
+      - go run {{.LD_FLAGS}} .
+
+  docker:
+    env:
+      CGO_ENABLED: 0
+      GOOS: linux
+    cmds:
+      - task: patch
+      - defer:
+          task: unpatch
+      - GOARCH=amd64 go build {{.LD_FLAGS}} -a -installsuffix cgo -o bin/httpbun-docker-amd64 .
+      - GOARCH=arm64 go build {{.LD_FLAGS}} -a -installsuffix cgo -o bin/httpbun-docker-arm64 .
+
+  fmt:
+    cmds:
+      - go fmt ./...
+
+  test:
+    cmds:
+      - go test -count=1 -vet=all ./...
+
+  patch:
+    cmds:
+      - sed 's:\(delete(req.Header, "Host")\)$://\1:' "$(go env GOROOT)/src/net/http/server.go" > x
+      - mv x "$(go env GOROOT)/src/net/http/server.go"
+
+  unpatch:
+    cmds:
+      - sed 's://\(delete(req.Header, "Host")\)$:\1:' "$(go env GOROOT)/src/net/http/server.go" > x
+      - mv x "$(go env GOROOT)/src/net/http/server.go"
