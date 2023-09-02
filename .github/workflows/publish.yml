@@ -46,7 +46,7 @@ jobs:
             tags+=(--tag "${{ vars.DOCKER_HUB_USERNAME }}/httpbun:${{ github.sha }}")
           fi
 
-          docker login ghcr.io --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}"
-          docker login --username "${{ vars.DOCKER_HUB_USERNAME }}" --password "${{ secrets.DOCKER_HUB_PASSWORD }}"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+          echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login --username "${{ vars.DOCKER_HUB_USERNAME }}" --password-stdin
 
-          docker buildx build --platforms linux/amd64,linux/arm64 --push "${tags[@]}" .
+          docker buildx build --platform linux/amd64,linux/arm64 --push "${tags[@]}" .
