@@ -6,7 +6,7 @@
 This is an HTTP service with endpoints that are useful when testing any HTTP client, like a browser, a library, or any
 API developer tool. It's heavily inspired by [httpbin](https://httpbin.org).
 
-Hosted at [httpbun.com](https://httpbun.com) and [httpbun.org](https://httpbun.org). Run your own with:
+Hosted at [httpbun.com](https://httpbun.com). Run your own with:
 
 ```sh
 docker run -p 80:80 sharat87/httpbun
