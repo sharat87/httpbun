@@ -19,35 +19,34 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Get versions
-        id: versions
-        run:
-          sed 's/ /=/' .tool-versions | tee -a "$GITHUB_OUTPUT"
+        with:
+          repository: sharat87/httpbun
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ steps.versions.outputs.golang }}
+          go-version-file: go.mod
 
       - name: Test
         run: make test
 
-      - name: Build
+      - name: Build binaries
         run: make docker
 
-      - name: Push Docker images to GHCR and DockerHub
+      - name: Build and Push Docker images to GHCR and DockerHub
         if: |
           success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          tag="${{ github.ref_name }}"
-          if [[ $tag == master ]]; then
-            tag=latest
-            docker tag httpbun "${{ secrets.DOCKER_HUB_USERNAME }}/httpbun:${{ github.sha }}"
+          tag_name="$(echo "${{ github.ref_name }}" | sed 's/^master$/latest/')"
+
+          declare -a tags
+          tags+=(--tag "${{ vars.DOCKER_HUB_USERNAME }}/httpbun:$tag_name")
+          tags+=(--tag "ghcr.io/${{ github.actor }}/httpbun:$tag_name")
+          if [[ "$tag_name" == latest ]]; then
+            tags+=(--tag "${{ vars.DOCKER_HUB_USERNAME }}/httpbun:${{ github.sha }}")
           fi
-          docker tag httpbun "${{ secrets.DOCKER_HUB_USERNAME }}/httpbun:$tag"
-          docker tag httpbun "ghcr.io/${{ github.actor }}/httpbun:$tag"
+
           docker login ghcr.io --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}"
-          docker login --username "${{ secrets.DOCKER_HUB_USERNAME }}" --password "${{ secrets.DOCKER_HUB_PASSWORD }}"
-          docker push --all-tags "ghcr.io/${{ github.actor }}/httpbun"
-          docker push --all-tags "${{ secrets.DOCKER_HUB_USERNAME }}/httpbun"
+          docker login --username "${{ vars.DOCKER_HUB_USERNAME }}" --password "${{ secrets.DOCKER_HUB_PASSWORD }}"
+
+          docker buildx build --platforms linux/amd64,linux/arm64 --push "${tags[@]}" .
