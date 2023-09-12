@@ -57,6 +57,16 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 		ex.ResponseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
 	}
 
+	accessControlHeaders := ex.Request.Header.Get("Access-Control-Request-Headers")
+	if accessControlHeaders != "" {
+		ex.ResponseWriter.Header().Set("Access-Control-Allow-Headers", accessControlHeaders)
+	}
+
+	accessControlMethods := ex.Request.Header.Get("Access-Control-Request-Method")
+	if accessControlMethods != "" {
+		ex.ResponseWriter.Header().Set("Access-Control-Allow-Methods", accessControlMethods)
+	}
+
 	ex.ResponseWriter.Header().Set("X-Powered-By", "httpbun/"+serverSpec.Commit)
 
 	return ex
