@@ -23,11 +23,26 @@ There's a `Taskfile.dist.yml` included in the project, which is a [Taskfile](htt
 3. `task fmt` to format code
 4. `task docker` to build binaries for building Docker image
 
-We patch Go's standard lib a little. There's a line in `net/http/server.go` that delets the `Host` header in all incoming requests. We comment that line out during build, and uncomment it again to restore it.
+### Patches
+
+We patch Go's standard lib a little.
+
+- [net/http/server.go#L1013][] will be appended with a new line:
+  `if !haveHost { hosts, haveHost = req.Header["host"] }`.
+  It fetches the "host" entry from headers if the "Host" entry is nil.
+- [net/http/server.go#L1031][] will be commented.
+  It deletes the `Host` header in all incoming requests.
+- [net/textproto/reader.go#L755][] and [net/textproto/reader.go#L757][] will be commented.
+  It converts the header key's case to a fixed pattern.
 
 So, if you're using the same Go installation for this and other projects _at the same time_, you may see unexpected behaviour.
 
 The patching and unpatching is in `task patch` and `task unpatch` targets.
+
+[net/http/server.go#L1013]: https://github.com/golang/go/blob/1cc19e5ba0a008df7baeb78e076e43f9d8e0abf2/src/net/http/server.go#L1013
+[net/http/server.go#L1031]: https://github.com/golang/go/blob/1cc19e5ba0a008df7baeb78e076e43f9d8e0abf2/src/net/http/server.go#L1031
+[net/textproto/reader.go#L755]: https://github.com/golang/go/blob/1cc19e5ba0a008df7baeb78e076e43f9d8e0abf2/src/net/textproto/reader.go#L755
+[net/textproto/reader.go#L757]: https://github.com/golang/go/blob/1cc19e5ba0a008df7baeb78e076e43f9d8e0abf2/src/net/textproto/reader.go#L757
 
 ## Contributing
 
