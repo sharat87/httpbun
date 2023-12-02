@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/util"
 	"io"
 	"log"
 	"mime"
@@ -139,5 +138,5 @@ func InfoJSON(ex *exchange.Exchange) {
 	result.Json = jsonData
 	result.Files = files
 
-	util.WriteJson(ex.ResponseWriter, result)
+	ex.WriteJSON(result)
 }

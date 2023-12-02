@@ -14,7 +14,7 @@ var Routes = map[string]exchange.HandlerFn{
 }
 
 func handleHeaders(ex *exchange.Exchange) {
-	util.WriteJson(ex.ResponseWriter, ex.ExposableHeadersMap())
+	ex.WriteJSON(ex.ExposableHeadersMap())
 }
 
 func handleResponseHeaders(ex *exchange.Exchange) {

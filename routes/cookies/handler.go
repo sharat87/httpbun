@@ -2,7 +2,6 @@ package cookies
 
 import (
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/util"
 	"net/http"
 	"time"
 )
@@ -18,7 +17,7 @@ func handleCookies(ex *exchange.Exchange) {
 	for _, cookie := range ex.Request.Cookies() {
 		items[cookie.Name] = cookie.Value
 	}
-	util.WriteJson(ex.ResponseWriter, items)
+	ex.WriteJSON(items)
 }
 
 func handleCookiesDelete(ex *exchange.Exchange) {

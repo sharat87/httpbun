@@ -239,6 +239,15 @@ func (ex Exchange) WriteF(content string, vars ...any) {
 	ex.Write(fmt.Sprintf(content, vars...))
 }
 
+func (ex Exchange) WriteJSON(data any) {
+	w := ex.ResponseWriter
+	w.Header().Set("Content-Type", "application/json")
+	_, err := w.Write(util.ToJsonMust(data))
+	if err != nil {
+		log.Printf("Error writing JSON to HTTP response %v", err)
+	}
+}
+
 func (ex Exchange) RespondWithStatus(errorStatus int) {
 	ex.ResponseWriter.WriteHeader(errorStatus)
 	ex.WriteLn(http.StatusText(errorStatus))
@@ -252,7 +261,7 @@ func (ex Exchange) RespondBadRequest(message string, vars ...any) {
 
 func (ex Exchange) RespondError(status int, code, detail string) {
 	ex.ResponseWriter.WriteHeader(status)
-	util.WriteJson(ex.ResponseWriter, map[string]any{
+	ex.WriteJSON(map[string]any{
 		"error": map[string]any{
 			"code":   code,
 			"detail": detail,

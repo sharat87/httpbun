@@ -114,7 +114,7 @@ func handleStatus(ex *exchange.Exchange) {
 	acceptHeader := ex.HeaderValueLast("Accept")
 
 	if acceptHeader == c.ApplicationJSON {
-		util.WriteJson(ex.ResponseWriter, map[string]any{
+		ex.WriteJSON(map[string]any{
 			"code":        codeNum,
 			"description": http.StatusText(codeNum),
 		})
@@ -130,7 +130,7 @@ func handleIp(ex *exchange.Exchange) {
 	if ex.Field("format") == "txt" {
 		ex.Write(origin)
 	} else {
-		util.WriteJson(ex.ResponseWriter, map[string]string{
+		ex.WriteJSON(map[string]string{
 			"origin": origin,
 		})
 	}
@@ -215,7 +215,10 @@ func handleDrip(ex *exchange.Exchange) {
 		if writeNewLines {
 			ex.Write("\n")
 		}
-		if !util.Flush(ex.ResponseWriter) {
+		f, ok := ex.ResponseWriter.(http.Flusher)
+		if ok {
+			f.Flush()
+		} else {
 			log.Println("Flush not available. Dripping and streaming not supported on this platform.")
 		}
 		time.Sleep(interval)
@@ -275,7 +278,7 @@ func handleInfo(ex *exchange.Exchange) {
 		}
 	}
 
-	util.WriteJson(ex.ResponseWriter, map[string]any{
+	ex.WriteJSON(map[string]any{
 		"hostname": hostname,
 		"env":      env,
 	})

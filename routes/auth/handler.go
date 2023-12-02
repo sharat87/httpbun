@@ -26,7 +26,7 @@ func handleAuthBasic(ex *exchange.Exchange) {
 		return
 	}
 
-	util.WriteJson(ex.ResponseWriter, map[string]any{
+	ex.WriteJSON(map[string]any{
 		"authenticated": isAuthenticated,
 		"user":          givenUsername,
 	})
@@ -44,7 +44,7 @@ func handleAuthBearer(ex *exchange.Exchange) {
 
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 
-	util.WriteJson(ex.ResponseWriter, map[string]any{
+	ex.WriteJSON(map[string]any{
 		"authenticated": token != "" && (expectedToken == "" || expectedToken == token),
 		"token":         token,
 	})
@@ -139,7 +139,7 @@ func handleAuthDigest(ex *exchange.Exchange) {
 		return
 	}
 
-	util.WriteJson(ex.ResponseWriter, map[string]any{
+	ex.WriteJSON(map[string]any{
 		"authenticated": true,
 		"user":          expectedUsername,
 	})
