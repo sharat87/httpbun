@@ -92,7 +92,16 @@ func handleHealth(ex *exchange.Exchange) {
 
 func handlePayload(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header()[c.ContentType] = ex.Request.Header[c.ContentType]
-	_, err := io.Copy(ex.ResponseWriter, ex.CappedBody)
+
+	payload, err := io.ReadAll(ex.CappedBody)
+	if err != nil {
+		log.Printf("Error reading request payload %v", err)
+		return
+	}
+
+	ex.ResponseWriter.Header().Set("Content-Length", fmt.Sprint(len(payload)))
+
+	_, err = ex.ResponseWriter.Write(payload)
 	if err != nil {
 		fmt.Println("Error reading request payload", err)
 	}
