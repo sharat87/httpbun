@@ -1,4 +1,4 @@
-package bun
+package static
 
 import (
 	"github.com/sharat87/httpbun/assets"
@@ -6,17 +6,24 @@ import (
 	"github.com/sharat87/httpbun/exchange"
 )
 
+var Routes = map[string]exchange.HandlerFn{
+	"/deny":       handleRobotsDeny,
+	"/robots.txt": handleRobotsTxt,
+	"/html":       handleHtml,
+	"/image/svg":  handleImageSvg,
+}
+
 func handleImageSvg(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set(c.ContentType, "image/svg+xml")
 	assets.WriteAsset("svg-logo.svg", *ex)
 }
 
-func handleSampleRobotsTxt(ex *exchange.Exchange) {
+func handleRobotsTxt(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set(c.ContentType, c.TextPlain)
 	ex.WriteLn("User-agent: *\nDisallow: /deny")
 }
 
-func handleSampleRobotsDeny(ex *exchange.Exchange) {
+func handleRobotsDeny(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set(c.ContentType, c.TextPlain)
 	ex.WriteLn(`
           .-''''''-.
@@ -31,7 +38,7 @@ func handleSampleRobotsDeny(ex *exchange.Exchange) {
      YOU SHOULDN'T BE HERE`)
 }
 
-func handleSampleHtml(ex *exchange.Exchange) {
+func handleHtml(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set(c.ContentType, c.TextHTML)
 	ex.WriteLn(`<!DOCTYPE html>
 <html>

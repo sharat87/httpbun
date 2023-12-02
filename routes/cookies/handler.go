@@ -1,4 +1,4 @@
-package bun
+package cookies
 
 import (
 	"github.com/sharat87/httpbun/exchange"
@@ -6,6 +6,12 @@ import (
 	"net/http"
 	"time"
 )
+
+var Routes = map[string]exchange.HandlerFn{
+	"/cookies":        handleCookies,
+	"/cookies/delete": handleCookiesDelete,
+	"/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?": handleCookiesSet,
+}
 
 func handleCookies(ex *exchange.Exchange) {
 	items := make(map[string]string)

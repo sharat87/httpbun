@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
-	"github.com/sharat87/httpbun/bun"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/routes"
 	"github.com/sharat87/httpbun/server/spec"
 	"log"
 	"net"
@@ -16,7 +16,7 @@ import (
 type Server struct {
 	*http.Server
 	spec    spec.Spec
-	routes  []bun.Route
+	routes  []routes.Route
 	closeCh chan error
 }
 
@@ -29,7 +29,7 @@ func StartNew(spec spec.Spec) Server {
 			Addr: spec.BindTarget,
 		},
 		spec:    spec,
-		routes:  bun.GetRoutes(),
+		routes:  routes.GetRoutes(),
 		closeCh: make(chan error, 1),
 	}
 	server.Handler = server

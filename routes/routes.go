@@ -1,17 +1,19 @@
-package bun
+package routes
 
 import (
 	"encoding/base64"
 	"fmt"
 	"github.com/sharat87/httpbun/assets"
-	"github.com/sharat87/httpbun/bun/auth"
-	"github.com/sharat87/httpbun/bun/cache"
-	"github.com/sharat87/httpbun/bun/headers"
-	"github.com/sharat87/httpbun/bun/method"
-	"github.com/sharat87/httpbun/bun/mix"
-	"github.com/sharat87/httpbun/bun/redirect"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/routes/auth"
+	"github.com/sharat87/httpbun/routes/cache"
+	"github.com/sharat87/httpbun/routes/cookies"
+	"github.com/sharat87/httpbun/routes/headers"
+	"github.com/sharat87/httpbun/routes/method"
+	"github.com/sharat87/httpbun/routes/mix"
+	"github.com/sharat87/httpbun/routes/redirect"
+	"github.com/sharat87/httpbun/routes/static"
 	"github.com/sharat87/httpbun/util"
 	"io"
 	"log"
@@ -25,56 +27,39 @@ import (
 	"time"
 )
 
-type handlerFn func(ex *exchange.Exchange)
 type Route struct {
 	Pat regexp.Regexp
-	Fn  handlerFn
+	Fn  exchange.HandlerFn
 }
 
 func GetRoutes() []Route {
 	var routes []Route
 
-	addRoute := func(pattern string, fn func(ex *exchange.Exchange)) {
-		routes = append(routes, Route{
-			Pat: *regexp.MustCompile("^" + pattern + "$"),
-			Fn:  fn,
-		})
+	allRoutes := map[string]exchange.HandlerFn{
+		`(/(index\.html)?)?`: handleIndex,
+
+		`/(?P<name>.+\.(png|ico|webmanifest))`: func(ex *exchange.Exchange) {
+			assets.WriteAsset(ex.Field("name"), *ex)
+		},
+
+		"/health": handleHealth,
+
+		"/payload": handlePayload,
+
+		"/status/(?P<codes>[\\d,]+)":    handleStatus,
+		"/ip(\\.(?P<format>txt|json))?": handleIp,
+
+		"/b(ase)?64(/(?P<encoded>.*))?":                handleDecodeBase64,
+		"/bytes/(?P<size>\\d+)":                        handleRandomBytes,
+		"/delay/(?P<delay>[^/]+)":                      handleDelayedResponse,
+		"/drip(-(?P<mode>lines))?":                     handleDrip,
+		"/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?": handleLinks,
+		"/range/(?P<count>\\d+)/?":                     handleRange,
+
+		"/info": handleInfo,
+
+		"/(?P<hook>hooks.slack.com/services/.*)": handleSlack,
 	}
-
-	addRoute(`(/(index\.html)?)?`, handleIndex)
-
-	addRoute(`/(?P<name>.+\.(png|ico|webmanifest))`, func(ex *exchange.Exchange) {
-		assets.WriteAsset(ex.Field("name"), *ex)
-	})
-
-	addRoute("/health", handleHealth)
-
-	addRoute("/payload", handlePayload)
-
-	addRoute("/status/(?P<codes>[\\d,]+)", handleStatus)
-	addRoute("/ip(\\.(?P<format>txt|json))?", handleIp)
-
-	addRoute("/deny", handleSampleRobotsDeny)
-	addRoute("/html", handleSampleHtml)
-	addRoute("/robots.txt", handleSampleRobotsTxt)
-	addRoute("/image/svg", handleImageSvg)
-
-	addRoute("/b(ase)?64(/(?P<encoded>.*))?", handleDecodeBase64)
-	addRoute("/bytes/(?P<size>\\d+)", handleRandomBytes)
-	addRoute("/delay/(?P<delay>[^/]+)", handleDelayedResponse)
-	addRoute("/drip(-(?P<mode>lines))?", handleDrip)
-	addRoute("/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?", handleLinks)
-	addRoute("/range/(?P<count>\\d+)/?", handleRange)
-
-	addRoute("/cookies", handleCookies)
-	addRoute("/cookies/delete", handleCookiesDelete)
-	addRoute("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
-
-	addRoute("/info", handleInfo)
-
-	addRoute("/(?P<hook>hooks.slack.com/services/.*)", handleSlack)
-
-	allRoutes := map[string]exchange.HandlerFn{}
 
 	maps.Copy(allRoutes, method.Routes)
 	maps.Copy(allRoutes, headers.Routes)
@@ -82,9 +67,14 @@ func GetRoutes() []Route {
 	maps.Copy(allRoutes, auth.Routes)
 	maps.Copy(allRoutes, redirect.Routes)
 	maps.Copy(allRoutes, mix.Routes)
+	maps.Copy(allRoutes, static.Routes)
+	maps.Copy(allRoutes, cookies.Routes)
 
 	for pat, fn := range allRoutes {
-		addRoute(pat, fn)
+		routes = append(routes, Route{
+			Pat: *regexp.MustCompile("^" + pat + "$"),
+			Fn:  fn,
+		})
 	}
 
 	return routes

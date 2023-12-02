@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"github.com/sharat87/httpbun/bun/responses"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/routes/responses"
 	"net/http"
 )
 
