@@ -50,7 +50,7 @@ func GetRoutes() []Route {
 		"/ip(\\.(?P<format>txt|json))?": handleIp,
 
 		"/b(ase)?64(/(?P<encoded>.*))?":                handleDecodeBase64,
-		"/bytes/(?P<size>\\d+)":                        handleRandomBytes,
+		"/bytes(/(?P<size>.+))?":                       handleRandomBytes,
 		"/delay/(?P<delay>[^/]+)":                      handleDelayedResponse,
 		"/drip(-(?P<mode>lines))?":                     handleDrip,
 		"/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?": handleLinks,
@@ -158,8 +158,17 @@ func handleDecodeBase64(ex *exchange.Exchange) {
 }
 
 func handleRandomBytes(ex *exchange.Exchange) {
+	sizeField := ex.Field("size")
+	if sizeField == "" {
+		ex.RespondBadRequest("specify size in bytes, example `/bytes/10`")
+		return
+	}
+	n, err := strconv.Atoi(sizeField)
+	if err != nil {
+		ex.RespondBadRequest("Invalid size: " + sizeField)
+		return
+	}
 	ex.ResponseWriter.Header().Set("content-type", "application/octet-stream")
-	n, _ := strconv.Atoi(ex.Field("size"))
 	ex.ResponseWriter.Header().Set("content-length", fmt.Sprint(n))
 	ex.WriteBytes(util.RandomBytes(n))
 }
