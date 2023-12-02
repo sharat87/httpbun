@@ -10,6 +10,19 @@ import (
 	"log"
 )
 
+func ToJson(data any) []byte {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	err := encoder.Encode(data)
+	if err != nil {
+		log.Printf("Error encoding JSON: %v", err)
+		return []byte(err.Error())
+	}
+	return bytes.TrimSpace(buffer.Bytes())
+}
+
 func ToJsonMust(data any) []byte {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)

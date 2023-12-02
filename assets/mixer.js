@@ -35,8 +35,11 @@ addBtnsEl.addEventListener("click", (event) => {
 	if (directive === "b64") {
 		parts.push(`<textarea id=${id} placeholder='Plain text response body' rows=4></textarea>`)
 
+	} else if (directive === "t") {
+		parts.push(`<textarea id=${id} placeholder='Golang template response body' rows=4></textarea>`)
+
 	} else if (directive === "s") {
-		parts.push(`<input id=${id} type=number min=100 max=599 required value=200>`)
+		parts.push(`<input id=${id} placeholder='One or more status codes, comma separated' required value=200>`)
 
 	} else if (directive === "h") {
 		parts.push(`<input id=${id} required pattern='^[-_a-zA-Z0-9]+$' placeholder=key>:<input placeholder=value>`)
@@ -113,7 +116,7 @@ function recomputeURL() {
 		const values = Array.from(p.querySelectorAll("input, textarea")).map((el) => el.value)
 		pathItems.push("/" + directive + "=")
 
-		if (directive === "b64") {
+		if (directive === "b64" || directive === "t") {
 			pathItems.push(btoa(values[0]))
 
 		} else if (directive === "s") {

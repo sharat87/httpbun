@@ -1,13 +1,19 @@
 package mix
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/exchange"
+	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -19,6 +25,60 @@ type entry struct {
 var Routes = map[string]exchange.HandlerFn{
 	`/mix\b(?P<conf>.*)`:   handleMix,
 	`/mixer\b(?P<conf>.*)`: handleMixer,
+}
+
+var singleValueDirectives = map[string]any{
+	"s":   nil,
+	"cd":  nil,
+	"r":   nil,
+	"b64": nil,
+	"d":   nil,
+	"t":   nil,
+}
+
+var pairValueDirectives = map[string]any{
+	"h": nil,
+	"c": nil,
+}
+
+var templateFuncMap = template.FuncMap{
+	"seq": func(args ...int) []int {
+		var start, end, delta int
+		switch len(args) {
+		case 1:
+			start = 0
+			end = args[0]
+			delta = 1
+		case 2:
+			start = args[0]
+			end = args[1]
+			delta = 1
+		case 3:
+			start = args[0]
+			end = args[1]
+			delta = args[2]
+		}
+		if (start > end && delta > 0) || (start < end && delta < 0) {
+			delta = -delta
+		}
+		var seq []int
+		for i := start; i != end; i += delta {
+			seq = append(seq, i)
+		}
+		return seq
+	},
+	"toJSON": func(v any) string {
+		buffer := &bytes.Buffer{}
+		encoder := json.NewEncoder(buffer)
+		encoder.SetEscapeHTML(false)
+		encoder.SetIndent("", "  ")
+		err := encoder.Encode(v)
+		if err != nil {
+			log.Printf("Error encoding JSON: %v", err)
+			return err.Error()
+		}
+		return string(bytes.TrimSpace(buffer.Bytes()))
+	},
 }
 
 func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
@@ -47,33 +107,16 @@ func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
 		directive, value, _ := strings.Cut(part, "=")
 		value, err := unescape(value)
 		if err != nil {
+			log.Printf("Error unescaping %s: %v", value, err)
 			return entries, err
 		}
 
-		switch directive {
+		if _, ok := singleValueDirectives[directive]; ok {
+			entries = append(entries, entry{directive, []string{value}})
 
-		case "s":
-			entries = append(entries, entry{"s", []string{value}})
-
-		case "h":
-			headerKey, headerValue, _ := strings.Cut(value, ":")
-			entries = append(entries, entry{"h", []string{headerKey, headerValue}})
-
-		case "c":
-			cookieName, cookieValue, _ := strings.Cut(value, ":")
-			entries = append(entries, entry{"c", []string{cookieName, cookieValue}})
-
-		case "cd":
-			entries = append(entries, entry{"cd", []string{value}})
-
-		case "r":
-			entries = append(entries, entry{"r", []string{value}})
-
-		case "b64":
-			entries = append(entries, entry{"b64", []string{value}})
-
-		case "d":
-			entries = append(entries, entry{"d", []string{value}})
+		} else if _, ok := pairValueDirectives[directive]; ok {
+			itemName, itemValue, _ := strings.Cut(value, ":")
+			entries = append(entries, entry{directive, []string{itemName, itemValue}})
 
 		}
 
@@ -101,7 +144,17 @@ func handleMix(ex *exchange.Exchange) {
 		switch entry.dir {
 
 		case "s":
-			status, err = strconv.Atoi(entry.args[0])
+			value := entry.args[0]
+			codes := regexp.MustCompile("\\d+").FindAllString(value, -1)
+
+			var code string
+			if len(codes) > 1 {
+				code = codes[rand.Intn(len(codes))]
+			} else {
+				code = codes[0]
+			}
+
+			status, err = strconv.Atoi(code)
 			if err != nil {
 				ex.RespondBadRequest(err.Error())
 				return
@@ -138,6 +191,14 @@ func handleMix(ex *exchange.Exchange) {
 			}
 			delay = time.Duration(int(seconds * float64(time.Second)))
 
+		case "t":
+			templateContent, err := base64.StdEncoding.DecodeString(entry.args[0])
+			payload, err = renderTemplate(ex, string(templateContent))
+			if err != nil {
+				ex.RespondBadRequest(err.Error())
+				return
+			}
+
 		}
 	}
 
@@ -154,6 +215,13 @@ func handleMix(ex *exchange.Exchange) {
 
 	if delay > 0 {
 		time.Sleep(delay)
+	}
+
+	if _, ok := headers["Content-Length"]; !ok {
+		if headers == nil {
+			headers = http.Header{}
+		}
+		headers.Set("Content-Length", strconv.Itoa(len(payload)))
 	}
 
 	for key, value := range headers {
@@ -192,4 +260,18 @@ func handleMixer(ex *exchange.Exchange) {
 	assets.Render("mixer.html", *ex, map[string]any{
 		"mixEntries": entries,
 	})
+}
+
+func renderTemplate(ex *exchange.Exchange, templateContent string) ([]byte, error) {
+	tpl, err := template.New("mix").Funcs(templateFuncMap).Parse(templateContent)
+	if err != nil {
+		ex.RespondBadRequest(err.Error())
+		return nil, err
+	}
+	buf := &bytes.Buffer{}
+	err = tpl.Execute(buf, nil)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
