@@ -177,13 +177,12 @@
 
     <dt id=bytes>/bytes/<span class=var>{count}</span></dt>
     <dd>Returns <code>count</code> random bytes in the response. The <code>Content-Type</code> header is set to
-        <code>application/octet-stream</code>. The pseudo-randomness algorithm is not to be considered as
-        cryptographically secure.
+        <code>application/octet-stream</code>. The randomness is not cryptographically secure.
     </dd>
 
     <dt id=delay>/delay/<span class=var>{seconds}</span></dt>
-    <dd>Respond with a delay of <code>seconds</code> seconds. The <code>seconds</code> parameter has to be an integer
-        currently. Fractional delays are not yet supported.
+    <dd>Respond with a delay of <code>seconds</code> seconds. The <code>seconds</code> parameter can be a positive
+        integer or floating point number.
     </dd>
 
     <dt id=drip>/drip</dt>

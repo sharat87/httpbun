@@ -163,8 +163,8 @@ func handleDelayedResponse(ex *exchange.Exchange) {
 		return
 	}
 
-	if n > 300 {
-		ex.RespondBadRequest("Delay can't be greater than 300")
+	if n < 0 || n > 300 {
+		ex.RespondBadRequest("Delay can't be greater than 300 or less than 0")
 		return
 	}
 
