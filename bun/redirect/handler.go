@@ -3,14 +3,13 @@ package redirect
 import (
 	"fmt"
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/mux"
 	"net/http"
 	"strconv"
 )
 
 const MaxRedirectCount = 20
 
-var Routes = map[string]mux.HandlerFn{
+var Routes = map[string]exchange.HandlerFn{
 	`/redirect(-to)?/?`:                            handleRedirectTo,
 	`/(?P<mode>relative-)?redirect/(?P<count>\d+)`: handleRedirectCount,
 	`/(?P<mode>absolute-)redirect/(?P<count>\d+)`:  handleRedirectCount,

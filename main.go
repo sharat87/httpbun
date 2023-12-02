@@ -15,6 +15,6 @@ func main() {
 	log.Printf("Commit: %q, Built: %q.", c.Commit, c.Date)
 
 	s := server.StartNew(c)
-	log.Printf("Serving on %s", s.Addr)
+	log.Printf("Serving on %v", s.Addr)
 	log.Fatal(s.Wait())
 }

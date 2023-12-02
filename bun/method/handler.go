@@ -3,12 +3,11 @@ package method
 import (
 	"github.com/sharat87/httpbun/bun/responses"
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/mux"
 	"net/http"
 	"strings"
 )
 
-var Routes = map[string]mux.HandlerFn{
+var Routes = map[string]exchange.HandlerFn{
 	"/get":             handleValidMethod,
 	"/post":            handleValidMethod,
 	"/put":             handleValidMethod,

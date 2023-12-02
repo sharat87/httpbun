@@ -12,8 +12,6 @@ import (
 	"github.com/sharat87/httpbun/bun/redirect"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/mux"
-	"github.com/sharat87/httpbun/server/spec"
 	"github.com/sharat87/httpbun/util"
 	"io"
 	"log"
@@ -27,45 +25,56 @@ import (
 	"time"
 )
 
-func MakeBunHandler(spec spec.Spec) mux.Mux {
-	m := mux.Mux{
-		ServerSpec: spec,
+type handlerFn func(ex *exchange.Exchange)
+type Route struct {
+	Pat regexp.Regexp
+	Fn  handlerFn
+}
+
+func GetRoutes() []Route {
+	var routes []Route
+
+	addRoute := func(pattern string, fn func(ex *exchange.Exchange)) {
+		routes = append(routes, Route{
+			Pat: *regexp.MustCompile("^" + pattern + "$"),
+			Fn:  fn,
+		})
 	}
 
-	m.HandleFunc(`(/(index\.html)?)?`, handleIndex)
+	addRoute(`(/(index\.html)?)?`, handleIndex)
 
-	m.HandleFunc(`/(?P<name>.+\.(png|ico|webmanifest))`, func(ex *exchange.Exchange) {
+	addRoute(`/(?P<name>.+\.(png|ico|webmanifest))`, func(ex *exchange.Exchange) {
 		assets.WriteAsset(ex.Field("name"), *ex)
 	})
 
-	m.HandleFunc("/health", handleHealth)
+	addRoute("/health", handleHealth)
 
-	m.HandleFunc("/payload", handlePayload)
+	addRoute("/payload", handlePayload)
 
-	m.HandleFunc("/status/(?P<codes>[\\d,]+)", handleStatus)
-	m.HandleFunc("/ip(\\.(?P<format>txt|json))?", handleIp)
+	addRoute("/status/(?P<codes>[\\d,]+)", handleStatus)
+	addRoute("/ip(\\.(?P<format>txt|json))?", handleIp)
 
-	m.HandleFunc("/deny", handleSampleRobotsDeny)
-	m.HandleFunc("/html", handleSampleHtml)
-	m.HandleFunc("/robots.txt", handleSampleRobotsTxt)
-	m.HandleFunc("/image/svg", handleImageSvg)
+	addRoute("/deny", handleSampleRobotsDeny)
+	addRoute("/html", handleSampleHtml)
+	addRoute("/robots.txt", handleSampleRobotsTxt)
+	addRoute("/image/svg", handleImageSvg)
 
-	m.HandleFunc("/b(ase)?64(/(?P<encoded>.*))?", handleDecodeBase64)
-	m.HandleFunc("/bytes/(?P<size>\\d+)", handleRandomBytes)
-	m.HandleFunc("/delay/(?P<delay>[^/]+)", handleDelayedResponse)
-	m.HandleFunc("/drip(-(?P<mode>lines))?", handleDrip)
-	m.HandleFunc("/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?", handleLinks)
-	m.HandleFunc("/range/(?P<count>\\d+)/?", handleRange)
+	addRoute("/b(ase)?64(/(?P<encoded>.*))?", handleDecodeBase64)
+	addRoute("/bytes/(?P<size>\\d+)", handleRandomBytes)
+	addRoute("/delay/(?P<delay>[^/]+)", handleDelayedResponse)
+	addRoute("/drip(-(?P<mode>lines))?", handleDrip)
+	addRoute("/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?", handleLinks)
+	addRoute("/range/(?P<count>\\d+)/?", handleRange)
 
-	m.HandleFunc("/cookies", handleCookies)
-	m.HandleFunc("/cookies/delete", handleCookiesDelete)
-	m.HandleFunc("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
+	addRoute("/cookies", handleCookies)
+	addRoute("/cookies/delete", handleCookiesDelete)
+	addRoute("/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?", handleCookiesSet)
 
-	m.HandleFunc("/info", handleInfo)
+	addRoute("/info", handleInfo)
 
-	m.HandleFunc("/(?P<hook>hooks.slack.com/services/.*)", handleSlack)
+	addRoute("/(?P<hook>hooks.slack.com/services/.*)", handleSlack)
 
-	allRoutes := map[string]mux.HandlerFn{}
+	allRoutes := map[string]exchange.HandlerFn{}
 
 	maps.Copy(allRoutes, method.Routes)
 	maps.Copy(allRoutes, headers.Routes)
@@ -75,10 +84,10 @@ func MakeBunHandler(spec spec.Spec) mux.Mux {
 	maps.Copy(allRoutes, mix.Routes)
 
 	for pat, fn := range allRoutes {
-		m.HandleFunc(pat, fn)
+		addRoute(pat, fn)
 	}
 
-	return m
+	return routes
 }
 
 func handleIndex(ex *exchange.Exchange) {
@@ -152,6 +161,7 @@ func handleDecodeBase64(ex *exchange.Exchange) {
 func handleRandomBytes(ex *exchange.Exchange) {
 	ex.ResponseWriter.Header().Set("content-type", "application/octet-stream")
 	n, _ := strconv.Atoi(ex.Field("size"))
+	ex.ResponseWriter.Header().Set("content-length", fmt.Sprint(n))
 	ex.WriteBytes(util.RandomBytes(n))
 }
 

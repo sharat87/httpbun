@@ -3,11 +3,10 @@ package cache
 import (
 	"github.com/sharat87/httpbun/bun/responses"
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/mux"
 	"net/http"
 )
 
-var Routes = map[string]mux.HandlerFn{
+var Routes = map[string]exchange.HandlerFn{
 	"/cache":                handleCache,
 	"/cache/(?P<age>\\d+)":  handleCacheControl,
 	"/etag/(?P<etag>[^/]+)": handleEtag,

@@ -24,6 +24,8 @@ type Exchange struct {
 	ServerSpec     spec.Spec
 }
 
+type HandlerFn func(ex *Exchange)
+
 func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchange {
 	ex := &Exchange{
 		Request:        req,

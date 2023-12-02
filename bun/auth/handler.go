@@ -3,14 +3,13 @@ package auth
 import (
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/mux"
 	"github.com/sharat87/httpbun/util"
 	"net/http"
 	"regexp"
 	"strings"
 )
 
-var Routes = map[string]mux.HandlerFn{
+var Routes = map[string]exchange.HandlerFn{
 	"/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?":                 handleAuthBasic,
 	"/bearer(/(?P<tok>\\w+))?":                                      handleAuthBearer,
 	"/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?": handleAuthDigest,

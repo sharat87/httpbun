@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/mux"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,7 +16,7 @@ type entry struct {
 	args []string
 }
 
-var Routes = map[string]mux.HandlerFn{
+var Routes = map[string]exchange.HandlerFn{
 	`/mix\b(?P<conf>.*)`:   handleMix,
 	`/mixer\b(?P<conf>.*)`: handleMixer,
 }

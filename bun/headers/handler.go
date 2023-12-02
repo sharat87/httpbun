@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/mux"
 	"github.com/sharat87/httpbun/util"
 	"net/http"
 )
 
-var Routes = map[string]mux.HandlerFn{
+var Routes = map[string]exchange.HandlerFn{
 	"/headers":                            handleHeaders,
 	"/(response|respond-with)-headers?/?": handleResponseHeaders,
 }
