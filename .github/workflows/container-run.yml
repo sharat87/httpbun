@@ -6,7 +6,7 @@ on:
 
 defaults:
   run:
-    shell: bash -l -o errexit -o pipefail -o xtrace {0}
+    shell: bash -l -o errexit -o pipefail {0}
 
 jobs:
 
@@ -19,6 +19,7 @@ jobs:
 
       - name: Run container
         run: |
+          set -o xtrace
           uname -m
           curl 'https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64' \
             --output '/usr/local/bin/mkcert'
@@ -43,4 +44,7 @@ jobs:
 
           curl --verbose --silent --show-error --fail --location https://localhost/get
 
+      - name: Logs
+        if: always()
+        run: |
           docker logs httpbun
