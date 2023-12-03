@@ -52,7 +52,7 @@ func GetRoutes() []Route {
 		"/b(ase)?64(/(?P<encoded>.*))?":                handleDecodeBase64,
 		"/bytes(/(?P<size>.+))?":                       handleRandomBytes,
 		"/delay/(?P<delay>[^/]+)":                      handleDelayedResponse,
-		"/drip(-(?P<mode>lines))?":                     handleDrip,
+		"/drip(-(?P<mode>lines))?(?P<extra>/.*)?":      handleDrip,
 		"/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?": handleLinks,
 		"/range/(?P<count>\\d+)/?":                     handleRange,
 
@@ -191,6 +191,19 @@ func handleDelayedResponse(ex *exchange.Exchange) {
 
 func handleDrip(ex *exchange.Exchange) {
 	// Test with `curl -N localhost:3090/drip`.
+
+	extra := ex.Field("extra")
+	if extra != "" {
+		// todo: docs duplicated from index.html
+		ex.RespondBadRequest("Unknown extra path: " + extra +
+			"\nUse `/drip` or `/drip-lines` with query params:\n" +
+			"  duration: Total number of seconds over which to stream the data. Default: 2.\n" +
+			"  numbytes: Total number of bytes to stream. Default: 10.\n" +
+			"  code: The HTTP status code to be used in their response. Default: 200.\n" +
+			"  delay: An initial delay, in seconds. Default: 2.\n",
+		)
+		return
+	}
 
 	writeNewLines := ex.Field("mode") == "lines"
 
