@@ -21,8 +21,8 @@ type Server struct {
 }
 
 func StartNew(spec spec.Spec) Server {
-	sslCertFile := os.Getenv("HTTPBUN_SSL_CERT")
-	sslKeyFile := os.Getenv("HTTPBUN_SSL_KEY")
+	tlsCertFile := os.Getenv("HTTPBUN_TLS_CERT")
+	tlsKeyFile := os.Getenv("HTTPBUN_TLS_KEY")
 
 	server := Server{
 		Server: &http.Server{
@@ -41,10 +41,10 @@ func StartNew(spec spec.Spec) Server {
 
 	go func() {
 		defer close(server.closeCh)
-		if sslCertFile == "" {
+		if tlsCertFile == "" {
 			server.closeCh <- server.Serve(listener)
 		} else {
-			server.closeCh <- server.ServeTLS(listener, sslCertFile, sslKeyFile)
+			server.closeCh <- server.ServeTLS(listener, tlsCertFile, tlsKeyFile)
 		}
 	}()
 
