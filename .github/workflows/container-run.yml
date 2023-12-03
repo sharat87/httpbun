@@ -26,6 +26,7 @@ jobs:
           chmod +x '/usr/local/bin/mkcert'
           mkcert -install
           mkcert -cert-file '/tmp/cert.pem' -key-file '/tmp/key.pem' localhost
+          ls /tmp
           docker run \
             --name httpbun \
             --detach \

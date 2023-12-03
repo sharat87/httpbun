@@ -24,9 +24,18 @@ func StartNew(spec spec.Spec) Server {
 	tlsCertFile := os.Getenv("HTTPBUN_TLS_CERT")
 	tlsKeyFile := os.Getenv("HTTPBUN_TLS_KEY")
 
+	bindTarget := spec.BindTarget
+	if bindTarget == "" {
+		if tlsCertFile != "" && tlsKeyFile == "" {
+			bindTarget = ":443"
+		} else {
+			bindTarget = ":80"
+		}
+	}
+
 	server := Server{
 		Server: &http.Server{
-			Addr: spec.BindTarget,
+			Addr: bindTarget,
 		},
 		spec:    spec,
 		routes:  routes.GetRoutes(),
@@ -34,7 +43,7 @@ func StartNew(spec spec.Spec) Server {
 	}
 	server.Handler = server
 
-	listener, err := net.Listen("tcp", spec.BindTarget)
+	listener, err := net.Listen("tcp", bindTarget)
 	if err != nil {
 		log.Fatalf("Error listening on %q: %v", spec.BindTarget, err)
 	}

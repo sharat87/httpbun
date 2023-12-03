@@ -31,10 +31,6 @@ func ParseArgs() Spec {
 	flag.StringVar(&spec.PathPrefix, "path-prefix", "", "Prefix at which to serve the httpbun APIs")
 	flag.Parse()
 
-	if spec.BindTarget == "" {
-		spec.BindTarget = ":3090"
-	}
-
 	spec.PathPrefix = strings.Trim(spec.PathPrefix, "/")
 	if spec.PathPrefix != "" {
 		spec.PathPrefix = "/" + spec.PathPrefix
