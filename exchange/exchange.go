@@ -171,7 +171,8 @@ func (ex Exchange) FindScheme() string {
 		return forwardedProto
 	}
 
-	if os.Getenv("HTTPBUN_SSL_CERT") != "" || ex.HeaderValueLast("X-Httpbun-Forwarded-Proto") == "https" {
+	// todo: this should use the current server's spec, not the global env var to decide if TLS is enabled
+	if os.Getenv("HTTPBUN_TLS_CERT") != "" {
 		return "https"
 	}
 
