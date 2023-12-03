@@ -20,11 +20,10 @@ jobs:
       - name: Run container
         run: |
           set -o xtrace
-          sudo apt-get install --yes mkcert
-          which mkcert
+          sudo apt-get install --yes mkcert libnss3-tools
           mkcert -install
-          mkcert -cert-file '/tmp/cert.pem' -key-file '/tmp/key.pem' localhost
-          ls /tmp
+          mkcert -cert-file '/tmp/cert.pem' -key-file '/tmp/key.pem' httpbun.local
+          echo '127.0.0.1 httpbun.local' | sudo tee --append /etc/hosts
           docker run \
             --name httpbun \
             --detach \
@@ -41,7 +40,7 @@ jobs:
           set -o errexit
           set -o xtrace
 
-          curl --verbose --silent --show-error --fail --location https://localhost/get
+          curl --include --silent --show-error --fail --location https://httpbun.local/any
 
       - name: Logs
         if: always()
