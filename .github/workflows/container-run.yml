@@ -1,0 +1,31 @@
+name: Container Run
+
+
+on:
+  workflow_dispatch:
+
+
+jobs:
+
+  all:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run container
+        run: |
+          docker run \
+            --name httpbun \
+            --detach \
+            --publish 80:80 \
+            sharat87/httpbun
+          sleep 1
+
+      - name: Test
+        run: |
+          set -o errexit
+          set -o xtrace
+
+          curl --silent --show-error --fail --location localhost/get
