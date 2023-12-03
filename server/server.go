@@ -26,7 +26,7 @@ func StartNew(spec spec.Spec) Server {
 
 	bindTarget := spec.BindTarget
 	if bindTarget == "" {
-		if tlsCertFile != "" && tlsKeyFile == "" {
+		if tlsCertFile != "" {
 			bindTarget = ":443"
 		} else {
 			bindTarget = ":80"

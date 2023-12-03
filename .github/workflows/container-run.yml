@@ -20,10 +20,8 @@ jobs:
       - name: Run container
         run: |
           set -o xtrace
-          uname -m
-          curl 'https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64' \
-            --output '/usr/local/bin/mkcert'
-          chmod +x '/usr/local/bin/mkcert'
+          sudo apt-get install --yes mkcert
+          which mkcert
           mkcert -install
           mkcert -cert-file '/tmp/cert.pem' -key-file '/tmp/key.pem' localhost
           ls /tmp
