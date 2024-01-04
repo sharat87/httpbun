@@ -133,7 +133,7 @@ func handleMix(ex *exchange.Exchange) {
 	}
 
 	var status int
-	var headers http.Header
+	headers := http.Header{}
 	var cookies map[string]string
 	var deleteCookies []string
 	var redirectTo string
