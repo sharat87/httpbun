@@ -123,7 +123,7 @@ function recomputeURL() {
 			pathItems.push(values[0])
 
 		} else if (directive === "h") {
-			pathItems.push(values[0] + ":" + values[1])
+			pathItems.push(values[0] + ":" + encodeURIComponent(values[1]))
 
 		} else if (directive === "c") {
 			pathItems.push(values[0] + ":" + values[1])

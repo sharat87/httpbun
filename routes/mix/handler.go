@@ -82,7 +82,9 @@ var templateFuncMap = template.FuncMap{
 }
 
 func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
-	path := ex.Field("conf")
+	// We need raw path here, with percent encoding intact.
+	// TODO: trim also the base path.
+	path := strings.TrimPrefix(ex.Request.URL.RawPath, "/mix")
 	query := ex.URL.RawQuery
 
 	var source, itemSep string
@@ -161,7 +163,12 @@ func handleMix(ex *exchange.Exchange) {
 			}
 
 		case "h":
-			headers.Add(entry.args[0], entry.args[1])
+			headerValue, err := url.QueryUnescape(entry.args[1])
+			if err != nil {
+				ex.RespondBadRequest(err.Error())
+				return
+			}
+			headers.Add(entry.args[0], headerValue)
 
 		case "c":
 			cookies[entry.args[0]] = entry.args[1]
