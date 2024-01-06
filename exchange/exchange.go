@@ -36,8 +36,8 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 		CappedBody:      io.LimitReader(req.Body, 10000),
 		RoutedPath:      strings.TrimPrefix(req.URL.Path, serverSpec.PathPrefix),
 		OriginalPath:    req.URL.Path,
-		RoutedRawPath:   strings.TrimPrefix(req.URL.RawPath, serverSpec.PathPrefix),
-		OriginalRawPath: req.URL.RawPath,
+		RoutedRawPath:   strings.TrimPrefix(req.URL.EscapedPath(), serverSpec.PathPrefix),
+		OriginalRawPath: req.URL.EscapedPath(),
 		ServerSpec:      serverSpec,
 	}
 

@@ -18,9 +18,6 @@ form p > [data-directive] {
 form p :is(input, textarea) {
 	flex: 1;
 }
-input, button {
-	font: inherit;
-}
 </style>`)
 
 addBtnsEl.addEventListener("click", (event) => {
@@ -58,7 +55,7 @@ addBtnsEl.addEventListener("click", (event) => {
 
 	}
 
-	parts.push("<button>Del</button></p>")
+	parts.push("<button class=del>&times;</button></p>")
 	formEl.insertAdjacentHTML("beforeend", parts.join(""))
 	formEl.lastElementChild.querySelector("input, textarea").focus()
 	recomputeURL()
@@ -66,7 +63,7 @@ addBtnsEl.addEventListener("click", (event) => {
 })
 
 formEl.addEventListener("click", (event) => {
-	if (event.target.tagName === "BUTTON" && event.target.innerText === "Del") {
+	if (event.target.tagName === "BUTTON" && event.target.matches("button.del")) {
 		event.target.closest("p").remove()
 		recomputeURL()
 		checkAddButtons()
@@ -126,7 +123,7 @@ function recomputeURL() {
 			pathItems.push(values[0] + ":" + encodeURIComponent(values[1]))
 
 		} else if (directive === "c") {
-			pathItems.push(values[0] + ":" + values[1])
+			pathItems.push(values[0] + ":" + encodeURIComponent(values[1]))
 
 		} else if (directive === "cd") {
 			pathItems.push(values[0])

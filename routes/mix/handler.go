@@ -83,7 +83,6 @@ var templateFuncMap = template.FuncMap{
 
 func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
 	// We need raw path here, with percent encoding intact.
-	// TODO: trim also the base path.
 	path := strings.TrimPrefix(ex.RoutedRawPath, "/mix")
 	query := ex.Request.URL.RawQuery
 
@@ -136,7 +135,7 @@ func handleMix(ex *exchange.Exchange) {
 
 	var status int
 	headers := http.Header{}
-	var cookies map[string]string
+	cookies := map[string]string{}
 	var deleteCookies []string
 	var redirectTo string
 	var payload []byte
@@ -171,13 +170,26 @@ func handleMix(ex *exchange.Exchange) {
 			headers.Add(entry.args[0], headerValue)
 
 		case "c":
-			cookies[entry.args[0]] = entry.args[1]
+			cookieValue, err := url.QueryUnescape(entry.args[1])
+			if err != nil {
+				ex.RespondBadRequest(err.Error())
+				return
+			}
+			cookies[entry.args[0]] = cookieValue
 
 		case "cd":
 			deleteCookies = append(deleteCookies, entry.args[0])
 
 		case "r":
-			redirectTo = entry.args[0]
+			if redirectTo != "" {
+				ex.RespondBadRequest("multiple redirects not allowed")
+				return
+			}
+			redirectTo, err = url.QueryUnescape(entry.args[0])
+			if err != nil {
+				ex.RespondBadRequest(err.Error())
+				return
+			}
 
 		case "b64":
 			payload, err = base64.StdEncoding.DecodeString(entry.args[0])

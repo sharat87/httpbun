@@ -132,6 +132,20 @@ summary {
 	margin: 6px 0;
 }
 
+input {
+	font: inherit;
+}
+
+textarea {
+	font-size: inherit;
+}
+
+button {
+	font: inherit;
+	cursor: pointer;
+	display: inline-block;
+}
+
 .ghost {
 	position: fixed;
 	display: flex;
