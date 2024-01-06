@@ -2,10 +2,13 @@ package exchange
 
 import (
 	"fmt"
+	"github.com/sharat87/httpbun/c"
+	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/server/spec"
 	"github.com/sharat87/httpbun/util"
 	"io"
 	"log"
+	"maps"
 	"net"
 	"net/http"
 	"os"
@@ -27,6 +30,8 @@ type Exchange struct {
 }
 
 type HandlerFn func(ex *Exchange)
+
+type HandlerFn2 func(ex *Exchange) response.Response
 
 func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchange {
 	ex := &Exchange{
@@ -244,22 +249,30 @@ func (ex Exchange) WriteJSON(data any) {
 }
 
 func (ex Exchange) RespondWithStatus(errorStatus int) {
-	ex.ResponseWriter.WriteHeader(errorStatus)
-	ex.WriteLn(http.StatusText(errorStatus))
+	ex.Finish(response.New(errorStatus, nil, []byte(http.StatusText(errorStatus)+"\n")))
 }
 
 func (ex Exchange) RespondBadRequest(message string, vars ...any) {
-	ex.ResponseWriter.WriteHeader(http.StatusBadRequest)
-	ex.WriteF(message, vars...)
-	ex.WriteBytes([]byte("\n"))
+	ex.Finish(response.BadRequest(message, vars...))
 }
 
 func (ex Exchange) RespondError(status int, code, detail string) {
-	ex.ResponseWriter.WriteHeader(status)
-	ex.WriteJSON(map[string]any{
-		"error": map[string]any{
-			"code":   code,
-			"detail": detail,
+	ex.Finish(response.New(
+		status,
+		http.Header{
+			c.ContentType: []string{c.ApplicationJSON},
 		},
-	})
+		util.ToJsonMust(map[string]any{
+			"error": map[string]any{
+				"code":   code,
+				"detail": detail,
+			},
+		}),
+	))
+}
+
+func (ex Exchange) Finish(resp response.Response) {
+	maps.Copy(ex.ResponseWriter.Header(), resp.Header)
+	ex.ResponseWriter.WriteHeader(resp.Status)
+	ex.WriteBytes(resp.Body)
 }

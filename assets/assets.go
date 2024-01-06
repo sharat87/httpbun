@@ -1,9 +1,11 @@
 package assets
 
 import (
+	"bytes"
 	"embed"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 	"html/template"
 	"io"
 	"io/fs"
@@ -33,6 +35,25 @@ func Render(name string, ex exchange.Exchange, data map[string]any) {
 	if err := assetsTemplate.ExecuteTemplate(ex.ResponseWriter, name, data); err != nil {
 		log.Fatalf("Error executing %q template %v.", name, err)
 	}
+}
+
+func Render2(name string, ex exchange.Exchange, data map[string]any) response.Response {
+	data["serverSpec"] = ex.ServerSpec
+
+	buf := bytes.Buffer{}
+	err := assetsTemplate.ExecuteTemplate(&buf, name, data)
+
+	if err != nil {
+		log.Fatalf("Error executing %q template %v.", name, err)
+	}
+
+	return response.New(
+		http.StatusOK,
+		http.Header{
+			c.ContentType: []string{c.TextHTML},
+		},
+		buf.Bytes(),
+	)
 }
 
 func WriteAsset(name string, ex exchange.Exchange) {

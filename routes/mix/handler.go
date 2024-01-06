@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 	"log"
 	"math/rand"
 	"net/http"
@@ -22,7 +23,7 @@ type entry struct {
 	args []string
 }
 
-var Routes = map[string]exchange.HandlerFn{
+var Routes = map[string]exchange.HandlerFn2{
 	`/mix\b(?P<conf>.*)`:   handleMix,
 	`/mixer\b(?P<conf>.*)`: handleMixer,
 }
@@ -126,11 +127,10 @@ func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
 	return entries, nil
 }
 
-func handleMix(ex *exchange.Exchange) {
+func handleMix(ex *exchange.Exchange) response.Response {
 	entries, err := computeMixEntries(ex)
 	if err != nil {
-		ex.RespondBadRequest(err.Error())
-		return
+		return response.BadRequest(err.Error())
 	}
 
 	var status int
@@ -157,23 +157,20 @@ func handleMix(ex *exchange.Exchange) {
 
 			status, err = strconv.Atoi(code)
 			if err != nil {
-				ex.RespondBadRequest(err.Error())
-				return
+				return response.BadRequest(err.Error())
 			}
 
 		case "h":
 			headerValue, err := url.QueryUnescape(entry.args[1])
 			if err != nil {
-				ex.RespondBadRequest(err.Error())
-				return
+				return response.BadRequest(err.Error())
 			}
 			headers.Add(entry.args[0], headerValue)
 
 		case "c":
 			cookieValue, err := url.QueryUnescape(entry.args[1])
 			if err != nil {
-				ex.RespondBadRequest(err.Error())
-				return
+				return response.BadRequest(err.Error())
 			}
 			cookies[entry.args[0]] = cookieValue
 
@@ -182,31 +179,26 @@ func handleMix(ex *exchange.Exchange) {
 
 		case "r":
 			if redirectTo != "" {
-				ex.RespondBadRequest("multiple redirects not allowed")
-				return
+				return response.BadRequest("multiple redirects not allowed")
 			}
 			redirectTo, err = url.QueryUnescape(entry.args[0])
 			if err != nil {
-				ex.RespondBadRequest(err.Error())
-				return
+				return response.BadRequest(err.Error())
 			}
 
 		case "b64":
 			payload, err = base64.StdEncoding.DecodeString(entry.args[0])
 			if err != nil {
-				ex.RespondBadRequest(err.Error())
-				return
+				return response.BadRequest(err.Error())
 			}
 
 		case "d":
 			seconds, err := strconv.ParseFloat(entry.args[0], 32)
 			if err != nil {
-				ex.RespondBadRequest(err.Error())
-				return
+				return response.BadRequest(err.Error())
 			}
 			if seconds > 10 {
-				ex.RespondBadRequest("delay must be less than 10 seconds")
-				return
+				return response.BadRequest("delay must be less than 10 seconds")
 			}
 			delay = time.Duration(int(seconds * float64(time.Second)))
 
@@ -214,8 +206,7 @@ func handleMix(ex *exchange.Exchange) {
 			templateContent, err := base64.StdEncoding.DecodeString(entry.args[0])
 			payload, err = renderTemplate(ex, string(templateContent))
 			if err != nil {
-				ex.RespondBadRequest(err.Error())
-				return
+				return response.BadRequest(err.Error())
 			}
 
 		}
@@ -243,10 +234,6 @@ func handleMix(ex *exchange.Exchange) {
 		headers.Set("Content-Length", strconv.Itoa(len(payload)))
 	}
 
-	for key, value := range headers {
-		ex.ResponseWriter.Header()[key] = value
-	}
-
 	for key, value := range cookies {
 		http.SetCookie(ex.ResponseWriter, &http.Cookie{
 			Name:  key,
@@ -265,18 +252,16 @@ func handleMix(ex *exchange.Exchange) {
 		})
 	}
 
-	ex.ResponseWriter.WriteHeader(status)
-	ex.WriteBytes(payload)
+	return response.New(status, headers, payload)
 }
 
-func handleMixer(ex *exchange.Exchange) {
+func handleMixer(ex *exchange.Exchange) response.Response {
 	entries, err := computeMixEntries(ex)
 	if err != nil {
-		ex.RespondBadRequest(err.Error())
-		return
+		return response.BadRequest(err.Error())
 	}
 
-	assets.Render("mixer.html", *ex, map[string]any{
+	return assets.Render2("mixer.html", *ex, map[string]any{
 		"mixEntries": entries,
 	})
 }

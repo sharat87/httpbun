@@ -61,12 +61,14 @@ func GetRoutes() []Route {
 		"/(?P<hook>hooks.slack.com/services/.*)": handleSlack,
 	}
 
+	allRoutes2 := map[string]exchange.HandlerFn2{}
+
 	maps.Copy(allRoutes, method.Routes)
 	maps.Copy(allRoutes, headers.Routes)
 	maps.Copy(allRoutes, cache.Routes)
 	maps.Copy(allRoutes, auth.Routes)
 	maps.Copy(allRoutes, redirect.Routes)
-	maps.Copy(allRoutes, mix.Routes)
+	maps.Copy(allRoutes2, mix.Routes)
 	maps.Copy(allRoutes, static.Routes)
 	maps.Copy(allRoutes, cookies.Routes)
 
@@ -74,6 +76,17 @@ func GetRoutes() []Route {
 		routes = append(routes, Route{
 			Pat: *regexp.MustCompile("^" + pat + "$"),
 			Fn:  fn,
+		})
+	}
+
+	for pat, fn := range allRoutes2 {
+		routes = append(routes, Route{
+			Pat: *regexp.MustCompile("^" + pat + "$"),
+			Fn: (func(fn exchange.HandlerFn2) exchange.HandlerFn {
+				return func(ex *exchange.Exchange) {
+					ex.Finish(fn(ex))
+				}
+			})(fn),
 		})
 	}
 
