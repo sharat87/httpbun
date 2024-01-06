@@ -178,7 +178,7 @@ func (ex Exchange) FullUrl() string {
 		return ex.Request.URL.String()
 	}
 
-	return ex.FindScheme() + "://" + ex.Request.Host + ex.Request.URL.String()
+	return ex.FindScheme() + ":" + ex.Request.URL.String()
 }
 
 // FindIncomingIPAddress Find the IP address of the client that made this Exchange.
