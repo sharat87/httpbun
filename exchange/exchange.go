@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -16,39 +15,34 @@ import (
 )
 
 type Exchange struct {
-	Request        *http.Request
-	ResponseWriter http.ResponseWriter
-	Fields         map[string]string
-	CappedBody     io.Reader
-	URL            *url.URL
-	ServerSpec     spec.Spec
+	Request         *http.Request
+	ResponseWriter  http.ResponseWriter
+	Fields          map[string]string
+	CappedBody      io.Reader
+	RoutedPath      string
+	OriginalPath    string
+	RoutedRawPath   string
+	OriginalRawPath string
+	ServerSpec      spec.Spec
 }
 
 type HandlerFn func(ex *Exchange)
 
 func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchange {
 	ex := &Exchange{
-		Request:        req,
-		ResponseWriter: w,
-		Fields:         map[string]string{},
-		CappedBody:     io.LimitReader(req.Body, 10000),
-		URL: &url.URL{
-			Scheme:      req.URL.Scheme,
-			Opaque:      req.URL.Opaque,
-			User:        req.URL.User,
-			Host:        req.URL.Host,
-			Path:        strings.TrimPrefix(req.URL.Path, serverSpec.PathPrefix),
-			RawPath:     req.URL.RawPath,
-			ForceQuery:  req.URL.ForceQuery,
-			RawQuery:    req.URL.RawQuery,
-			Fragment:    req.URL.Fragment,
-			RawFragment: req.URL.RawFragment,
-		},
-		ServerSpec: serverSpec,
+		Request:         req,
+		ResponseWriter:  w,
+		Fields:          map[string]string{},
+		CappedBody:      io.LimitReader(req.Body, 10000),
+		RoutedPath:      strings.TrimPrefix(req.URL.Path, serverSpec.PathPrefix),
+		OriginalPath:    req.URL.Path,
+		RoutedRawPath:   strings.TrimPrefix(req.URL.RawPath, serverSpec.PathPrefix),
+		OriginalRawPath: req.URL.RawPath,
+		ServerSpec:      serverSpec,
 	}
 
-	if ex.URL.Host == "" && req.Host != "" {
-		ex.URL.Host = req.Host
+	if req.URL.Host == "" && req.Host != "" {
+		req.URL.Host = req.Host
 	}
 
 	// Need to set the exact origin, since `*` won't work if request includes credentials.
@@ -75,7 +69,7 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 }
 
 func (ex Exchange) MatchAndLoadFields(routePat regexp.Regexp) bool {
-	match := routePat.FindStringSubmatch(ex.URL.Path)
+	match := routePat.FindStringSubmatch(ex.RoutedPath)
 	if match != nil {
 		names := routePat.SubexpNames()
 		for i, name := range names {

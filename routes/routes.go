@@ -82,7 +82,7 @@ func GetRoutes() []Route {
 
 func handleIndex(ex *exchange.Exchange) {
 	assets.Render("index.html", *ex, map[string]any{
-		"host": ex.URL.Host,
+		"host": ex.Request.URL.Host,
 	})
 }
 

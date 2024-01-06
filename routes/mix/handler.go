@@ -84,8 +84,8 @@ var templateFuncMap = template.FuncMap{
 func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
 	// We need raw path here, with percent encoding intact.
 	// TODO: trim also the base path.
-	path := strings.TrimPrefix(ex.Request.URL.RawPath, "/mix")
-	query := ex.URL.RawQuery
+	path := strings.TrimPrefix(ex.RoutedRawPath, "/mix")
+	query := ex.Request.URL.RawQuery
 
 	var source, itemSep string
 	var unescape func(string) (string, error)

@@ -17,7 +17,7 @@ var Routes = map[string]exchange.HandlerFn{
 }
 
 func handleValidMethod(ex *exchange.Exchange) {
-	allowedMethod := strings.ToUpper(strings.TrimPrefix(ex.URL.Path, "/"))
+	allowedMethod := strings.ToUpper(strings.TrimPrefix(ex.RoutedPath, "/"))
 	if ex.Request.Method != allowedMethod {
 		allowedMethods := allowedMethod + ", " + http.MethodOptions
 		ex.ResponseWriter.Header().Set("Allow", allowedMethods)
