@@ -146,6 +146,14 @@ button {
 	display: inline-block;
 }
 
+#url {
+	white-space: nowrap;
+	overflow-x: hidden;
+	max-width: 100%;
+	display: block;
+	text-overflow: ellipsis;
+}
+
 .ghost {
 	position: fixed;
 	display: flex;
