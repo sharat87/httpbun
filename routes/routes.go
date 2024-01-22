@@ -81,7 +81,7 @@ func GetRoutes() []Route {
 
 	for pat, fn := range allRoutes2 {
 		routes = append(routes, Route{
-			Pat: *regexp.MustCompile("^" + pat + "$"),
+			Pat: *regexp.MustCompile("(?s)^" + pat + "$"),
 			Fn: (func(fn exchange.HandlerFn2) exchange.HandlerFn {
 				return func(ex *exchange.Exchange) {
 					ex.Finish(fn(ex))

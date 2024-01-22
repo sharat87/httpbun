@@ -16,7 +16,7 @@ tasks:
     cmds:
       - task: fmt
       - go mod tidy
-      - go run {{.LD_FLAGS}} .
+      - go run {{.LD_FLAGS}} . --bind localhost:3090
 
   docker:
     env:

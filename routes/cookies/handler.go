@@ -7,9 +7,9 @@ import (
 )
 
 var Routes = map[string]exchange.HandlerFn{
-	"/cookies":        handleCookies,
-	"/cookies/delete": handleCookiesDelete,
-	"/cookies/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?": handleCookiesSet,
+	`/cookies?`:        handleCookies,
+	`/cookies?/delete`: handleCookiesDelete,
+	`/cookies?/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?`: handleCookiesSet,
 }
 
 func handleCookies(ex *exchange.Exchange) {

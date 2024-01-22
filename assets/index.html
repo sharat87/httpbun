@@ -22,23 +22,15 @@
 <dl>
 
     <dt id=get>/get</dt>
-    <dd>Accepts GET requests and responds with a JSON object with query params, headers and a few other information
-        about the request.
-        <details>
-            <summary><span>Examples</span></summary>
-            <pre>curl {{.host}}/get</pre>
-        </details>
-    </dd>
-
     <dt id=post>/post</dt>
     <dt id=put>/put</dt>
     <dt id=patch>/patch</dt>
     <dt id=delete>/delete</dt>
-    <dd>Accepts POST requests and responds with a JSON object with form body, query params, headers and a few other
-        information about the request. There's also <code>/put</code>, <code>/patch</code> and <code>/delete</code>
-        endpoints that behave similarly.
+    <dd>Accepts GET/POST/... requests and responds with a JSON object with form body, query params, headers and a few
+        other information about the request.
         <details>
             <summary><span>Examples</span></summary>
+            <pre>curl {{.host}}/get</pre>
             <pre>curl -X POST -d 'one=1' {{.host}}/post</pre>
             <pre>curl -X POST -d '{"one": 1}' -H 'content-type:application/json' {{.host}}/post</pre>
             <pre>curl -X PUT {{.host}}/put</pre>
@@ -301,25 +293,6 @@
     </dd>
 
 </dl>
-
-<h2 id=diff-from-httpbin>Differences from Httpbin <a href="#diff-from-httpbin">&para;</a></h2>
-
-<p>This is a non-exhaustive list of differences from httpbin.</p>
-
-<ol>
-    <li>Not all endpoints are available. If you need something, please
-        <a href='https://github.com/sharat87/httpbun/issues/new' rel=noopener>open an issue on GitHub</a>.
-    <li>Almost all endpoints work with <em>any</em> HTTP method. Notable exceptions are the method endpoints themselves,
-        <em>i.e.</em>, <code>/get</code>, <code>/post</code>, etc.
-    <li>The bytes returned by <a href=#range>/range</a> are not the same as those from httpbin.
-    <li>Multipart-form data payloads without a boundary set, will respond with a <code>400 Bad Request</code> error,
-        instead of responding with a success, and empty body details like httpbin.
-    <li>No hidden headers. <em>All headers</em> are returned in endpoints that send headers in response, like <code>/headers</code>.
-        See
-        <a href='https://github.com/postmanlabs/httpbin/blob/f8ec666b4d1b654e4ff6aedd356f510dcac09f83/httpbin/helpers.py#L40'
-        target="_blank">list of hidden headers on httpbin</a>.
-    <li>Written in Go.
-</ol>
 
 <h2 id=license>License</h2>
 

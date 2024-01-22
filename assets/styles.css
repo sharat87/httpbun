@@ -92,7 +92,11 @@ pre {
 	overflow-x: auto;
 }
 
-input {
+::placeholder {
+	font-style: italic;
+}
+
+input, select, button {
 	font: inherit;
 }
 
@@ -140,17 +144,19 @@ textarea {
 	font-size: inherit;
 }
 
-button {
-	font: inherit;
+button, select {
 	cursor: pointer;
 	display: inline-block;
 }
 
-#url {
+button + button {
+	margin-left: 6px;
+}
+
+#urlBox {
 	white-space: nowrap;
 	overflow-x: hidden;
 	max-width: 100%;
-	display: block;
 	text-overflow: ellipsis;
 }
 
