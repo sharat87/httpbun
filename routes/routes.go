@@ -6,6 +6,7 @@ import (
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/routes/auth"
 	"github.com/sharat87/httpbun/routes/cache"
 	"github.com/sharat87/httpbun/routes/cookies"
@@ -46,7 +47,6 @@ func GetRoutes() []Route {
 
 		"/payload": handlePayload,
 
-		"/status/(?P<codes>[\\d,]+)":    handleStatus,
 		"/ip(\\.(?P<format>txt|json))?": handleIp,
 
 		"/b(ase)?64(/(?P<encoded>.*))?":                handleDecodeBase64,
@@ -61,7 +61,9 @@ func GetRoutes() []Route {
 		"/(?P<hook>hooks.slack.com/services/.*)": handleSlack,
 	}
 
-	allRoutes2 := map[string]exchange.HandlerFn2{}
+	allRoutes2 := map[string]exchange.HandlerFn2{
+		"/status/(?P<codes>[\\w,]+)": handleStatus,
+	}
 
 	maps.Copy(allRoutes, method.Routes)
 	maps.Copy(allRoutes, headers.Routes)
@@ -120,29 +122,48 @@ func handlePayload(ex *exchange.Exchange) {
 	}
 }
 
-func handleStatus(ex *exchange.Exchange) {
-	codes := regexp.MustCompile("\\d+").FindAllString(ex.Request.URL.String(), -1)
-
-	var code string
-	if len(codes) > 1 {
-		code = codes[rand.Intn(len(codes))]
-	} else {
-		code = codes[0]
+func handleStatus(ex *exchange.Exchange) response.Response {
+	input := ex.Field("codes")
+	if len(input) > 99 {
+		return response.BadRequest("Too many status codes")
 	}
 
-	codeNum, _ := strconv.Atoi(code)
-	ex.ResponseWriter.WriteHeader(codeNum)
+	parts := strings.Split(input, ",")
+	var codes []int
 
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		code, err := strconv.Atoi(part)
+		if err != nil {
+			return response.BadRequest("Invalid status code: " + part)
+		}
+		if code < 100 || code > 599 {
+			return response.BadRequest("Invalid status code: " + part)
+		}
+		codes = append(codes, code)
+	}
+
+	var status int
+	if len(codes) > 1 {
+		status = codes[rand.Intn(len(codes))]
+	} else {
+		status = codes[0]
+	}
+
+	ex.ResponseWriter.WriteHeader(status)
 	acceptHeader := ex.HeaderValueLast("Accept")
 
-	if acceptHeader == c.ApplicationJSON {
-		ex.WriteJSON(map[string]any{
-			"code":        codeNum,
-			"description": http.StatusText(codeNum),
-		})
+	if acceptHeader == c.TextPlain {
+		return response.New(status, nil, []byte(http.StatusText(status)))
 
-	} else if acceptHeader == c.TextPlain {
-		ex.WriteF("%d %s", codeNum, http.StatusText(codeNum))
+	} else {
+		return response.New(status, nil, util.ToJsonMust(map[string]any{
+			"code":        status,
+			"description": http.StatusText(status),
+		}))
 
 	}
 }
