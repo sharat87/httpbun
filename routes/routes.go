@@ -153,17 +153,16 @@ func handleStatus(ex *exchange.Exchange) response.Response {
 		status = codes[0]
 	}
 
-	ex.ResponseWriter.WriteHeader(status)
 	acceptHeader := ex.HeaderValueLast("Accept")
 
 	if acceptHeader == c.TextPlain {
 		return response.New(status, nil, []byte(http.StatusText(status)))
 
 	} else {
-		return response.New(status, nil, util.ToJsonMust(map[string]any{
+		return response.JSON(status, nil, map[string]any{
 			"code":        status,
 			"description": http.StatusText(status),
-		}))
+		})
 
 	}
 }

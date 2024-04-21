@@ -2,6 +2,7 @@ package response
 
 import (
 	"fmt"
+	"github.com/sharat87/httpbun/util"
 	"net/http"
 )
 
@@ -17,6 +18,14 @@ func New(status int, header http.Header, body []byte) Response {
 		Header: header,
 		Body:   body,
 	}
+}
+
+func JSON(status int, header http.Header, body map[string]any) Response {
+	if header == nil {
+		header = http.Header{}
+	}
+	header.Set("Content-Type", "application/json")
+	return New(status, header, util.ToJsonMust(body))
 }
 
 func BadRequest(message string, vars ...any) Response {
