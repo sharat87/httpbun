@@ -1,9 +1,14 @@
+FROM golang AS builder
+WORKDIR /w/
+COPY ./ /w/
+ENV CGO_ENABLED=0
+RUN --mount=type=cache,target=/go/pkg/mod/cache go mod tidy && go build -a -installsuffix cgo -o /httpbun .
+
 FROM scratch
 
 LABEL org.opencontainers.image.authors="shrikantsharat.k@gmail.com"
 
-ARG TARGETARCH
-ADD bin/httpbun-docker-$TARGETARCH /httpbun
+COPY --from=builder /httpbun /httpbun
 
 ENV PATH="___httpbun_unset_marker"
 ENV HOME="___httpbun_unset_marker"
