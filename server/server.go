@@ -88,10 +88,9 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	incomingIP := ex.FindIncomingIPAddress()
 	log.Printf(
-		"From ip=%s %s %s%s",
+		"From %s %s %s",
 		incomingIP,
 		req.Method,
-		req.Host,
 		req.URL.String(),
 	)
 
