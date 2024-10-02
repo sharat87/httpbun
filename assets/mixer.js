@@ -74,9 +74,16 @@ formEl.addEventListener("keydown", () => setTimeout(recomputeURL))
 formEl.addEventListener("keyup", recomputeURL)  // for paste
 formEl.addEventListener("change", recomputeURL)
 
-urlEl.closest("p").addEventListener("click", () => {
+document.getElementById("copyUrlBtn").addEventListener("click", (event) => {
+	event.preventDefault()
 	navigator.clipboard.writeText(urlEl.innerText)
-	showGhost(urlEl)
+	showGhost(event.target)
+})
+
+document.getElementById("copyCurlBtn").addEventListener("click", (event) => {
+	event.preventDefault()
+	navigator.clipboard.writeText("curl " + urlEl.innerText)
+	showGhost(event.target)
 })
 
 loadFromURL()
