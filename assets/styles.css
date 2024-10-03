@@ -120,6 +120,10 @@ label, input[type=submit], input[type=checkbox] {
 	cursor: pointer;
 }
 
+label[data-directive] {
+	text-align: right;
+}
+
 footer {
 	margin: 3rem 0 1rem;
 	padding: 1rem 0 0;

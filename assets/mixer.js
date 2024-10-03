@@ -82,7 +82,13 @@ document.getElementById("copyUrlBtn").addEventListener("click", (event) => {
 
 document.getElementById("copyCurlBtn").addEventListener("click", (event) => {
 	event.preventDefault()
-	navigator.clipboard.writeText("curl " + urlEl.innerText)
+	navigator.clipboard.writeText(`curl '${urlEl.innerText}'`)
+	showGhost(event.target)
+})
+
+document.getElementById("copyHttpieBtn").addEventListener("click", (event) => {
+	event.preventDefault()
+	navigator.clipboard.writeText(`http '${urlEl.innerText}'`)
 	showGhost(event.target)
 })
 
@@ -90,7 +96,7 @@ loadFromURL()
 
 function loadFromURL() {
 	if (URL_MIX_ENTRIES == null) {
-		addBtnsEl.children[0].click()
+		addBtnsEl.querySelector("button").click()
 		formEl.querySelector("input, textarea").focus()
 		return
 	}
@@ -145,7 +151,7 @@ function recomputeURL() {
 	}
 
 	url.pathname = pathItems.join("")
-	urlEl.innerText = url.toString()
+	urlEl.innerText = urlEl.href = url.toString()
 
 	urlMismatchMessageEl.style.display =
 		currentURLPath !== "/mixer" && url.pathname !== currentURLPath.replace("/mixer", "/mix") ? "" : "none"

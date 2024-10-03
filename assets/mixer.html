@@ -8,12 +8,17 @@
 
 <p id=urlMismatchMessage style="display:none">Note: Below URL is different from the one in the browser URL bar.</p>
 
-<p><a id=url>https://httpbun.com/mix/...</a><br><button id="copyUrlBtn">Copy URL</button><button id="copyCurlBtn">Copy <code>curl</code> command</button></p>
+<p style="display:flex;flex-wrap:wrap;gap:.4em 0">
+    <a id=url target=m style="flex-basis:100%">https://httpbun.com/mix/...</a>
+    <button id=copyUrlBtn>Copy URL</button>
+    <button id=copyCurlBtn>Copy <code>curl</code></button>
+    <button id=copyHttpieBtn>Copy <code>httpie</code></button>
+</p>
 
 <form id=form></form>
 
-<p id=addBtns>
-	Add:
+<p id=addBtns style="display:flex;flex-wrap:wrap">
+	<span style="margin-right:6px">Add:</span>
 	<button data-directive=s no-repeat>Status</button>
 	<button data-directive=h>Header</button>
 	<button data-directive=c>Set-Cookie</button>
