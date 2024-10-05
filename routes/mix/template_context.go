@@ -8,8 +8,7 @@ import (
 )
 
 var templateFuncMap = template.FuncMap{
-	"seq":    tplFuncSeq,
-	"repeat": tplFuncSeq,
+	"seq": tplFuncSeq,
 	"toJSON": func(v any) string {
 		buffer := &bytes.Buffer{}
 		encoder := json.NewEncoder(buffer)
@@ -24,7 +23,13 @@ var templateFuncMap = template.FuncMap{
 	},
 }
 
-func tplFuncSeq(args ...int) []map[string]any {
+type SeqItem struct {
+	N       int
+	IsFirst bool
+	IsLast  bool
+}
+
+func tplFuncSeq(args ...int) []SeqItem {
 	var start, end, delta int
 	switch len(args) {
 	case 1:
@@ -43,17 +48,13 @@ func tplFuncSeq(args ...int) []map[string]any {
 	if (start > end && delta > 0) || (start < end && delta < 0) {
 		delta = -delta
 	}
-	var seq []map[string]any
-	for i := start; i != end; i += delta {
-		seq = append(seq, map[string]any{
-			"N":       i,
-			"IsFirst": false,
-			"IsLast":  false,
-		})
+	var seq []SeqItem
+	for i := start; i <= end; i += delta {
+		seq = append(seq, SeqItem{N: i})
 	}
 	if len(seq) > 0 {
-		seq[0]["IsFirst"] = true
-		seq[len(seq)-1]["IsLast"] = true
+		seq[0].IsFirst = true
+		seq[len(seq)-1].IsLast = true
 	}
 	return seq
 }

@@ -264,6 +264,8 @@
         <li><code>c</code>: Set a cookie, in the form <code>name:value</code>.
         <li><code>r</code>: Set a redirect URL. Uses status code 307. To change, use <code>s=</code> directive.
         <li><code>b64</code>: Set the response body to the base64 decoded value.
+        <li><code>t</code>: The base64 decoded value of this, is rendered as a Golang text template, and the result is
+            used as the response body.
     </ol>
 	<br>Use the <a href=mixer>mixer</a> for a UI to generate these URLs.
     </dd>
