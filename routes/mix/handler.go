@@ -65,6 +65,11 @@ func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
 		if part == "" {
 			continue
 		}
+
+		if part == "end" {
+			break
+		}
+
 		directive, value, _ := strings.Cut(part, "=")
 		value, err := unescape(value)
 		if err != nil {
