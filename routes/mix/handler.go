@@ -18,8 +18,8 @@ import (
 )
 
 type entry struct {
-	dir  string
-	args []string
+	Dir  string   `json:"dir"`
+	Args []string `json:"args"`
 }
 
 var Routes = map[string]exchange.HandlerFn2{
@@ -106,10 +106,10 @@ func handleMix(ex *exchange.Exchange) response.Response {
 	var delay time.Duration
 
 	for _, entry := range entries {
-		switch entry.dir {
+		switch entry.Dir {
 
 		case "s":
-			value := entry.args[0]
+			value := entry.Args[0]
 			codes := regexp.MustCompile("\\d+").FindAllString(value, -1)
 
 			var code string
@@ -125,39 +125,39 @@ func handleMix(ex *exchange.Exchange) response.Response {
 			}
 
 		case "h":
-			headerValue, err := url.QueryUnescape(entry.args[1])
+			headerValue, err := url.QueryUnescape(entry.Args[1])
 			if err != nil {
 				return response.BadRequest(err.Error())
 			}
-			headers.Add(entry.args[0], headerValue)
+			headers.Add(entry.Args[0], headerValue)
 
 		case "c":
-			cookieValue, err := url.QueryUnescape(entry.args[1])
+			cookieValue, err := url.QueryUnescape(entry.Args[1])
 			if err != nil {
 				return response.BadRequest(err.Error())
 			}
-			cookies[entry.args[0]] = cookieValue
+			cookies[entry.Args[0]] = cookieValue
 
 		case "cd":
-			deleteCookies = append(deleteCookies, entry.args[0])
+			deleteCookies = append(deleteCookies, entry.Args[0])
 
 		case "r":
 			if redirectTo != "" {
 				return response.BadRequest("multiple redirects not allowed")
 			}
-			redirectTo, err = url.QueryUnescape(entry.args[0])
+			redirectTo, err = url.QueryUnescape(entry.Args[0])
 			if err != nil {
 				return response.BadRequest(err.Error())
 			}
 
 		case "b64":
-			payload, err = base64.StdEncoding.DecodeString(entry.args[0])
+			payload, err = base64.StdEncoding.DecodeString(entry.Args[0])
 			if err != nil {
 				return response.BadRequest(err.Error())
 			}
 
 		case "d":
-			seconds, err := strconv.ParseFloat(entry.args[0], 32)
+			seconds, err := strconv.ParseFloat(entry.Args[0], 32)
 			if err != nil {
 				return response.BadRequest(err.Error())
 			}
@@ -167,7 +167,7 @@ func handleMix(ex *exchange.Exchange) response.Response {
 			delay = time.Duration(int(seconds * float64(time.Second)))
 
 		case "t":
-			templateContent, err := base64.StdEncoding.DecodeString(entry.args[0])
+			templateContent, err := base64.StdEncoding.DecodeString(entry.Args[0])
 			payload, err = renderTemplate(ex, string(templateContent))
 			if err != nil {
 				return response.BadRequest(err.Error())
