@@ -38,6 +38,10 @@ func Render(name string, ex exchange.Exchange, data map[string]any) {
 }
 
 func Render2(name string, ex exchange.Exchange, data map[string]any) response.Response {
+	if data == nil {
+		data = make(map[string]any)
+	}
+
 	data["serverSpec"] = ex.ServerSpec
 
 	buf := bytes.Buffer{}

@@ -6,18 +6,17 @@
 
 <noscript><p style="color:red">This page requires JavaScript. Please enable it.</p></noscript>
 
-<p id=urlMismatchMessage style="display:none">Note: Below URL is different from the one in the browser URL bar.</p>
+<url-pane id=urlPane class=flex>
+    <a target=m style="flex-basis:100%">https://httpbun.com/mix/...</a>
+    <button data-format="%">Copy URL</button>
+    <button data-format="curl '%'">Copy <code>curl</code></button>
+    <button data-format="http '%'">Copy <code>httpie</code></button>
+    <em id=urlMismatchMessageEl style="display:none">Note: Below URL is different from the one in the browser URL bar.</em>
+</url-pane>
 
-<p style="display:flex;flex-wrap:wrap;gap:.4em 0">
-    <a id=url target=m style="flex-basis:100%">https://httpbun.com/mix/...</a>
-    <button id=copyUrlBtn>Copy URL</button>
-    <button id=copyCurlBtn>Copy <code>curl</code></button>
-    <button id=copyHttpieBtn>Copy <code>httpie</code></button>
-</p>
+<form id=form style="margin:2.6em 0"></form>
 
-<form id=form></form>
-
-<p id=addBtns style="display:flex;flex-wrap:wrap">
+<p id=addBtns class=flex>
 	<span style="margin-right:6px">Add:</span>
 	<button data-directive=s no-repeat>Status</button>
 	<button data-directive=h>Header</button>
@@ -29,9 +28,23 @@
 	<button data-directive=d no-repeat>Delay</button>
 </p>
 
+<style>
+.entry :is(input, textarea) {
+    flex: 1;
+}
+.entry + .entry {
+    margin-top: .6em;
+}
+.flex {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4em;
+}
+</style>
+
 <script>
-const URL_MIX_ENTRIES = {{.mixEntries}}
-{ {{template "mixer.js"}} }
+{{template "mixer.js"}}
 </script>
 
 {{template "_foot.html"}}

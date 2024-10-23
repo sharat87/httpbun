@@ -1,118 +1,216 @@
-const urlEl = document.getElementById("url")
 const formEl = document.getElementById("form")
 const addBtnsEl = document.getElementById("addBtns")
-const urlMismatchMessageEl = document.getElementById("urlMismatchMessage")
 
-document.body.insertAdjacentHTML("afterbegin", `<style>
-form {
-	margin: 2.6em 0;
+const LABELS = {}
+for (const b of addBtnsEl.querySelectorAll("button")) {
+	LABELS[b.dataset.directive] = b.textContent
 }
-form p {
-	display: flex;
-	gap: 1em;
-	align-items: start;
+
+function el(html) {
+	const nodes = new DOMParser().parseFromString(html, "text/html").body.children
+	if (nodes.length > 1) {
+		const f= document.createDocumentFragment()
+		f.append(...nodes)
+		return f
+	} else return nodes[0]
 }
-form p > [data-directive] {
-	flex: 0 0 9em;
+
+class EntryElement extends HTMLElement {
+	constructor() {
+		super()
+		this.directive = ""
+	}
+
+	connectedCallback() {
+		this.directive = this.tagName.substring("entry-".length).toLowerCase()
+		this.className = "entry flex"
+
+		this.innerHTML = this.formControl()
+
+		const label = el(`<label style="flex:0 0 9em;text-align:right">${LABELS[this.directive]}</label>`)
+		this.insertBefore(label, this.firstChild)
+
+		const delBtn = el(`<button class=del>&times;</button>`)
+		delBtn.addEventListener("click", this.remove.bind(this))
+		this.append(delBtn)
+
+		const input = this.querySelector("input, textarea")
+		label.setAttribute("for", input.id = "e" + Math.random())
+		input.focus()
+	}
+
+	get path() {
+		return this.directive ? "/" + this.directive + "=" + this.value : ""
+	}
 }
-form p :is(input, textarea) {
-	flex: 1;
-}
-</style>`)
+
+customElements.define("entry-s", class extends EntryElement {
+	formControl() {
+		return `<input placeholder='One or more status codes, comma separated' required value=200>`
+	}
+
+	get value() {
+		return this.querySelector("input").value
+	}
+
+	set value(v) {
+		this.querySelector("input").value = v
+	}
+})
+
+customElements.define("entry-h", class extends EntryElement {
+	formControl() {
+		return `<input required pattern='^[-_a-zA-Z0-9]+$' placeholder=key>:<input placeholder=value>`
+	}
+
+	get value() {
+		const inputs = this.querySelectorAll("input")
+		return inputs[0].value + ":" + encodeURIComponent(inputs[1].value)
+	}
+
+	set value(v) {
+		const [_, name, value] = v.match(/^(.+?):(.+)$/)
+		const inputs = this.querySelectorAll("input")
+		inputs[0].value = name
+		inputs[1].value = decodeURIComponent(value)
+	}
+})
+
+customElements.define("entry-c", class extends EntryElement {
+	formControl() {
+		return `<input required placeholder=name>:<input placeholder=value>`
+	}
+
+	get value() {
+		const inputs = this.querySelectorAll("input")
+		return inputs[0].value + ":" + encodeURIComponent(inputs[1].value)
+	}
+
+	set value(v) {
+		const [_, name, value] = v.match(/^(.+?):(.+)$/)
+		const inputs = this.querySelectorAll("input")
+		inputs[0].value = name
+		inputs[1].value = decodeURIComponent(value)
+	}
+})
+
+customElements.define("entry-cd", class extends EntryElement {
+	formControl() {
+		return `<input required placeholder=name>`
+	}
+
+	get value() {
+		return this.querySelector("input").value
+	}
+
+	set value(v) {
+		this.querySelector("input").value = v
+	}
+})
+
+customElements.define("entry-b64", class extends EntryElement {
+	formControl() {
+		return `<textarea placeholder='Plain text response body' rows=4></textarea>`
+	}
+
+	get value() {
+		return btoa(this.querySelector("textarea").value)
+	}
+
+	set value(v) {
+		this.querySelector("textarea").value = atob(v)
+	}
+})
+
+customElements.define("entry-t", class extends EntryElement {
+	formControl() {
+		return `<textarea placeholder='Golang template response body' rows=4></textarea>`
+	}
+
+	get value() {
+		return btoa(this.querySelector("textarea").value)
+	}
+
+	set value(v) {
+		this.querySelector("textarea").value = atob(v)
+	}
+})
+
+customElements.define("entry-r", class extends EntryElement {
+	formControl() {
+		return `<input type=url placeholder=URL>`
+	}
+
+	get value() {
+		return encodeURIComponent(this.querySelector("input").value)
+	}
+
+	set value(v) {
+		this.querySelector("input").value = decodeURIComponent(v)
+	}
+})
+
+customElements.define("entry-d", class extends EntryElement {
+	formControl() {
+		return `<input type=number required placeholder='Delay seconds' min=0 max=10 step=.1>`
+	}
+
+	get value() {
+		return this.querySelector("input").value
+	}
+
+	set value(v) {
+		this.querySelector("input").value = v
+	}
+})
 
 addBtnsEl.addEventListener("click", (event) => {
-	if (event.target.tagName !== "BUTTON") {
-		return
-	}
-
-	const directive = event.target.dataset.directive
-	const id = "d" + formEl.children.length
-	const parts = ["<p>", `<label for=${id} data-directive=${directive}>${event.target.innerText}</label>`]
-
-	if (directive === "b64") {
-		parts.push(`<textarea id=${id} placeholder='Plain text response body' rows=4></textarea>`)
-
-	} else if (directive === "t") {
-		parts.push(`<textarea id=${id} placeholder='Golang template response body' rows=4></textarea>`)
-
-	} else if (directive === "s") {
-		parts.push(`<input id=${id} placeholder='One or more status codes, comma separated' required value=200>`)
-
-	} else if (directive === "h") {
-		parts.push(`<input id=${id} required pattern='^[-_a-zA-Z0-9]+$' placeholder=key>:<input placeholder=value>`)
-
-	} else if (directive === "c") {
-		parts.push(`<input id=${id} required placeholder=name>:<input placeholder=value>`)
-
-	} else if (directive === "cd") {
-		parts.push(`<input id=${id} required placeholder=name>`)
-
-	} else if (directive === "r") {
-		parts.push(`<input id=${id} type=url placeholder=URL>`)
-
-	} else if (directive === "d") {
-		parts.push(`<input id=${id} type=number required placeholder='Delay seconds' min=0 max=10 step=.1>`)
-
-	}
-
-	parts.push("<button class=del>&times;</button></p>")
-	formEl.insertAdjacentHTML("beforeend", parts.join(""))
-	formEl.lastElementChild.querySelector("input, textarea").focus()
-	recomputeURL()
-	checkAddButtons()
+	if (event.target.dataset.directive)
+		formEl.append(document.createElement("entry-" + event.target.dataset.directive))
 })
 
-formEl.addEventListener("click", (event) => {
-	if (event.target.tagName === "BUTTON" && event.target.matches("button.del")) {
-		event.target.closest("p").remove()
-		recomputeURL()
-		checkAddButtons()
-	}
-})
-
-formEl.addEventListener("keydown", () => setTimeout(recomputeURL))
-formEl.addEventListener("keyup", recomputeURL)  // for paste
+formEl.addEventListener("input", recomputeURL)
 formEl.addEventListener("change", recomputeURL)
 
-document.getElementById("copyUrlBtn").addEventListener("click", (event) => {
-	event.preventDefault()
-	navigator.clipboard.writeText(urlEl.innerText)
-	showGhost(event.target)
-})
+new MutationObserver(() => {
+	recomputeURL()
+	checkAddButtons()
+}).observe(formEl, { childList: true })
 
-document.getElementById("copyCurlBtn").addEventListener("click", (event) => {
-	event.preventDefault()
-	navigator.clipboard.writeText(`curl '${urlEl.innerText}'`)
-	showGhost(event.target)
-})
+customElements.define("url-pane", class extends HTMLElement {
+	constructor() {
+		super()
+		this.url = ""
+	}
 
-document.getElementById("copyHttpieBtn").addEventListener("click", (event) => {
-	event.preventDefault()
-	navigator.clipboard.writeText(`http '${urlEl.innerText}'`)
-	showGhost(event.target)
+	connectedCallback() {
+		this.a = this.querySelector("a")
+		this.addEventListener("click", (event) => {
+			if (event.target.dataset.format) {
+				navigator.clipboard.writeText(event.target.dataset.format.replace("%", this.url))
+				showGhost(event.target)
+			}
+		})
+	}
+
+	set url(value) {
+		this.a && (this.a.href = this.a.innerText = value)
+	}
+
+	get url() {
+		return this.a.href
+	}
 })
 
 loadFromURL()
 
 function loadFromURL() {
-	if (URL_MIX_ENTRIES == null) {
-		addBtnsEl.querySelector("button").click()
-		formEl.querySelector("input, textarea").focus()
-		return
+	const [_, ...parts] = location.pathname.match(/\/mixer(\/\w+=[^\/]+)+/)
+	for (const part of parts) {
+		const [_, dir, data] = part.match(/^\/(\w+)=(.+)$/)
+		addBtnsEl.querySelector("button[data-directive=" + dir + "]").click()
+		formEl.lastElementChild.value = data
 	}
-
-	for (const entry of URL_MIX_ENTRIES) {
-		document.querySelector("button[data-directive=" + entry.dir + "]").click()
-		const part = formEl.lastElementChild
-		const inputs = part.querySelectorAll("input, textarea")
-		for (let i = 0; i < inputs.length; i++) {
-			const data = entry.args[i] ?? ""
-			inputs[i].value = entry.dir === "b64" ? atob(data) : data
-		}
-	}
-
-	recomputeURL()
-	checkAddButtons()
 }
 
 function recomputeURL() {
@@ -121,56 +219,21 @@ function recomputeURL() {
 	const currentURLPath = url.pathname
 	const pathItems = ["/mix"]
 
-	for (const p of formEl.querySelectorAll("p")) {
-		const directive = p.firstElementChild.dataset.directive
-		const values = Array.from(p.querySelectorAll("input, textarea")).map((el) => el.value)
-		pathItems.push("/" + directive + "=")
-
-		if (directive === "b64" || directive === "t") {
-			pathItems.push(btoa(values[0]))
-
-		} else if (directive === "s") {
-			pathItems.push(values[0])
-
-		} else if (directive === "h") {
-			pathItems.push(values[0] + ":" + encodeURIComponent(values[1]))
-
-		} else if (directive === "c") {
-			pathItems.push(values[0] + ":" + encodeURIComponent(values[1]))
-
-		} else if (directive === "cd") {
-			pathItems.push(values[0])
-
-		} else if (directive === "r") {
-			pathItems.push(encodeURIComponent(values[0]))
-
-		} else if (directive === "d") {
-			pathItems.push(values[0])
-
-		}
+	for (const p of formEl.querySelectorAll("p, .entry")) {
+		pathItems.push(p.path)
 	}
 
 	url.pathname = pathItems.join("")
-	urlEl.innerText = urlEl.href = url.toString()
+	urlPane.url = url.toString()
 
 	urlMismatchMessageEl.style.display =
 		currentURLPath !== "/mixer" && url.pathname !== currentURLPath.replace("/mixer", "/mix") ? "" : "none"
 }
 
 function checkAddButtons() {
-	const addedLabels = new Set
-	const unrepeatableLabels = new Set
-
+	const added = new Set(Array.from(formEl.children).map(e => e.directive))
 	for (const btn of addBtnsEl.querySelectorAll("button[no-repeat]")) {
-		unrepeatableLabels.add(btn.innerText)
-	}
-
-	for (const p of formEl.querySelectorAll("p > [data-directive]")) {
-		addedLabels.add(p.innerText)
-	}
-
-	for (const btn of addBtnsEl.querySelectorAll("button")) {
-		btn.disabled = addedLabels.has(btn.innerText) && unrepeatableLabels.has(btn.innerText);
+		btn.disabled = added.has(btn.dataset.directive)
 	}
 }
 

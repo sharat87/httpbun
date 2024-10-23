@@ -220,14 +220,7 @@ func handleMix(ex *exchange.Exchange) response.Response {
 }
 
 func handleMixer(ex *exchange.Exchange) response.Response {
-	entries, err := computeMixEntries(ex)
-	if err != nil {
-		return response.BadRequest(err.Error())
-	}
-
-	return assets.Render2("mixer.html", *ex, map[string]any{
-		"mixEntries": entries,
-	})
+	return assets.Render2("mixer.html", *ex, nil)
 }
 
 func renderTemplate(ex *exchange.Exchange, templateContent string) ([]byte, error) {
