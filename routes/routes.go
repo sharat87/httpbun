@@ -37,7 +37,8 @@ func GetRoutes() []Route {
 	var routes []Route
 
 	allRoutes := map[string]exchange.HandlerFn{
-		`(/(index\.html)?)?`: handleIndex,
+		`(/(index\.html)?)?`:   handleIndex,
+		`/assets/(?P<path>.+)`: handleAsset,
 
 		`/(?P<name>.+\.(png|ico|webmanifest))`: func(ex *exchange.Exchange) {
 			assets.WriteAsset(ex.Field("name"), *ex)
@@ -46,8 +47,6 @@ func GetRoutes() []Route {
 		"/health": handleHealth,
 
 		"/payload": handlePayload,
-
-		"/ip(\\.(?P<format>txt|json))?": handleIp,
 
 		"/b(ase)?64(/(?P<encoded>.*))?":                handleDecodeBase64,
 		"/bytes(/(?P<size>.+))?":                       handleRandomBytes,
@@ -63,6 +62,8 @@ func GetRoutes() []Route {
 
 	allRoutes2 := map[string]exchange.HandlerFn2{
 		"/status/(?P<codes>[\\w,]+)": handleStatus,
+
+		"/ip(\\.(?P<format>txt|json))?": handleIp,
 	}
 
 	maps.Copy(allRoutes, method.Routes)
@@ -99,6 +100,14 @@ func handleIndex(ex *exchange.Exchange) {
 	assets.Render("index.html", *ex, map[string]any{
 		"host": ex.Request.URL.Host,
 	})
+}
+
+func handleAsset(ex *exchange.Exchange) {
+	path := ex.Field("path")
+	if strings.Contains(path, "..") {
+		ex.RespondBadRequest("Assets path cannot contain '..'.")
+	}
+	assets.WriteAsset(path, *ex)
 }
 
 func handleHealth(ex *exchange.Exchange) {
@@ -167,12 +176,13 @@ func handleStatus(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleIp(ex *exchange.Exchange) {
+func handleIp(ex *exchange.Exchange) response.Response {
 	origin := ex.FindIncomingIPAddress()
 	if ex.Field("format") == "txt" {
 		ex.Write(origin)
+		return response.New(http.StatusOK, nil, []byte(origin))
 	} else {
-		ex.WriteJSON(map[string]string{
+		return response.JSON(http.StatusOK, nil, map[string]any{
 			"origin": origin,
 		})
 	}
