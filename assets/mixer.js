@@ -27,7 +27,7 @@ class EntryElement extends HTMLElement {
 
 		this.innerHTML = this.formControl()
 
-		const label = el(`<label style="flex:0 0 9em;text-align:right">${LABELS[this.directive]}</label>`)
+		const label = el(`<label style="flex:0 0 min(20%, 9em);text-align:right">${LABELS[this.directive]}</label>`)
 		this.insertBefore(label, this.firstChild)
 
 		const delBtn = el(`<button class=del>&times;</button>`)
@@ -205,11 +205,14 @@ customElements.define("url-pane", class extends HTMLElement {
 loadFromURL()
 
 function loadFromURL() {
-	const [_, ...parts] = location.pathname.match(/\/mixer(\/\w+=[^\/]+)+/)
+	const [_, ...parts] = location.pathname.match(/\/mixer(\/\w+=[^\/]+)+/) ?? []
 	for (const part of parts) {
-		const [_, dir, data] = part.match(/^\/(\w+)=(.+)$/)
+		const [_, dir, data] = part.match(/^\/(\w+)=(.*)$/)
 		addBtnsEl.querySelector("button[data-directive=" + dir + "]").click()
 		formEl.lastElementChild.value = data
+	}
+	if (parts.length === 0) {
+		addBtnsEl.querySelector("button").click()
 	}
 }
 

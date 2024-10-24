@@ -1,8 +1,9 @@
 {{template "_head.html" .}}
 
-<h1><img alt=Logo src='{{.pathPrefix}}/icon-180.png'> Mixer &mdash; <a style="color: inherit" href="/{{.pathPrefix}}">Httpbun</a></h1>
+<h1><img alt=Logo src='{{.pathPrefix}}/icon-180.png'> Mixer &mdash; <a href="/{{.pathPrefix}}">Httpbun</a></h1>
 
-<p style="font-size: 1.2em">Build your own API endpoint, by combining multiple functionalities into one endpoint.</p>
+<p style="font-size:1.2em">Build your own API endpoint, by combining multiple functionalities into one endpoint.
+<a href="/mixer-help" style="white-space:nowrap">User guide</a>.</p>
 
 <noscript><p style="color:red">This page requires JavaScript. Please enable it.</p></noscript>
 
@@ -17,7 +18,7 @@
 <form id=form style="margin:2.6em 0"></form>
 
 <p id=addBtns class=flex>
-	<span style="margin-right:6px">Add:</span>
+	<span>Add:</span>
 	<button data-directive=s no-repeat>Status</button>
 	<button data-directive=h>Header</button>
 	<button data-directive=c>Set-Cookie</button>
@@ -40,6 +41,9 @@
     flex-wrap: wrap;
     align-items: center;
     gap: .4em;
+}
+.entry:has(textarea) {
+    align-items: start;
 }
 </style>
 

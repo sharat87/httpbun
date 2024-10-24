@@ -23,8 +23,9 @@ type entry struct {
 }
 
 var Routes = map[string]exchange.HandlerFn2{
-	`/mix\b(?P<conf>.*)`:   handleMix,
-	`/mixer\b(?P<conf>.*)`: handleMixer,
+	`/mix\b(?P<conf>.*)`:      handleMix,
+	`/mixer((?P<conf>/.*)|$)`: handleMixer,
+	`/mixer-help`:             handleMixerHelp,
 }
 
 var singleValueDirectives = map[string]any{
@@ -221,6 +222,10 @@ func handleMix(ex *exchange.Exchange) response.Response {
 
 func handleMixer(ex *exchange.Exchange) response.Response {
 	return assets.Render2("mixer.html", *ex, nil)
+}
+
+func handleMixerHelp(ex *exchange.Exchange) response.Response {
+	return assets.Render2("mixer-help.html", *ex, nil)
 }
 
 func renderTemplate(ex *exchange.Exchange, templateContent string) ([]byte, error) {

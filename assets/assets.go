@@ -14,13 +14,13 @@ import (
 	"strings"
 )
 
-//go:embed *.html *.css *.js *.png *.svg favicon.ico site.webmanifest
+//go:embed *
 var assets embed.FS
 
 var assetsTemplate = prepare()
 
 func prepare() template.Template {
-	t, err := template.ParseFS(assets, "*")
+	t, err := template.ParseFS(assets, "*.html", "*.css", "*.js")
 	if err != nil {
 		log.Fatalf("Error parsing HTML assets %v.", err)
 	}

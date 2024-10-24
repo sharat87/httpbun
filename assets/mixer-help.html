@@ -1,0 +1,114 @@
+{{template "_head.html" .}}
+
+<h1>Mix User Guide &mdash; <a href=..>Httpbun</a></h1>
+
+<p style="text-align:center">
+<img style="max-width:50%;border:3px solid #09f;border-radius:12px;" src="assets/mixer-preview.gif">
+</p>
+
+<p>The <code>/mix</code> API endpoint lets us construct URLs with very specific and flexible behaviours. The <a href=mixer><code>/mixer</code></a>  is a small and convenient UI to help with creating such <code>/mix</code> URLs. This document is both and introduction, and a reference for the directives available.</p>
+<p>This is best illustrated with examples. Consider the following URL:</p><pre><code>https://httpbun.com/mix/s=401
+</code></pre>
+<p>This URL responds with the status <code>401</code>, exactly like the <code>/status/401</code> endpoint. Now consider this:</p><pre><code>https://httpbun.com/mix/s=200/h=x-custom-key:some-value
+</code></pre>
+<p>This URL responds with the status 401, <i>and</i> with the response header <code>X-Custom-Key: some-value</code> as well. Such flexibility	isn’t possible with the <code>/status</code> endpoint, or any other endpoint.</p>
+<p>In the URLs above, the <code>s=</code> and <code>h=</code>, are termed <i>directives</i>. There’s several directives supported by <code>/mix</code> today. They can all be used together with each other, producing surprisingly versatile and useful endpoints. For another example:</p>
+<pre><code>http://localhost:3090/mix/s=401/h=content-type:text%2Fhtml/b64=PHNjcmlwdD5hbGVydCg0Mik8L3NjcmlwdD4=
+</code></pre>
+<p>This URL responds with status <code>401</code>, content type as <code>text/html</code>, and the response body containing just <code>&lt;script&gt;alert(42)&lt;/script&gt;</code> in it. This URL is suddenly handy to test an API client’s XSS protection from such responses.</p>
+<h3>Directive <code>s</code></h3><ul>
+    <li>1️⃣ Non-repeatable.</li>
+    <li>Syntax: <code>/s=200</code>, or <code>/s=200,400,500</code>.</li>
+    <li>Mnemonic: <b>S</b>tatus.</li>
+</ul>
+<p>This is the <code>status</code> directive. It can take a single status number, like <code>200</code>, <code>400</code> etc., and the <code>/mix</code> URL will respond with that status code. This can also be a CSV of multiple numbers, like <code>200,400,500</code>, in which case the response status will be a random choice among them.</p>
+<h3>Directive <code>h</code></h3><ul>
+    <li>♾️ Repeatable.</li>
+    <li>Syntax: <code>/h=key:value</code>.</li>
+    <li>Example: <code>h=content-type:text%2Fhtml</code>.</li>
+    <li>Mnemonic: <b>H</b>eader.</li>
+</ul>
+<p>This is for adding headers to the response. The header key and value must be separated by a <code>:</code>. Any special characters, <i>especially</i> <code>/</code> and <code>:</code>, must be URL encoded. For example, if wanted <code>text/html</code> as the header value, we have to use <code>text%2Fhtml</code> in the <code>/mix</code> URL. The Mixer UI can handle this encoding automatically.</p>
+<h3>Directive <code>c</code></h3><ul>
+    <li>♾️ Repeatable.</li>
+    <li>Syntax: <code>/c=name:value</code>.</li>
+    <li>Example: <code>/c=email:me%40example.com</code>.</li>
+    <li>Mnemonic: <b>C</b>ookie.</li>
+</ul>
+<p>The response will set a cookie, with given name and value. Essentially, this works by sending a <code>Set-Cookie: name=value; Path=/</code> header in the response. Nothing that can’t already be achieved with the <code>h</code> directive, but this exists for convenience.</p>
+<h3>Directive <code>cd</code></h3><ul>
+    <li>♾️ Repeatable.</li>
+    <li>Syntax: <code>/cd=name</code>.</li>
+    <li>Example: <code>/cd=email</code>.</li>
+    <li>Mnemonic: <b>C</b>ookie <b>D</b>elete.</li>
+</ul>
+<p>Deletes the cookie with the given name. Essentially, this works by sending a <code>Set-Cookie</code> header with this name, and expiry date set to 1-Jan-1970, so the cookie will be immediately deemed expired, and generally deleted by clients.</p>
+<h3>Directive <code>r</code></h3><ul>
+    <li>1️⃣ Non-repeatable.</li>
+    <li>Syntax: <code>/r=encoded-url-here</code>.</li>
+    <li>Example: <code>/r=https%3A%2F%2Fsharats.me</code>.</li>
+    <li>Mnemonic: <b>R</b>edirect.</li>
+</ul>
+<p>Responds with a redirect to the given URL. This is the same as <code>/mix/s=301/h:Location=url-here</code>, but exists for the convenience. To control the response states used, use a separate <code>s</code> directive method instead.</p>
+<h3>Directive <code>d</code></h3><ul>
+    <li>1️⃣ Non-repeatable.</li>
+    <li>Syntax: <code>/d=number-of-seconds</code>.</li>
+    <li>Example: <code>/d=10</code>.</li>
+    <li>Mnemonic: <b>D</b>elay.</li>
+</ul>
+<p>Delays response from the server by given number of seconds. Decimal point values are allowed. Must be between 0 and 10.</p>
+<h3>Directive <code>b64</code></h3><ul>
+    <li>1️⃣ Non-repeatable.</li>
+    <li>Syntax: <code>/b64=body-base64-encoded</code>.</li>
+    <li>Example: <code>/b64=aGVsbG8=</code>.</li>
+    <li>Mnemonic: Base<b>64</b> <b>B</b>ody.</li>
+</ul>
+<p>The body of the response will be the base64-decoded content of the given value. The given value <i>has</i> to be valid base64-encoded data, including trailing <code>=</code> if applicable.</p>
+<h3>Directive <code>t</code></h3><ul>
+    <li>1️⃣ Non-repeatable.</li>
+    <li>Syntax: <code>/t=golang-text-template-base64-encoded</code>.</li>
+    <li>Example: <code>/t=e3siSGVsbG8gdGhlcmUhIn19</code>.</li>
+    <li>Mnemonic: <b>T</b>emplate.</li>
+</ul>
+<p>The given value is base64-decoded, and the result is expected to be a valid Golang text template. This template will be rendered, and the result will be the response body.</p>
+<p>This is a very powerful directive, and offers rich and creative ways of constructing the response body. This directive is very much beta, and the API is subject to change (or disappear) with little notice.</p>
+<h3>Directive <code>end</code></h3><ul>
+    <li>1️⃣ Non-repeatable.</li>
+    <li>Syntax: <code>/end</code>.</li>
+</ul>
+<p>This directive is unlike the others. It doesn’t take a value after an <code>=</code> sign, and it indicates the end of directive processing. For example, in <code>/s=400/end/d=5</code>, the response status will be 400, but a delay of 5s won’t be applied. But in <code>/s=400/d=5/end</code>, both status and delay will be applicable in the response behaviour.</p>
+<p>This directive is useful when we have to submit a URL to a client, that then appends more path to the end of it, which we want Httpbun to ignore.</p>
+<h3>Template API</h3><p>This is the reference for APIs available in the <code>t</code> directive. Note that the whole <code>t</code> directive itself, is very beta, very up-in-the-air, and may even disappear one day. It’s an experiment only, for now.</p>
+<h4>Function <code>seq</code></h4><p>A function that produces a list of sequential numbers. Can take one, two or three numeric parameters.</p><ol>
+    <li>One number argument: Generate natural numbers from <code>0</code> (including) to the given number (excluding), incremented by <code>1</code>. Example: <code>seq 5</code> &rarr; <code>[0 1 2 3 4]</code>.</li>
+    <li>Two number arguments: Generate natural numbers from the first number (including) to the second number (excluding), incremented by <code>1</code> if <code>first &lt; second</code> or <code>-1</code> otherwise. Example:<code>seq 3 7</code> &rarr; <code>[3 4 5 6]</code>.</li>
+    <li>Three number arguments: Generate natural numbers from the first number (including) to the second number (excluding), incremented by the third number.<code>seq 2 13 3</code> &rarr; <code>[2 5 8 11]</code>.</li>
+</ol>
+<p>Each item in the returned list is an object, with the following keys:</p><ul>
+    <li><code>N</code>: the number represented by this item in the generated list.</li>
+    <li><code>IsFirst</code>: If this item is the very first item in the generated list, this is <code>true</code>.</li>
+    <li><code>IsLast</code>: Similar to above, but for the very last item.</li>
+</ul>
+<h4>Function <code>toJSON</code></h4><p>Takes a single argument, of any type, and attempts to serialise it to JSON. Returns the JSON string.</p>
+<pre><code>{{`{{seq 3 | toJSON}}`}}
+</code></pre>
+<p>Produces:</p><pre><code>[
+  {
+    "N": 0,
+    "IsFirst": true,
+    "IsLast": false
+  },
+  {
+    "N": 1,
+    "IsFirst": false,
+    "IsLast": false
+  },
+  {
+    "N": 2,
+    "IsFirst": false,
+    "IsLast": false
+  }
+]
+</code></pre>
+
+{{template "_foot.html"}}

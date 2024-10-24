@@ -27,6 +27,10 @@ h1 img {
 	vertical-align: text-top;
 }
 
+h1 a {
+	color: inherit;
+}
+
 h2 {
 	font-size: 2.25em;
 }
@@ -55,7 +59,7 @@ a {
 
 dt, code {
 	font-family: Menlo, 'Cascadia Code', Consolas, Monaco, monospace;
-	font-size: .95rem;
+	font-size: .9em;
 }
 
 dt {
@@ -134,6 +138,10 @@ footer {
 summary {
 	cursor: pointer;
 	margin: 6px 0;
+}
+
+input, textarea {
+	min-width: 30px;
 }
 
 input {
