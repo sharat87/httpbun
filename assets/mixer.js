@@ -185,12 +185,14 @@ customElements.define("url-pane", class extends HTMLElement {
 
 	connectedCallback() {
 		this.a = this.querySelector("a")
-		this.addEventListener("click", (event) => {
-			if (event.target.dataset.format) {
-				navigator.clipboard.writeText(event.target.dataset.format.replace("%", this.url))
-				showGhost(event.target)
-			}
-		})
+
+		const onClick = ({currentTarget: e}) => {
+			navigator.clipboard.writeText(e.dataset.format.replace("%", this.url))
+			showGhost(e)
+		}
+
+		this.querySelectorAll("button[data-format]")
+			.forEach(b => b.addEventListener("click", onClick))
 	}
 
 	set url(value) {
