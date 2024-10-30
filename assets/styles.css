@@ -120,6 +120,11 @@ input[type=submit]:hover {
 	opacity: 1;
 }
 
+label {
+	display: block;
+	margin: .3em 0;
+}
+
 label, input[type=submit], input[type=checkbox] {
 	cursor: pointer;
 }
@@ -133,6 +138,19 @@ footer {
 
 .flex {
 	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .4em;
+}
+
+.grid {
+	display: grid;
+	grid: auto auto / 160px auto;
+	gap: .4em;
+}
+
+form label {
+	text-align: right;
 }
 
 summary {
