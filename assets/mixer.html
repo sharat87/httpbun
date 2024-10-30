@@ -7,7 +7,7 @@
 
 <noscript><p style="color:red">This page requires JavaScript. Please enable it.</p></noscript>
 
-<url-pane id=urlPane class=flex>
+<url-pane id=urlPane class=flex style="margin:2.6em 0">
     <a target=m style="flex-basis:100%">https://httpbun.com/mix/...</a>
     <button data-format="%">Copy URL</button>
     <button data-format="curl '%'">Copy <code>curl</code></button>
@@ -15,9 +15,9 @@
     <em id=urlMismatchMessageEl style="display:none">Note: Below URL is different from the one in the browser URL bar.</em>
 </url-pane>
 
-<form id=form style="margin:2.6em 0"></form>
+<form id=formEl style="margin:2.6em 0"></form>
 
-<p id=addBtns class=flex>
+<p id=addBtnsEl class=flex>
 	<span>Add:</span>
 	<button data-directive=s no-repeat>Status</button>
 	<button data-directive=h>Header</button>
@@ -35,12 +35,6 @@
 }
 .entry + .entry {
     margin-top: .6em;
-}
-.flex {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: .4em;
 }
 .entry:has(textarea) {
     align-items: start;

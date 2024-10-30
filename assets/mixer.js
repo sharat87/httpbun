@@ -1,6 +1,3 @@
-const formEl = document.getElementById("form")
-const addBtnsEl = document.getElementById("addBtns")
-
 const LABELS = {}
 for (const b of addBtnsEl.querySelectorAll("button")) {
 	LABELS[b.dataset.directive] = b.textContent
