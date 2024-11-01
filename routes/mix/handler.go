@@ -44,7 +44,7 @@ var pairValueDirectives = map[string]any{
 
 func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
 	// We need raw path here, with percent encoding intact.
-	path := strings.TrimPrefix(ex.RoutedRawPath, "/mix")
+	path := strings.TrimPrefix(ex.RoutedPath, "/mix")
 	query := ex.Request.URL.RawQuery
 
 	var source, itemSep string

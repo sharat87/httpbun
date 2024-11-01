@@ -18,15 +18,12 @@ import (
 )
 
 type Exchange struct {
-	Request         *http.Request
-	ResponseWriter  http.ResponseWriter
-	fields          map[string]string
-	CappedBody      io.Reader
-	RoutedPath      string
-	OriginalPath    string
-	RoutedRawPath   string
-	OriginalRawPath string
-	ServerSpec      spec.Spec
+	Request        *http.Request
+	ResponseWriter http.ResponseWriter
+	fields         map[string]string
+	CappedBody     io.Reader
+	RoutedPath     string
+	ServerSpec     spec.Spec
 }
 
 type HandlerFn func(ex *Exchange)
@@ -35,15 +32,12 @@ type HandlerFn2 func(ex *Exchange) response.Response
 
 func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchange {
 	ex := &Exchange{
-		Request:         req,
-		ResponseWriter:  w,
-		fields:          map[string]string{},
-		CappedBody:      io.LimitReader(req.Body, 10000),
-		RoutedPath:      strings.TrimPrefix(req.URL.Path, serverSpec.PathPrefix), // deprecated
-		OriginalPath:    req.URL.Path,
-		RoutedRawPath:   strings.TrimPrefix(req.URL.EscapedPath(), serverSpec.PathPrefix),
-		OriginalRawPath: req.URL.EscapedPath(),
-		ServerSpec:      serverSpec,
+		Request:        req,
+		ResponseWriter: w,
+		fields:         map[string]string{},
+		CappedBody:     io.LimitReader(req.Body, 10000),
+		RoutedPath:     strings.TrimPrefix(req.URL.EscapedPath(), serverSpec.PathPrefix),
+		ServerSpec:     serverSpec,
 	}
 
 	if req.URL.Host == "" && req.Host != "" {
@@ -74,7 +68,7 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 }
 
 func (ex Exchange) MatchAndLoadFields(routePat regexp.Regexp) bool {
-	match := routePat.FindStringSubmatch(ex.RoutedRawPath)
+	match := routePat.FindStringSubmatch(ex.RoutedPath)
 	if match != nil {
 		names := routePat.SubexpNames()
 		for i, name := range names {
