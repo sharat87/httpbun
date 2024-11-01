@@ -20,7 +20,7 @@ import (
 type Exchange struct {
 	Request         *http.Request
 	ResponseWriter  http.ResponseWriter
-	Fields          map[string]string
+	fields          map[string]string
 	CappedBody      io.Reader
 	RoutedPath      string
 	OriginalPath    string
@@ -37,9 +37,9 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 	ex := &Exchange{
 		Request:         req,
 		ResponseWriter:  w,
-		Fields:          map[string]string{},
+		fields:          map[string]string{},
 		CappedBody:      io.LimitReader(req.Body, 10000),
-		RoutedPath:      strings.TrimPrefix(req.URL.Path, serverSpec.PathPrefix),
+		RoutedPath:      strings.TrimPrefix(req.URL.Path, serverSpec.PathPrefix), // deprecated
 		OriginalPath:    req.URL.Path,
 		RoutedRawPath:   strings.TrimPrefix(req.URL.EscapedPath(), serverSpec.PathPrefix),
 		OriginalRawPath: req.URL.EscapedPath(),
@@ -74,12 +74,12 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 }
 
 func (ex Exchange) MatchAndLoadFields(routePat regexp.Regexp) bool {
-	match := routePat.FindStringSubmatch(ex.RoutedPath)
+	match := routePat.FindStringSubmatch(ex.RoutedRawPath)
 	if match != nil {
 		names := routePat.SubexpNames()
 		for i, name := range names {
 			if name != "" {
-				ex.Fields[name] = match[i]
+				ex.fields[name] = match[i]
 			}
 		}
 		return true
@@ -88,7 +88,7 @@ func (ex Exchange) MatchAndLoadFields(routePat regexp.Regexp) bool {
 }
 
 func (ex Exchange) Field(name string) string {
-	return ex.Fields[name]
+	return ex.fields[name]
 }
 
 func (ex Exchange) Redirect(target string) {
