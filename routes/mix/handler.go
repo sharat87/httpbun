@@ -25,7 +25,7 @@ type entry struct {
 var Routes = map[string]exchange.HandlerFn2{
 	`/mix\b(?P<conf>.*)`:      handleMix,
 	`/mixer((?P<conf>/.*)|$)`: handleMixer,
-	`/mixer-help`:             handleMixerHelp,
+	`/help/mixer`:             handleMixerHelp,
 }
 
 var singleValueDirectives = map[string]any{

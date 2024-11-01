@@ -1,0 +1,31 @@
+{{template "_head.html" .}}
+
+<h1><img alt=Logo src='{{.pathPrefix}}/icon-180.png'> Runner &mdash; <a href="/{{.pathPrefix}}">Httpbun</a></h1>
+
+<p style="font-size:1.2em">Build your own API endpoint, by writing Javascript to handle the request.
+<a href="help/runner" style="white-space:nowrap">User guide</a>.</p>
+
+<noscript><p style="color:red">This page requires JavaScript. Please enable it.</p></noscript>
+
+<url-pane id=urlPane class=flex style="margin:2.6em 0">
+    <a target=m style="flex-basis:100%">https://httpbun.com/run/...</a>
+    <button data-format="%">Copy URL</button>
+    <button data-format="curl '%'">Copy <code>curl</code></button>
+    <button data-format="http '%'">Copy <code>httpie</code></button>
+    <em id=urlMismatchMessageEl style="display:none">Note: Below URL is different from the one in the browser URL bar.</em>
+</url-pane>
+
+<label>
+<span>Javascript code:</span>
+<textarea id=editor autofocus style="display:block;width:100%" rows=20>return {
+    status: 400,
+    body: "not implemented yet"
+}</textarea>
+</label>
+
+<script>
+{{template "common.js"}}
+{{template "runner.js"}}
+</script>
+
+{{template "_foot.html"}}

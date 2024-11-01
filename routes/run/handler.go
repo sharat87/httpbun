@@ -5,14 +5,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dop251/goja"
+	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/response"
 	"net/http"
 	"time"
 )
 
+const restPathPattern = `/(?P<encoded>[-=%\w]+)(?P<extraPath>.*)`
+
 var Routes = map[string]exchange.HandlerFn2{
-	`/run/(?P<encoded>[-=%\w]+)(?P<extraPath>.*)`: handleRunJS,
+	`/runner(` + restPathPattern + ")?": handleRunner,
+	`/run` + restPathPattern:            handleRunJS,
+}
+
+func handleRunner(ex *exchange.Exchange) response.Response {
+	return assets.Render2("runner.html", *ex, nil)
 }
 
 func handleRunJS(ex *exchange.Exchange) response.Response {

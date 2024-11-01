@@ -175,6 +175,12 @@ button, select {
 	display: inline-block;
 }
 
+url-pane a {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
 #urlBox {
 	white-space: nowrap;
 	overflow-x: hidden;
