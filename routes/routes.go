@@ -14,6 +14,7 @@ import (
 	"github.com/sharat87/httpbun/routes/method"
 	"github.com/sharat87/httpbun/routes/mix"
 	"github.com/sharat87/httpbun/routes/redirect"
+	"github.com/sharat87/httpbun/routes/run"
 	"github.com/sharat87/httpbun/routes/static"
 	"github.com/sharat87/httpbun/util"
 	"io"
@@ -74,6 +75,7 @@ func GetRoutes() []Route {
 	maps.Copy(allRoutes2, mix.Routes)
 	maps.Copy(allRoutes, static.Routes)
 	maps.Copy(allRoutes, cookies.Routes)
+	maps.Copy(allRoutes2, run.Routes)
 
 	for pat, fn := range allRoutes {
 		routes = append(routes, Route{
