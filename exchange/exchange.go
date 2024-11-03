@@ -146,6 +146,10 @@ func (ex Exchange) HeaderValueLast(name string) string {
 func (ex Exchange) ExposableHeadersMap() map[string]any {
 	headers := map[string]any{}
 
+	if len(ex.Request.TransferEncoding) > 0 {
+		headers["Transfer-Encoding"] = ex.Request.TransferEncoding
+	}
+
 	for name, values := range ex.Request.Header {
 		if !strings.HasPrefix(name, "X-Httpbun-") {
 			if len(values) > 1 {
