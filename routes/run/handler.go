@@ -20,7 +20,7 @@ var Routes = map[string]exchange.HandlerFn2{
 }
 
 func handleRunner(ex *exchange.Exchange) response.Response {
-	return assets.Render2("runner.html", *ex, nil)
+	return assets.Render("runner.html", *ex, nil)
 }
 
 func handleRunJS(ex *exchange.Exchange) response.Response {
@@ -30,7 +30,7 @@ func handleRunJS(ex *exchange.Exchange) response.Response {
 	}
 
 	rt := goja.New()
-	time.AfterFunc(200*time.Millisecond, func() {
+	time.AfterFunc(100*time.Millisecond, func() {
 		rt.Interrupt("halt")
 	})
 

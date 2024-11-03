@@ -267,6 +267,8 @@ func (ex Exchange) RespondError(status int, code, detail string) {
 
 func (ex Exchange) Finish(resp response.Response) {
 	maps.Copy(ex.ResponseWriter.Header(), resp.Header)
+	// Set `Content-Length` header, to disable chunked transfer. See https://github.com/sharat87/httpbun/issues/13
+	ex.ResponseWriter.Header().Set("Content-Length", fmt.Sprint(len(resp.Body)))
 	ex.ResponseWriter.WriteHeader(resp.Status)
 	ex.WriteBytes(resp.Body)
 }

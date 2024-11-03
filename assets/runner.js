@@ -4,6 +4,6 @@ editor.addEventListener("input", refreshURL)
 refreshURL()
 
 function refreshURL() {
-	urlPane.url =
+	urlPane.path =
 		"/run/" + btoa(editor.value).replaceAll(/\+/g, "-").replaceAll(/\//g, "_")
 }

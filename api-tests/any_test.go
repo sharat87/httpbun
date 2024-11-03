@@ -77,7 +77,7 @@ func TestAnythingWithExtraPathInvalid(t *testing.T) {
 		Path:   "anymore",
 	})
 	s.Equal(http.StatusNotFound, resp.StatusCode)
-	s.Equal(c.TextPlainUTF8, resp.Header.Get(c.ContentType))
+	s.Equal(c.TextPlain, resp.Header.Get(c.ContentType))
 	s.Equal("404 page not found\n", body)
 }
 

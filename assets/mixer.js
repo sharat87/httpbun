@@ -27,6 +27,10 @@ class EntryElement extends HTMLElement {
 		input.focus()
 	}
 
+	formControl() {
+		throw new Error("formControl unimplemented")
+	}
+
 	get path() {
 		return this.directive ? "/" + this.directive + "=" + this.value : ""
 	}
@@ -188,7 +192,7 @@ function recomputeURL() {
 		pathItems.push(p.path)
 	}
 
-	urlPane.url = pathItems.join("")
+	urlPane.path = pathItems.join("")
 }
 
 function checkAddButtons() {
@@ -196,17 +200,4 @@ function checkAddButtons() {
 	for (const btn of addBtnsEl.querySelectorAll("button[no-repeat]")) {
 		btn.disabled = added.has(btn.dataset.directive)
 	}
-}
-
-function showGhost(el) {
-	const rect = el.getBoundingClientRect()
-	const ghost = document.createElement("div")
-	ghost.innerText = "Copied!"
-	ghost.className = "ghost"
-	ghost.style.left = rect.x + "px"
-	ghost.style.top = rect.y + "px"
-	ghost.style.minWidth = rect.width + "px"
-	ghost.style.height = rect.height + "px"
-	ghost.addEventListener("animationend", ghost.remove.bind(ghost))
-	document.body.appendChild(ghost)
 }

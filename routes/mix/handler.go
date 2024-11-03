@@ -221,11 +221,11 @@ func handleMix(ex *exchange.Exchange) response.Response {
 }
 
 func handleMixer(ex *exchange.Exchange) response.Response {
-	return assets.Render2("mixer.html", *ex, nil)
+	return assets.Render("mixer.html", *ex, nil)
 }
 
 func handleMixerHelp(ex *exchange.Exchange) response.Response {
-	return assets.Render2("mixer-help.html", *ex, nil)
+	return assets.Render("mixer-help.html", *ex, nil)
 }
 
 func renderTemplate(ex *exchange.Exchange, templateContent string) ([]byte, error) {

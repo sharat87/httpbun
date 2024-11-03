@@ -38,13 +38,6 @@ func GetRoutes() []Route {
 	var routes []Route
 
 	allRoutes := map[string]exchange.HandlerFn{
-		`(/(index\.html)?)?`:   handleIndex,
-		`/assets/(?P<path>.+)`: handleAsset,
-
-		`/(?P<name>.+\.(png|ico|webmanifest))`: func(ex *exchange.Exchange) {
-			assets.WriteAsset(ex.Field("name"), *ex)
-		},
-
 		"/health": handleHealth,
 
 		"/payload": handlePayload,
@@ -62,18 +55,22 @@ func GetRoutes() []Route {
 	}
 
 	allRoutes2 := map[string]exchange.HandlerFn2{
+		`/assets/(?P<path>.+)`: handleAsset,
+
+		`(/(index\.html)?)?`: handleIndex,
+
 		"/status/(?P<codes>[\\w,]+)": handleStatus,
 
 		"/ip(\\.(?P<format>txt|json))?": handleIp,
 	}
 
-	maps.Copy(allRoutes, method.Routes)
+	maps.Copy(allRoutes2, method.Routes)
 	maps.Copy(allRoutes, headers.Routes)
-	maps.Copy(allRoutes, cache.Routes)
+	maps.Copy(allRoutes2, cache.Routes)
 	maps.Copy(allRoutes, auth.Routes)
 	maps.Copy(allRoutes, redirect.Routes)
 	maps.Copy(allRoutes2, mix.Routes)
-	maps.Copy(allRoutes, static.Routes)
+	maps.Copy(allRoutes2, static.Routes)
 	maps.Copy(allRoutes, cookies.Routes)
 	maps.Copy(allRoutes2, run.Routes)
 
@@ -98,16 +95,16 @@ func GetRoutes() []Route {
 	return routes
 }
 
-func handleIndex(ex *exchange.Exchange) {
-	assets.Render("index.html", *ex, nil)
+func handleIndex(ex *exchange.Exchange) response.Response {
+	return assets.Render("index.html", *ex, nil)
 }
 
-func handleAsset(ex *exchange.Exchange) {
+func handleAsset(ex *exchange.Exchange) response.Response {
 	path := ex.Field("path")
 	if strings.Contains(path, "..") {
 		ex.RespondBadRequest("Assets path cannot contain '..'.")
 	}
-	assets.WriteAsset(path, *ex)
+	return assets.WriteAsset(path)
 }
 
 func handleHealth(ex *exchange.Exchange) {
@@ -164,7 +161,7 @@ func handleStatus(ex *exchange.Exchange) response.Response {
 
 	acceptHeader := ex.HeaderValueLast("Accept")
 
-	if acceptHeader == c.TextPlain {
+	if strings.HasPrefix(acceptHeader, c.TextPlain) {
 		return response.New(status, nil, []byte(http.StatusText(status)))
 
 	} else {

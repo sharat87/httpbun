@@ -3,6 +3,7 @@ package assets
 import (
 	"bytes"
 	"embed"
+	"fmt"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/response"
@@ -27,17 +28,7 @@ func prepare() template.Template {
 	return *t
 }
 
-func Render(name string, ex exchange.Exchange, data map[string]any) {
-	data["serverSpec"] = ex.ServerSpec
-
-	ex.ResponseWriter.Header().Set(c.ContentType, c.TextHTML)
-
-	if err := assetsTemplate.ExecuteTemplate(ex.ResponseWriter, name, data); err != nil {
-		log.Fatalf("Error executing %q template %v.", name, err)
-	}
-}
-
-func Render2(name string, ex exchange.Exchange, data map[string]any) response.Response {
+func Render(name string, ex exchange.Exchange, data map[string]any) response.Response {
 	if data == nil {
 		data = make(map[string]any)
 	}
@@ -62,15 +53,14 @@ func Render2(name string, ex exchange.Exchange, data map[string]any) response.Re
 	)
 }
 
-func WriteAsset(name string, ex exchange.Exchange) {
+func WriteAsset(name string) response.Response {
 	file, err := assets.Open(name)
 	if err != nil {
 		if strings.HasSuffix(err.Error(), " file does not exist") {
-			http.NotFound(ex.ResponseWriter, ex.Request)
+			return response.New(http.StatusNotFound, nil, nil)
 		} else {
-			log.Printf("Error opening asset file %v", err)
+			return response.New(http.StatusInternalServerError, nil, []byte(fmt.Sprintf("Error opening asset file %v", err)))
 		}
-		return
 	}
 	defer func(file fs.File) {
 		err := file.Close()
@@ -79,8 +69,10 @@ func WriteAsset(name string, ex exchange.Exchange) {
 		}
 	}(file)
 
-	_, err = io.Copy(ex.ResponseWriter, file)
+	data, err := io.ReadAll(file)
 	if err != nil {
-		log.Printf("Error writing asset content %v", err)
+		return response.New(http.StatusInternalServerError, nil, []byte(fmt.Sprintf("Error reading asset file %v", err)))
 	}
+
+	return response.New(http.StatusOK, nil, data)
 }

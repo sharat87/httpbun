@@ -4,43 +4,49 @@ import (
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
+	"net/http"
 )
 
-var Routes = map[string]exchange.HandlerFn{
+var Routes = map[string]exchange.HandlerFn2{
 	"/deny":       handleRobotsDeny,
 	"/robots.txt": handleRobotsTxt,
 	"/html":       handleHtml,
 	"/image/svg":  handleImageSvg,
 }
 
-func handleImageSvg(ex *exchange.Exchange) {
+func handleImageSvg(ex *exchange.Exchange) response.Response {
+	// todo: why isn't this SVG content-type being set by itself, like all the other assets. Is it the extension in the URL?
 	ex.ResponseWriter.Header().Set(c.ContentType, "image/svg+xml")
-	assets.WriteAsset("svg-logo.svg", *ex)
+	return assets.WriteAsset("svg-logo.svg")
 }
 
-func handleRobotsTxt(ex *exchange.Exchange) {
-	ex.ResponseWriter.Header().Set(c.ContentType, c.TextPlain)
-	ex.WriteLn("User-agent: *\nDisallow: /deny")
+func handleRobotsTxt(ex *exchange.Exchange) response.Response {
+	return response.New(http.StatusOK, http.Header{
+		c.ContentType: []string{c.TextPlain},
+	}, []byte("User-agent: *\nDisallow: /deny\nDisallow: /mix/\nDisallow: /run/"))
 }
 
-func handleRobotsDeny(ex *exchange.Exchange) {
-	ex.ResponseWriter.Header().Set(c.ContentType, c.TextPlain)
-	ex.WriteLn(`
+func handleRobotsDeny(ex *exchange.Exchange) response.Response {
+	return response.New(http.StatusOK, http.Header{
+		c.ContentType: []string{c.TextPlain},
+	}, []byte(`
           .-''''''-.
         .' _      _ '.
        /   O      O   \
       :                :
       |                |
       :       __       :
-       \  .-"` + "`  `" + `"-.  /
+       \  .-"`+"`  `"+`"-.  /
         '.          .'
           '-......-'
-     YOU SHOULDN'T BE HERE`)
+     YOU SHOULDN'T BE HERE`))
 }
 
-func handleHtml(ex *exchange.Exchange) {
-	ex.ResponseWriter.Header().Set(c.ContentType, c.TextHTML)
-	ex.WriteLn(`<!DOCTYPE html>
+func handleHtml(ex *exchange.Exchange) response.Response {
+	return response.New(http.StatusOK, http.Header{
+		c.ContentType: []string{c.TextHTML},
+	}, []byte(`<!DOCTYPE html>
 <html>
 <title>Httpbun sample</title>
 <body>
@@ -48,5 +54,5 @@ func handleHtml(ex *exchange.Exchange) {
   <p>Some paragraph</p>
   <img src=x onerror='document.body.insertAdjacentText("beforeend", "inserted by img[onerror]")'>
   <script>document.write("inserted by script")</script>
-`)
+`))
 }

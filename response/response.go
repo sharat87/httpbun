@@ -20,7 +20,7 @@ func New(status int, header http.Header, body []byte) Response {
 	}
 }
 
-func JSON(status int, header http.Header, body map[string]any) Response {
+func JSON(status int, header http.Header, body any) Response {
 	if header == nil {
 		header = http.Header{}
 	}
