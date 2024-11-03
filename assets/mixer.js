@@ -182,18 +182,13 @@ function loadFromURL() {
 function recomputeURL() {
 	const url = new URL(location.href)
 	url.search = url.hash = ""
-	const currentURLPath = url.pathname
-	const pathItems = ["/mix"]
+	const pathItems = [pathPrefix, "/mix"]
 
 	for (const p of formEl.querySelectorAll("p, .entry")) {
 		pathItems.push(p.path)
 	}
 
-	url.pathname = pathItems.join("")
-	urlPane.url = url.toString()
-
-	urlMismatchMessageEl.style.display =
-		currentURLPath !== "/mixer" && url.pathname !== currentURLPath.replace("/mixer", "/mix") ? "" : "none"
+	urlPane.url = pathItems.join("")
 }
 
 function checkAddButtons() {

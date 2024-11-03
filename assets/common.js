@@ -1,3 +1,5 @@
+const pathPrefix = "{{.pathPrefix}}"
+
 function el(html) {
 	const nodes = new DOMParser().parseFromString(html, "text/html").body.children
 	if (nodes.length > 1) {
@@ -10,7 +12,6 @@ function el(html) {
 customElements.define("url-pane", class extends HTMLElement {
 	constructor() {
 		super()
-		this.url = ""
 	}
 
 	connectedCallback() {
@@ -23,13 +24,23 @@ customElements.define("url-pane", class extends HTMLElement {
 
 		this.querySelectorAll("button[data-format]")
 			.forEach(b => b.addEventListener("click", onClick))
+
+		this.append(this.urlChangedMsg = el("<em style='display:none'>Note: Below URL is different from the one in the browser URL bar.</em>"))
 	}
 
-	set url(value) {
-		this.a && (this.a.href = this.a.innerText = value)
+	set url(path) {
+		const url = `${location.protocol}//${location.host}/${pathPrefix}/${path}`
+		this.a && (this.a.href = this.a.innerText = url)
+
+		const currentPath = popFirst(location.pathname.substring(pathPrefix.length))
+		this.urlChangedMsg.style.display = currentPath && currentPath !== popFirst(path) ? "" : "none"
 	}
 
 	get url() {
 		return this.a.href
 	}
 })
+
+function popFirst(path) {
+	return path.replace(/^\/\w+/, "")
+}

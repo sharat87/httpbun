@@ -12,19 +12,18 @@
     <button data-format="%">Copy URL</button>
     <button data-format="curl '%'">Copy <code>curl</code></button>
     <button data-format="http '%'">Copy <code>httpie</code></button>
-    <em id=urlMismatchMessageEl style="display:none">Note: Below URL is different from the one in the browser URL bar.</em>
 </url-pane>
 
 <label>
 <span>Javascript code:</span>
 <textarea id=editor autofocus style="display:block;width:100%" rows=20>return {
     status: 400,
-    body: "not implemented yet"
+    body: "Httpbun is awesome!"
 }</textarea>
 </label>
 
 <script>
-{{template "common.js"}}
+{{template "common.js" .}}
 {{template "runner.js"}}
 </script>
 

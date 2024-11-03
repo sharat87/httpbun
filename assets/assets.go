@@ -42,7 +42,9 @@ func Render2(name string, ex exchange.Exchange, data map[string]any) response.Re
 		data = make(map[string]any)
 	}
 
-	data["serverSpec"] = ex.ServerSpec
+	data["pathPrefix"] = ex.ServerSpec.PathPrefix
+	data["commit"] = ex.ServerSpec.Commit
+	data["host"] = ex.Request.URL.Host
 
 	buf := bytes.Buffer{}
 	err := assetsTemplate.ExecuteTemplate(&buf, name, data)

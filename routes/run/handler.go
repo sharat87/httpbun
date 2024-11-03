@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-const restPathPattern = `/(?P<encoded>[-=%\w]+)(?P<extraPath>.*)`
+const restPathPattern = `/(?P<encoded>[-\w]+=*)(?P<extraPath>.*)`
 
 var Routes = map[string]exchange.HandlerFn2{
 	`/runner(` + restPathPattern + ")?": handleRunner,
