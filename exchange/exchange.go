@@ -21,7 +21,7 @@ type Exchange struct {
 	Request        *http.Request
 	ResponseWriter http.ResponseWriter
 	fields         map[string]string
-	CappedBody     io.Reader
+	cappedBody     io.Reader
 	RoutedPath     string
 	ServerSpec     spec.Spec
 }
@@ -35,7 +35,7 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 		Request:        req,
 		ResponseWriter: w,
 		fields:         map[string]string{},
-		CappedBody:     io.LimitReader(req.Body, 10000),
+		cappedBody:     io.LimitReader(req.Body, 10000),
 		RoutedPath:     strings.TrimPrefix(req.URL.EscapedPath(), serverSpec.PathPrefix),
 		ServerSpec:     serverSpec,
 	}
@@ -202,7 +202,7 @@ func (ex Exchange) FindIncomingIPAddress() string {
 }
 
 func (ex Exchange) BodyBytes() []byte {
-	if bodyBytes, err := io.ReadAll(ex.CappedBody); err != nil {
+	if bodyBytes, err := io.ReadAll(ex.cappedBody); err != nil {
 		fmt.Println("Error reading request payload", err)
 		return nil
 	} else {

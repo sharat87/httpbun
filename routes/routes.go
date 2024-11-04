@@ -17,7 +17,6 @@ import (
 	"github.com/sharat87/httpbun/routes/run"
 	"github.com/sharat87/httpbun/routes/static"
 	"github.com/sharat87/httpbun/util"
-	"io"
 	"log"
 	"maps"
 	"math/rand"
@@ -40,8 +39,6 @@ func GetRoutes() []Route {
 	allRoutes := map[string]exchange.HandlerFn{
 		"/health": handleHealth,
 
-		"/payload": handlePayload,
-
 		"/b(ase)?64(/(?P<encoded>.*))?":                handleDecodeBase64,
 		"/bytes(/(?P<size>.+))?":                       handleRandomBytes,
 		"/delay/(?P<delay>[^/]+)":                      handleDelayedResponse,
@@ -58,6 +55,8 @@ func GetRoutes() []Route {
 		`/assets/(?P<path>.+)`: handleAsset,
 
 		`(/(index\.html)?)?`: handleIndex,
+
+		"/payload": handlePayload,
 
 		"/status/(?P<codes>[\\w,]+)": handleStatus,
 
@@ -111,21 +110,10 @@ func handleHealth(ex *exchange.Exchange) {
 	ex.WriteLn("ok")
 }
 
-func handlePayload(ex *exchange.Exchange) {
-	ex.ResponseWriter.Header()[c.ContentType] = ex.Request.Header[c.ContentType]
-
-	payload, err := io.ReadAll(ex.CappedBody)
-	if err != nil {
-		log.Printf("Error reading request payload %v", err)
-		return
-	}
-
-	ex.ResponseWriter.Header().Set("Content-Length", fmt.Sprint(len(payload)))
-
-	_, err = ex.ResponseWriter.Write(payload)
-	if err != nil {
-		fmt.Println("Error reading request payload", err)
-	}
+func handlePayload(ex *exchange.Exchange) response.Response {
+	return response.New(http.StatusOK, http.Header{
+		c.ContentType: ex.Request.Header[c.ContentType],
+	}, ex.BodyBytes())
 }
 
 func handleStatus(ex *exchange.Exchange) response.Response {
