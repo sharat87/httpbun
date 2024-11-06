@@ -41,7 +41,6 @@ func GetRoutes() []Route {
 
 		"/b(ase)?64(/(?P<encoded>.*))?":                handleDecodeBase64,
 		"/bytes(/(?P<size>.+))?":                       handleRandomBytes,
-		"/delay/(?P<delay>[^/]+)":                      handleDelayedResponse,
 		"/drip(-(?P<mode>lines))?(?P<extra>/.*)?":      handleDrip,
 		"/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?": handleLinks,
 		"/range/(?P<count>\\d+)/?":                     handleRange,
@@ -55,6 +54,8 @@ func GetRoutes() []Route {
 		`/assets/(?P<path>.+)`: handleAsset,
 
 		`(/(index\.html)?)?`: handleIndex,
+
+		"/delay/(?P<delay>[^/]+)": handleDelayedResponse,
 
 		"/payload": handlePayload,
 
@@ -201,20 +202,19 @@ func handleRandomBytes(ex *exchange.Exchange) {
 	ex.WriteBytes(util.RandomBytes(n))
 }
 
-func handleDelayedResponse(ex *exchange.Exchange) {
+func handleDelayedResponse(ex *exchange.Exchange) response.Response {
 	n, err := strconv.ParseFloat(ex.Field("delay"), 32)
 
 	if err != nil {
-		ex.RespondBadRequest("Invalid delay: " + err.Error())
-		return
+		return response.BadRequest("Invalid delay: " + err.Error())
 	}
 
 	if n < 0 || n > 300 {
-		ex.RespondBadRequest("Delay can't be greater than 300 or less than 0")
-		return
+		return response.BadRequest("Delay can't be greater than 300 or less than 0")
 	}
 
 	time.Sleep(time.Duration(n * float64(time.Second)))
+	return response.New(http.StatusOK, nil, []byte("OK"))
 }
 
 func handleDrip(ex *exchange.Exchange) {
