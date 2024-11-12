@@ -172,8 +172,8 @@ new MutationObserver(() => {
 loadFromURL()
 
 function loadFromURL() {
-	const [_, ...parts] = location.pathname.match(/\/mixer(\/\w+=[^\/]+)+/) ?? []
-	for (const part of parts) {
+	const parts = Array.from(location.pathname.matchAll(/\/\w+=[^\/]+/g))
+	for (const [part] of parts) {
 		const [_, dir, data] = part.match(/^\/(\w+)=(.*)$/)
 		addBtnsEl.querySelector("button[data-directive=" + dir + "]").click()
 		formEl.lastElementChild.value = data
