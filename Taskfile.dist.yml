@@ -2,13 +2,14 @@ version: "3"
 
 
 vars:
-  LD_FLAGS:
+  COMMIT:
     sh: |
-      echo -ldflags \
-        "'" \
-        "-X github.com/sharat87/httpbun/server/spec.Commit=$(git rev-parse HEAD)" \
-        "-X github.com/sharat87/httpbun/server/spec.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-        "'"
+      git rev-parse HEAD
+  NOW:
+    sh: |
+      date -u +%FT%TZ
+  LD_FLAGS: |-
+    -ldflags '-X github.com/sharat87/httpbun/server/spec.Commit={{.COMMIT}} -X github.com/sharat87/httpbun/server/spec.Date={{.NOW}}'
 
 
 tasks:
