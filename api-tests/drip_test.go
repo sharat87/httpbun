@@ -16,6 +16,6 @@ func TestDrip(t *testing.T) {
 		Path: "drip?duration=1&delay=0",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
-	s.Equal(c.TextEventStream, resp.Header.Get(c.ContentType))
+	s.Equal("text/octet-stream", resp.Header.Get(c.ContentType))
 	s.Equal(strings.Repeat("*", 10), body)
 }

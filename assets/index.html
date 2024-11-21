@@ -9,8 +9,8 @@
 <ol>
     <li>The <code>/mix</code> endpoint, and the <a href="{{.pathPrefix}}/mixer">Mixer</a>.
     <li>The <code>/run</code> endpoint, and the <a href="{{.pathPrefix}}/runner">Runner</a>.
-    <li>The <a href=#payload>/payload endpoint</a>
-    <li>Allowing request body in <a href=#get>/get</a> endpoint.
+    <li>The <a href=#payload>/payload endpoint</a>.
+    <li>Allowing request body in <a href=#get>/get endpoint</a>.
     <li>Accept <em>any</em> method in <a href=#headers>/headers</a> and most other such endpoints.
     <li>Not <a href="https://github.com/postmanlabs/httpbin/blob/f8ec666b4d1b654e4ff6aedd356f510dcac09f83/httpbin/helpers.py#L40">hiding some headers</a> in responses.
     <li>More practical handling of unescaped special characters in <code>x-www-form-urlencoded</code> payloads.
@@ -200,6 +200,11 @@ Hosted versions:
         When using <code>/drip-lines</code>, a newline character is written after every piece of data.
     </dd>
 
+    <dt id=sse>/sse</dt>
+    <dd>Responds with 10 <a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events">
+        Server sent events</a>, each after 1s of delay. The count and delay aren't configurable today.
+    </dd>
+
     <dt id=links>/links/<span class=var>{count}</span></dt>
     <dt id=links-offset>/links/<span class=var>{count}</span>/<span class=var>{offset}</span></dt>
     <dd>Returns an HTML document with <code>count</code> links, which in turn respond with HTML documents with links
@@ -307,9 +312,10 @@ Hosted versions:
     </dd>
 
     <dt id=configuration-root-is-any>--root-is-any</dt>
-    <dd>If provided, all endpoint routes are disabled, and all endpoints behave like `/any`. This means that when this
-        option is given, all HTML pages will also become inaccessible. Like the homepage, Mixer UI, help pages etc. A
-        hosted instance with this option enabled is available at <a href="https://any.httpbun.com">any.httpbun.com</a>.
+    <dd>If provided, all endpoint routes are disabled, and all endpoints behave like <code>/any</code>. This means that
+        when this option is given, all HTML pages will also become inaccessible. Like the homepage, Mixer UI, help pages
+        etc. A hosted instance with this option enabled is available at
+        <a href="https://any.httpbun.com">any.httpbun.com</a>.
     </dd>
 
 </dl>

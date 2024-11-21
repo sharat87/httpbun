@@ -15,6 +15,7 @@ import (
 	"github.com/sharat87/httpbun/routes/mix"
 	"github.com/sharat87/httpbun/routes/redirect"
 	"github.com/sharat87/httpbun/routes/run"
+	"github.com/sharat87/httpbun/routes/sse"
 	"github.com/sharat87/httpbun/routes/static"
 	"github.com/sharat87/httpbun/util"
 	"log"
@@ -73,6 +74,7 @@ func GetRoutes() []Route {
 	maps.Copy(allRoutes2, static.Routes)
 	maps.Copy(allRoutes, cookies.Routes)
 	maps.Copy(allRoutes2, run.Routes)
+	maps.Copy(allRoutes, sse.Routes)
 
 	for pat, fn := range allRoutes {
 		routes = append(routes, Route{
@@ -264,7 +266,7 @@ func handleDrip(ex *exchange.Exchange) {
 	}
 
 	ex.ResponseWriter.Header().Set("Cache-Control", "no-cache")
-	ex.ResponseWriter.Header().Set(c.ContentType, "text/event-stream")
+	ex.ResponseWriter.Header().Set(c.ContentType, "text/octet-stream")
 	ex.ResponseWriter.WriteHeader(code)
 
 	interval := time.Duration(float32(time.Second) * float32(duration) / float32(numbytes))
