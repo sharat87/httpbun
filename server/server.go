@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/routes"
+	"github.com/sharat87/httpbun/routes/responses"
 	"github.com/sharat87/httpbun/server/spec"
 	"log"
 	"net"
@@ -33,15 +34,19 @@ func StartNew(spec spec.Spec) Server {
 		}
 	}
 
-	server := Server{
+	server := &Server{
 		Server: &http.Server{
 			Addr: bindTarget,
 		},
 		spec:    spec,
-		routes:  routes.GetRoutes(),
 		closeCh: make(chan error, 1),
 	}
 	server.Handler = server
+
+	if !spec.RootIsAny {
+		// When root is any, we don't need the route handlers at all.
+		server.routes = routes.GetRoutes()
+	}
 
 	listener, err := net.Listen("tcp", bindTarget)
 	if err != nil {
@@ -57,7 +62,7 @@ func StartNew(spec spec.Spec) Server {
 		}
 	}()
 
-	return server
+	return *server
 }
 
 func (s Server) Wait() error {
@@ -93,6 +98,12 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		req.Method,
 		req.URL.String(),
 	)
+
+	// Skip all route checking when root-is-any is enabled.
+	if s.spec.RootIsAny {
+		ex.Finish(responses.InfoJSON(ex))
+		return
+	}
 
 	for _, route := range s.routes {
 		if ex.MatchAndLoadFields(route.Pat) {

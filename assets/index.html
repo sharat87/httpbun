@@ -7,8 +7,8 @@
     httpbin lacked some things I needed, like:</p>
 
 <ol>
-    <li>The <code>/mix</code> endpoint, and the <a href=mixer>Mixer</a>.
-    <li>The <code>/run</code> endpoint, and the <a href=runner>Runner</a>.
+    <li>The <code>/mix</code> endpoint, and the <a href="{{.pathPrefix}}/mixer">Mixer</a>.
+    <li>The <code>/run</code> endpoint, and the <a href="{{.pathPrefix}}/runner">Runner</a>.
     <li>The <a href=#payload>/payload endpoint</a>
     <li>Allowing request body in <a href=#get>/get</a> endpoint.
     <li>Accept <em>any</em> method in <a href=#headers>/headers</a> and most other such endpoints.
@@ -16,8 +16,14 @@
     <li>More practical handling of unescaped special characters in <code>x-www-form-urlencoded</code> payloads.
 </ol>
 
-<p>Canonical version is at <a href='https://httpbun.com'>httpbun.com</a>. Also at
-    <code>https://self-signed-cert.httpbun.com</code> that uses a self-signed HTTPS certificate.</p>
+Hosted versions:
+
+<ol>
+    <li>Canonical version is at <a href='https://httpbun.com'>httpbun.com</a>.
+    <li>At <a href="https://any.httpbun.com">any.httpbun.com</a>, with
+        <a href=#configuration-root-is-any><code>--root-is-any</code></a> enabled.
+    <li><code>https://self-signed-cert.httpbun.com</code> that uses a self-signed HTTPS certificate.
+</ol>
 
 <p><span style='font-size:1.6em'>★</span> Star this project on <a href='https://github.com/sharat87/httpbun' rel=noopener>GitHub</a>.</p>
 
@@ -298,6 +304,12 @@
     <dd>Sets a path prefix for <em>all</em> the paths in Httpbun. For example, if this is set to <code>the-one</code>,
         then the <code>/get</code> endpoint will be available on <code>/the-one/get</code>. Similarly, all other
         endpoints are also prefixed with the value of this argument.
+    </dd>
+
+    <dt id=configuration-root-is-any>--root-is-any</dt>
+    <dd>If provided, all endpoint routes are disabled, and all endpoints behave like `/any`. This means that when this
+        option is given, all HTML pages will also become inaccessible. Like the homepage, Mixer UI, help pages etc. A
+        hosted instance with this option enabled is available at <a href="https://any.httpbun.com">any.httpbun.com</a>.
     </dd>
 
 </dl>
