@@ -17,7 +17,7 @@ func handleCookies(ex *exchange.Exchange) {
 	for _, cookie := range ex.Request.Cookies() {
 		items[cookie.Name] = cookie.Value
 	}
-	ex.WriteJSON(items)
+	ex.WriteJSON(map[string]any{"cookies": items})
 }
 
 func handleCookiesDelete(ex *exchange.Exchange) {
