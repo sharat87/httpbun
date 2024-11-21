@@ -34,7 +34,7 @@ func Render(name string, ex exchange.Exchange, data map[string]any) response.Res
 	}
 
 	data["pathPrefix"] = ex.ServerSpec.PathPrefix
-	data["commit"] = ex.ServerSpec.Commit
+	data["commitShort"] = ex.ServerSpec.CommitShort
 	data["date"] = ex.ServerSpec.Date
 	data["host"] = ex.Request.URL.Host
 
