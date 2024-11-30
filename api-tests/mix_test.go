@@ -125,3 +125,24 @@ func TestMixBody(t *testing.T) {
 	s.Equal(http.StatusOK, resp.StatusCode)
 	s.Equal("sample", body)
 }
+
+func TestMixInvalidBase64(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecRequest(R{
+		Path: "mix/b64=invalid!base64",
+	})
+	s.Equal(http.StatusBadRequest, resp.StatusCode)
+	s.Equal("illegal base64 data at input byte 7", strings.TrimSpace(body))
+}
+
+func TestMixXSSAttack(t *testing.T) {
+	s := assert.New(t)
+	xssPayload := "<script>alert('XSS')</script>"
+	encodedPayload := "PHNjcmlwdD5hbGVydCgnWFNTJylcL3NjcmlwdD4="
+	resp, body := ExecRequest(R{
+		Path: "mix/h=Content-Type:text%2Fhtml/b64=" + encodedPayload,
+	})
+	s.Equal(http.StatusOK, resp.StatusCode)
+	s.Equal("text/html", resp.Header.Get("Content-Type"))
+	s.Equal(xssPayload, body)
+}

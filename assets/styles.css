@@ -9,11 +9,23 @@ html {
 
 body {
 	margin: 0 auto;
-	padding: 6px;
+	padding: 0 6px;
 	font: 18px system-ui, sans-serif;
 	max-width: 960px;
 	line-height: 1.4;
 	overflow-wrap: break-word;
+}
+
+.banner {
+	padding: .5em;
+	margin-bottom: 1em;
+	background-image: linear-gradient(to top, #0004, #fff4);
+	text-align: center;
+	font-size: 2em;
+	font-weight: bold;
+	letter-spacing: -1px;
+	width: 100%;
+	border-radius: 0 0 6px 6px;
 }
 
 h1 {

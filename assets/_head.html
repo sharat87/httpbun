@@ -12,3 +12,9 @@
 <link rel=manifest href="{{.pathPrefix}}/site.webmanifest">
 
 <style>{{template "styles.css"}}</style>
+
+{{- if .bannerText}}
+<div class=banner {{if .bannerColor}}style="background-color: {{.bannerColor}}"{{end}}>
+<span style="mix-blend-mode: difference; color: white">{{.bannerText}}</span>
+</div>
+{{- end}}

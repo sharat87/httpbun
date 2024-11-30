@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/response"
 	"html/template"
 	"io"
 	"io/fs"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/sharat87/httpbun/c"
+	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 )
 
 //go:embed *
@@ -34,6 +35,10 @@ func Render(name string, ex exchange.Exchange, data map[string]any) response.Res
 	}
 
 	data["pathPrefix"] = ex.ServerSpec.PathPrefix
+
+	data["bannerText"] = ex.ServerSpec.BannerText
+	data["bannerColor"] = ex.ServerSpec.BannerColor
+
 	data["commitShort"] = ex.ServerSpec.CommitShort
 	data["date"] = ex.ServerSpec.Date
 	data["host"] = ex.Request.URL.Host
