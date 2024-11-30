@@ -138,7 +138,7 @@ func TestMixInvalidBase64(t *testing.T) {
 func TestMixXSSAttack(t *testing.T) {
 	s := assert.New(t)
 	xssPayload := "<script>alert('XSS')</script>"
-	encodedPayload := "PHNjcmlwdD5hbGVydCgnWFNTJylcL3NjcmlwdD4="
+	encodedPayload := "PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4="
 	resp, body := ExecRequest(R{
 		Path: "mix/h=Content-Type:text%2Fhtml/b64=" + encodedPayload,
 	})
