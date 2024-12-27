@@ -7,9 +7,10 @@ import (
 )
 
 type Response struct {
-	Status int
-	Header http.Header
-	Body   []byte
+	Status  int
+	Header  http.Header
+	Cookies []http.Cookie
+	Body    any
 }
 
 func New(status int, header http.Header, body []byte) Response {
@@ -25,9 +26,17 @@ func JSON(status int, header http.Header, body any) Response {
 		header = http.Header{}
 	}
 	header.Set("Content-Type", "application/json")
-	return New(status, header, util.ToJsonMust(body))
+
+	return Response{
+		Status: status,
+		Header: header,
+		Body:   util.ToJsonMust(body),
+	}
 }
 
 func BadRequest(message string, vars ...any) Response {
-	return New(http.StatusBadRequest, nil, []byte(fmt.Sprintf(message, vars...)))
+	return Response{
+		Status: http.StatusBadRequest,
+		Body:   fmt.Sprintf(message, vars...),
+	}
 }

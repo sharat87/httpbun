@@ -202,6 +202,9 @@ func (ex Exchange) FindIncomingIPAddress() string {
 }
 
 func (ex Exchange) BodyBytes() []byte {
+	if ex.cappedBody == nil {
+		return nil
+	}
 	if bodyBytes, err := io.ReadAll(ex.cappedBody); err != nil {
 		fmt.Println("Error reading request payload", err)
 		return nil
@@ -270,9 +273,33 @@ func (ex Exchange) RespondError(status int, code, detail string) {
 }
 
 func (ex Exchange) Finish(resp response.Response) {
+	status := resp.Status
+	if status == 0 {
+		status = http.StatusOK
+	}
+
 	maps.Copy(ex.ResponseWriter.Header(), resp.Header)
+
+	for _, cookie := range resp.Cookies {
+		ex.ResponseWriter.Header().Add("Set-Cookie", cookie.String())
+	}
+
+	var body []byte
+	switch resp.Body.(type) {
+	case nil:
+		// do nothing
+	case []byte:
+		body = resp.Body.([]byte)
+	case string:
+		body = []byte(resp.Body.(string))
+	default:
+		ex.ResponseWriter.Header().Set("Content-Type", "application/json")
+		body = util.ToJsonMust(resp.Body)
+	}
+
 	// Set `Content-Length` header, to disable chunked transfer. See https://github.com/sharat87/httpbun/issues/13
-	ex.ResponseWriter.Header().Set("Content-Length", fmt.Sprint(len(resp.Body)))
-	ex.ResponseWriter.WriteHeader(resp.Status)
-	ex.WriteBytes(resp.Body)
+	ex.ResponseWriter.Header().Set("Content-Length", fmt.Sprint(len(body)))
+
+	ex.ResponseWriter.WriteHeader(status)
+	ex.WriteBytes(body)
 }
