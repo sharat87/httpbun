@@ -1,7 +1,5 @@
 FROM scratch
 
-LABEL org.opencontainers.image.authors="shrikantsharat.k@gmail.com"
-
 ARG TARGETARCH
 ADD bin/httpbun-docker-$TARGETARCH /httpbun
 
