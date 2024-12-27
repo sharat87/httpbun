@@ -34,10 +34,12 @@ func Render(name string, ex exchange.Exchange, data map[string]any) response.Res
 		data = make(map[string]any)
 	}
 
+	data["spec"] = ex.ServerSpec
+
 	data["pathPrefix"] = ex.ServerSpec.PathPrefix
 
-	data["bannerText"] = ex.ServerSpec.BannerText
-	data["bannerColor"] = ex.ServerSpec.BannerColor
+	data["bannerText"] = ex.ServerSpec.Banner
+	data["bannerColor"] = ex.ServerSpec.BannerBg
 
 	data["commit"] = ex.ServerSpec.Commit
 	data["commitShort"] = ex.ServerSpec.CommitShort
