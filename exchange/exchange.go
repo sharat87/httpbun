@@ -216,18 +216,15 @@ func (ex Exchange) BodyString() string {
 	return string(ex.BodyBytes())
 }
 
-func (ex Exchange) Write(content string) {
-	_, err := fmt.Fprint(ex.ResponseWriter, content)
-	if err != nil {
-		log.Printf("Error writing to exchange response: %v\n", err)
-	}
-}
-
-func (ex Exchange) RespondBadRequest(message string, vars ...any) {
-	ex.Finish(response.BadRequest(message, vars...))
-}
-
 func (ex Exchange) Finish(resp response.Response) {
+	if resp.Body != nil && resp.Writer != nil {
+		ex.Finish(response.Response{
+			Status: http.StatusInternalServerError,
+			Body:   "Both Body and Writer are set in response. This isn't supported.",
+		})
+		return
+	}
+
 	status := resp.Status
 	if status == 0 {
 		status = http.StatusOK
@@ -237,6 +234,11 @@ func (ex Exchange) Finish(resp response.Response) {
 
 	for _, cookie := range resp.Cookies {
 		ex.ResponseWriter.Header().Add("Set-Cookie", cookie.String())
+	}
+
+	if resp.Writer != nil {
+		resp.Writer(response.NewBodyWriter(ex.ResponseWriter))
+		return
 	}
 
 	var body []byte

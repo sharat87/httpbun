@@ -231,7 +231,7 @@ func handleMixerHelp(ex *exchange.Exchange) response.Response {
 func renderTemplate(ex *exchange.Exchange, templateContent string) ([]byte, error) {
 	tpl, err := template.New("mix").Funcs(templateFuncMap).Parse(templateContent)
 	if err != nil {
-		ex.RespondBadRequest(err.Error())
+		ex.Finish(response.BadRequest(err.Error()))
 		return nil, err
 	}
 	buf := &bytes.Buffer{}

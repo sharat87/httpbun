@@ -37,9 +37,7 @@ type Route struct {
 func GetRoutes() []Route {
 	var routes []Route
 
-	allRoutes := map[string]exchange.HandlerFn{
-		"/drip(-(?P<mode>lines))?(?P<extra>/.*)?": handleDrip,
-	}
+	allRoutes := map[string]exchange.HandlerFn{}
 
 	allRoutes2 := map[string]exchange.HandlerFn2{
 		"/health": handleHealth,
@@ -49,6 +47,8 @@ func GetRoutes() []Route {
 		"/bytes(/(?P<size>.+))?":                       handleRandomBytes,
 		"/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?": handleLinks,
 		"/range/(?P<count>\\d+)/?":                     handleRange,
+
+		"/drip(-(?P<mode>lines))?(?P<extra>/.*)?": handleDrip,
 
 		`/assets/(?P<path>.+)`: handleAsset,
 		`(/(index\.html)?)?`:   handleIndex,
@@ -228,71 +228,70 @@ func handleDelayedResponse(ex *exchange.Exchange) response.Response {
 	return response.New(http.StatusOK, nil, []byte("OK"))
 }
 
-func handleDrip(ex *exchange.Exchange) {
+func handleDrip(ex *exchange.Exchange) response.Response {
 	// Test with `curl -N localhost:3090/drip`.
 
 	extra := ex.Field("extra")
 	if extra != "" {
 		// todo: docs duplicated from index.html
-		ex.RespondBadRequest("Unknown extra path: " + extra +
+		return response.BadRequest("Unknown extra path: " + extra +
 			"\nUse `/drip` or `/drip-lines` with query params:\n" +
 			"  duration: Total number of seconds over which to stream the data. Default: 2.\n" +
 			"  numbytes: Total number of bytes to stream. Default: 10.\n" +
 			"  code: The HTTP status code to be used in their response. Default: 200.\n" +
 			"  delay: An initial delay, in seconds. Default: 2.\n",
 		)
-		return
 	}
 
 	writeNewLines := ex.Field("mode") == "lines"
 
 	duration, err := ex.QueryParamInt("duration", 2)
 	if err != nil {
-		ex.RespondBadRequest(err.Error())
-		return
+		return response.BadRequest(err.Error())
 	}
 
 	numbytes, err := ex.QueryParamInt("numbytes", 10)
 	if err != nil {
-		ex.RespondBadRequest(err.Error())
-		return
+		return response.BadRequest(err.Error())
 	}
 
 	code, err := ex.QueryParamInt("code", 200)
 	if err != nil {
-		ex.RespondBadRequest(err.Error())
-		return
+		return response.BadRequest(err.Error())
 	}
 
 	delay, err := ex.QueryParamInt("delay", 2)
 	if err != nil {
-		ex.RespondBadRequest(err.Error())
-		return
+		return response.BadRequest(err.Error())
 	}
 
 	if delay > 0 {
 		time.Sleep(time.Duration(delay) * time.Second)
 	}
 
-	ex.ResponseWriter.Header().Set("Cache-Control", "no-cache")
-	ex.ResponseWriter.Header().Set(c.ContentType, "text/octet-stream")
-	ex.ResponseWriter.WriteHeader(code)
-
 	interval := time.Duration(float32(time.Second) * float32(duration) / float32(numbytes))
 
-	for numbytes > 0 {
-		ex.Write("*")
-		if writeNewLines {
-			ex.Write("\n")
-		}
-		f, ok := ex.ResponseWriter.(http.Flusher)
-		if ok {
-			f.Flush()
-		} else {
-			log.Println("Flush not available. Dripping and streaming not supported on this platform.")
-		}
-		time.Sleep(interval)
-		numbytes--
+	return response.Response{
+		Status: code,
+		Header: http.Header{
+			"Cache-Control": {"no-cache"},
+			c.ContentType:   {"text/octet-stream"},
+		},
+		Writer: func(w response.BodyWriter) {
+			for numbytes > 0 {
+				part := "*"
+				if writeNewLines {
+					part += "\n"
+				}
+				err := w.Write(part)
+				if err != nil {
+					log.Printf("Error writing drip part: %v\n", err)
+					return
+				}
+				time.Sleep(interval)
+				numbytes--
+			}
+		},
 	}
 }
 
