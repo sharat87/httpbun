@@ -37,9 +37,7 @@ type Route struct {
 func GetRoutes() []Route {
 	var routes []Route
 
-	allRoutes := map[string]exchange.HandlerFn{}
-
-	allRoutes2 := map[string]exchange.HandlerFn2{
+	allRoutes := map[string]exchange.HandlerFn2{
 		"/health": handleHealth,
 		"/info":   handleInfo,
 
@@ -62,25 +60,18 @@ func GetRoutes() []Route {
 		"/(?P<hook>hooks.slack.com/services/.*)": handleSlack,
 	}
 
-	maps.Copy(allRoutes2, method.Routes)
-	maps.Copy(allRoutes2, headers.Routes)
-	maps.Copy(allRoutes2, cache.Routes)
-	maps.Copy(allRoutes2, auth.Routes)
-	maps.Copy(allRoutes2, redirect.Routes)
-	maps.Copy(allRoutes2, mix.Routes)
-	maps.Copy(allRoutes2, static.Routes)
-	maps.Copy(allRoutes2, cookies.Routes)
-	maps.Copy(allRoutes2, run.Routes)
+	maps.Copy(allRoutes, method.Routes)
+	maps.Copy(allRoutes, headers.Routes)
+	maps.Copy(allRoutes, cache.Routes)
+	maps.Copy(allRoutes, auth.Routes)
+	maps.Copy(allRoutes, redirect.Routes)
+	maps.Copy(allRoutes, mix.Routes)
+	maps.Copy(allRoutes, static.Routes)
+	maps.Copy(allRoutes, cookies.Routes)
+	maps.Copy(allRoutes, run.Routes)
 	maps.Copy(allRoutes, sse.Routes)
 
 	for pat, fn := range allRoutes {
-		routes = append(routes, Route{
-			Pat: *regexp.MustCompile("^" + pat + "$"),
-			Fn:  fn,
-		})
-	}
-
-	for pat, fn := range allRoutes2 {
 		routes = append(routes, Route{
 			Pat: *regexp.MustCompile("(?s)^" + pat + "$"),
 			Fn: (func(fn exchange.HandlerFn2) exchange.HandlerFn {

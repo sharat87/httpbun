@@ -4,38 +4,31 @@ import (
 	"fmt"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 	"log"
-	"net/http"
 	"strings"
 	"time"
 )
 
-var Routes = map[string]exchange.HandlerFn{
+var Routes = map[string]exchange.HandlerFn2{
 	`/sse`: handleServerSentEvents,
 }
 
-func handleServerSentEvents(ex *exchange.Exchange) {
-	ex.ResponseWriter.Header().Set("Cache-Control", "no-store")
-	ex.ResponseWriter.Header().Set(c.ContentType, "text/event-stream")
-	ex.ResponseWriter.WriteHeader(http.StatusOK)
-
-	if f, ok := ex.ResponseWriter.(http.Flusher); ok {
-		f.Flush()
-	} else {
-		log.Println("Flush not available. Dripping and streaming not supported on this platform.")
-	}
-
-	for id := range 10 {
-		time.Sleep(1 * time.Second)
-		_, err := fmt.Fprint(ex.ResponseWriter, strings.Join(pingMessage(id+1), "\n")+"\n\n")
-		if err != nil {
-			return
-		}
-		if f, ok := ex.ResponseWriter.(http.Flusher); ok {
-			f.Flush()
-		} else {
-			log.Println("Flush not available. Dripping and streaming not supported on this platform.")
-		}
+func handleServerSentEvents(ex *exchange.Exchange) response.Response {
+	return response.Response{
+		Header: map[string][]string{
+			"Cache-Control": {"no-store"},
+			c.ContentType:   {"text/event-stream"},
+		},
+		Writer: func(w response.BodyWriter) {
+			for id := range 10 {
+				err := w.Write(strings.Join(pingMessage(id+1), "\n") + "\n\n")
+				if err != nil {
+					log.Printf("Error writing to response: %v\n", err)
+				}
+				time.Sleep(1 * time.Second)
+			}
+		},
 	}
 }
 
