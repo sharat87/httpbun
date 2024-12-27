@@ -39,6 +39,7 @@ func Render(name string, ex exchange.Exchange, data map[string]any) response.Res
 	data["bannerText"] = ex.ServerSpec.BannerText
 	data["bannerColor"] = ex.ServerSpec.BannerColor
 
+	data["commit"] = ex.ServerSpec.Commit
 	data["commitShort"] = ex.ServerSpec.CommitShort
 	data["date"] = ex.ServerSpec.Date
 	data["host"] = ex.Request.URL.Host

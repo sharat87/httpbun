@@ -33,6 +33,34 @@ Hosted versions:
 
 <h2 id=endpoints>Endpoints <a href="#endpoints">&para;</a></h2>
 
+<h3 id=mix>Mix <a href="#mix">&para;</a></h3>
+
+<dl>
+
+    <dt>/mix</dt>
+    <dd>
+        Combine behaviour from multiple of other endpoints, into one. For example, if we want an endpoint with some
+        response headers, as well as a specific status code, we can use:
+        <pre>/mix/s=400/h=x-custom-header:some-value</pre>
+        The <code>s=</code> and <code>h=</code> are directives that <code>/mix</code> understands. Supported directives are:
+        <ol>
+            <li><code>s</code>: HTTP response status code.
+            <li><code>h</code>: Set a response header, in the form <code>name:value</code>.
+            <li><code>c</code>: Set a cookie, in the form <code>name:value</code>.
+            <li><code>r</code>: Set a redirect URL. Uses status code 307. To change, use <code>s=</code> directive.
+            <li><code>b64</code>: Set the response body to the base64 decoded value.
+            <li><code>t</code>: The base64 decoded value of this, is rendered as a Golang text template, and the result is
+                used as the response body.
+            <li><code>end</code>: Takes no value, marks the end of directive processing. Path segment after this is ignored
+                by Httpbun.
+        </ol>
+        <br>Learn more in the <a href=mixer-guide>guide</a>, and use the <a href=mixer>mixer</a> for a UI to build these URLs.
+    </dd>
+
+</dl>
+
+<h3 id=methods>Methods <a href="#methods">&para;</a></h3>
+
 <dl>
 
     <dt id=get>/get</dt>
@@ -110,7 +138,8 @@ Hosted versions:
     <dd>Digest authentication. The endpoint <code>/digest-auth/auth/scott/tiger</code> requires to be authenticated with
         the credentials <code>scott</code> and <code>tiger</code> as username and password. The implementation is based
         on <a href='https://en.wikipedia.org/wiki/Digest_access_authentication#Example_with_explanation' target=_blank
-           rel=noopener>this example from Wikipedia</a>. The value of <code>qop</code> defaults to <code>auth</code>.
+           rel=noopener>this example from Wikipedia</a>. The value of <code>qop</code> can be one of <code>auth</code>
+        (default), <code>auth-int</code> or <code>auth,auth-int</code>.
     </dd>
 
 </dl>
@@ -267,37 +296,16 @@ Hosted versions:
 
 </dl>
 
-<h3 id=mix>Mix <a href="#mix">&para;</a></h3>
-
-<dl>
-
-    <dt>/mix</dt>
-    <dd>
-    Combine behaviour from multiple of other endpoints, into one. For example, if we want an endpoint with some
-    response headers, as well as a specific status code, we can use:
-        <pre>/mix/s=400/h=x-custom-header:some-value</pre>
-    The <code>s=</code> and <code>h=</code> are directives that <code>/mix</code> understands. Supported directives are:
-    <ol>
-        <li><code>s</code>: HTTP response status code.
-        <li><code>h</code>: Set a response header, in the form <code>name:value</code>.
-        <li><code>c</code>: Set a cookie, in the form <code>name:value</code>.
-        <li><code>r</code>: Set a redirect URL. Uses status code 307. To change, use <code>s=</code> directive.
-        <li><code>b64</code>: Set the response body to the base64 decoded value.
-        <li><code>t</code>: The base64 decoded value of this, is rendered as a Golang text template, and the result is
-            used as the response body.
-        <li><code>end</code>: Takes no value, marks the end of directive processing. Path segment after this is ignored
-            by Httpbun.
-    </ol>
-    <br>Learn more in the <a href=mixer-guide>guide</a>, and use the <a href=mixer>mixer</a> for a UI to build these URLs.
-    </dd>
-
-</dl>
-
 <h2 id=self-hosting>Self Hosting <a href="#self-hosting">&para;</a></h2>
 
 <p>With Docker: <code>docker run -p 80:80 sharat87/httpbun</code></p>
 
 <p>From source, with <a href="https://taskfile.dev" rel="noopener noreferrer">task</a> installed: <code>task run</code></p>
+
+<p>If using for your project's CI, please consider running a self-hosted version using the Docker container. An example
+    of this is in the <a
+        href="https://github.com/sharat87/httpbun/blob/{{.commit}}/.github/workflows/container-run.yml">container-run.yml</a>
+    workflow.</p>
 
 <h2 id=configuration>Configuration <a href="#configuration">&para;</a></h2>
 

@@ -13,10 +13,10 @@ import (
 )
 
 var Routes = map[string]exchange.HandlerFn2{
-	"/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?":                                       handleAuthBasic,
-	"/bearer(/(?P<tok>\\w+))?":                                                            handleAuthBearer,
-	"/digest-auth/(?P<qop>auth|auth-int|auth,auth-int)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?": handleAuthDigest,
-	"/digest-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?":                                      handleAuthDigest,
+	"/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?":                 handleAuthBasic,
+	"/bearer(/(?P<tok>\\w+))?":                                      handleAuthBearer,
+	"/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?": handleAuthDigest,
+	"/digest-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?":                handleAuthDigest,
 }
 
 func handleAuthBasic(ex *exchange.Exchange) response.Response {
@@ -62,6 +62,10 @@ func handleAuthDigest(ex *exchange.Exchange) response.Response {
 
 	requireCookieParamValue, _ := ex.QueryParamSingle("require-cookie")
 	requireCookie := requireCookieParamValue == "true" || requireCookieParamValue == "1" || requireCookieParamValue == "t"
+
+	if expectedQop != "" && expectedQop != "auth" && expectedQop != "auth-int" && expectedQop != "auth,auth-int" {
+		return unauthorizedDigest("", requireCookie, "Error: invalid qop")
+	}
 
 	var authHeader string
 	if vals := ex.Request.Header["Authorization"]; len(vals) == 1 {
@@ -130,7 +134,7 @@ func handleAuthDigest(ex *exchange.Exchange) response.Response {
 func unauthorizedDigest(expectedQop string, setCookie bool, body string) response.Response {
 	qop := expectedQop
 	if qop == "" {
-		qop = "auth,auth-int"
+		qop = "auth"
 	}
 
 	newNonce := util.RandomString()
