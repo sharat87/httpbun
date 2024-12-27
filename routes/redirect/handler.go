@@ -10,7 +10,7 @@ import (
 
 const MaxRedirectCount = 20
 
-var Routes = map[string]exchange.HandlerFn2{
+var Routes = map[string]exchange.HandlerFn{
 	`/redirect(-to)?/?`: handleRedirectTo,
 	`/(?P<mode>relative-|absolute-)?redirect/(?P<count>\d+)`: handleRedirectCount,
 }

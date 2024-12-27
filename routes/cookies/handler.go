@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var Routes = map[string]exchange.HandlerFn2{
+var Routes = map[string]exchange.HandlerFn{
 	`/cookies?`:        handleCookies,
 	`/cookies?/delete`: handleCookiesDelete,
 	`/cookies?/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?`: handleCookiesSet,

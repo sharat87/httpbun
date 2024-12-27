@@ -22,7 +22,7 @@ type entry struct {
 	Args []string `json:"args"`
 }
 
-var Routes = map[string]exchange.HandlerFn2{
+var Routes = map[string]exchange.HandlerFn{
 	`/mix\b(?P<conf>.*)`:      handleMix,
 	`/mixer((?P<conf>/.*)|$)`: handleMixer,
 	`/help/mixer`:             handleMixerHelp,

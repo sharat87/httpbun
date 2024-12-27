@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var Routes = map[string]exchange.HandlerFn2{
+var Routes = map[string]exchange.HandlerFn{
 	`/sse`: handleServerSentEvents,
 }
 

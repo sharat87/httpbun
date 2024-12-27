@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-var Routes = map[string]exchange.HandlerFn2{
+var Routes = map[string]exchange.HandlerFn{
 	"/deny":       handleRobotsDeny,
 	"/robots.txt": handleRobotsTxt,
 	"/html":       handleHtml,

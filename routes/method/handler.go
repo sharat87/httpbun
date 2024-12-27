@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var Routes = map[string]exchange.HandlerFn2{
+var Routes = map[string]exchange.HandlerFn{
 	"/get":             handleValidMethod,
 	"/post":            handleValidMethod,
 	"/put":             handleValidMethod,

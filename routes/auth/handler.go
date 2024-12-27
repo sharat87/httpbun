@@ -12,7 +12,7 @@ import (
 	"github.com/sharat87/httpbun/util"
 )
 
-var Routes = map[string]exchange.HandlerFn2{
+var Routes = map[string]exchange.HandlerFn{
 	"/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?":                 handleAuthBasic,
 	"/bearer(/(?P<tok>\\w+))?":                                      handleAuthBearer,
 	"/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?": handleAuthDigest,

@@ -14,7 +14,7 @@ import (
 
 const restPathPattern = `/(?P<encoded>[-\w]+=*)(?P<extraPath>.*)`
 
-var Routes = map[string]exchange.HandlerFn2{
+var Routes = map[string]exchange.HandlerFn{
 	`/runner(` + restPathPattern + ")?": handleRunner,
 	`/run` + restPathPattern:            handleRunJS,
 }

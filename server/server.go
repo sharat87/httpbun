@@ -107,7 +107,7 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	for _, route := range s.routes {
 		if ex.MatchAndLoadFields(route.Pat) {
-			route.Fn(ex)
+			ex.Finish(route.Fn(ex))
 			return
 		}
 	}

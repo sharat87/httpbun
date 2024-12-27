@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-var Routes = map[string]exchange.HandlerFn2{
+var Routes = map[string]exchange.HandlerFn{
 	"/cache":                handleCache,
 	"/cache/(?P<age>\\d+)":  handleCacheControl,
 	"/etag/(?P<etag>[^/]+)": handleEtag,
