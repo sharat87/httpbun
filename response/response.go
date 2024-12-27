@@ -2,7 +2,6 @@ package response
 
 import (
 	"fmt"
-	"github.com/sharat87/httpbun/util"
 	"net/http"
 )
 
@@ -18,19 +17,6 @@ func New(status int, header http.Header, body []byte) Response {
 		Status: status,
 		Header: header,
 		Body:   body,
-	}
-}
-
-func JSON(status int, header http.Header, body any) Response {
-	if header == nil {
-		header = http.Header{}
-	}
-	header.Set("Content-Type", "application/json")
-
-	return Response{
-		Status: status,
-		Header: header,
-		Body:   util.ToJsonMust(body),
 	}
 }
 

@@ -2,7 +2,6 @@ package exchange
 
 import (
 	"fmt"
-	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/server/spec"
 	"github.com/sharat87/httpbun/util"
@@ -224,52 +223,8 @@ func (ex Exchange) Write(content string) {
 	}
 }
 
-func (ex Exchange) WriteLn(content string) {
-	ex.Write(content)
-	ex.Write("\n")
-}
-
-func (ex Exchange) WriteBytes(content []byte) {
-	_, err := ex.ResponseWriter.Write(content)
-	if err != nil {
-		log.Printf("Error writing bytes to exchange response: %v\n", err)
-	}
-}
-
-func (ex Exchange) WriteF(content string, vars ...any) {
-	ex.Write(fmt.Sprintf(content, vars...))
-}
-
-func (ex Exchange) WriteJSON(data any) {
-	w := ex.ResponseWriter
-	w.Header().Set("Content-Type", "application/json")
-	_, err := w.Write(util.ToJsonMust(data))
-	if err != nil {
-		log.Printf("Error writing JSON to HTTP response %v", err)
-	}
-}
-
-func (ex Exchange) RespondWithStatus(errorStatus int) {
-	ex.Finish(response.New(errorStatus, nil, []byte(http.StatusText(errorStatus)+"\n")))
-}
-
 func (ex Exchange) RespondBadRequest(message string, vars ...any) {
 	ex.Finish(response.BadRequest(message, vars...))
-}
-
-func (ex Exchange) RespondError(status int, code, detail string) {
-	ex.Finish(response.New(
-		status,
-		http.Header{
-			c.ContentType: []string{c.ApplicationJSON},
-		},
-		util.ToJsonMust(map[string]any{
-			"error": map[string]any{
-				"code":   code,
-				"detail": detail,
-			},
-		}),
-	))
 }
 
 func (ex Exchange) Finish(resp response.Response) {
@@ -301,5 +256,9 @@ func (ex Exchange) Finish(resp response.Response) {
 	ex.ResponseWriter.Header().Set("Content-Length", fmt.Sprint(len(body)))
 
 	ex.ResponseWriter.WriteHeader(status)
-	ex.WriteBytes(body)
+
+	_, err := ex.ResponseWriter.Write(body)
+	if err != nil {
+		log.Printf("Error writing bytes to exchange response: %v\n", err)
+	}
 }

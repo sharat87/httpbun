@@ -3,12 +3,13 @@ package routes
 import (
 	"bytes"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/util"
 	"io"
 	"net/http"
 )
 
-func handleSlack(ex *exchange.Exchange) {
+func handleSlack(ex *exchange.Exchange) response.Response {
 	message := "*From*: `" + ex.Request.RemoteAddr + "`\n\n*" + ex.Request.Method + "* `" + ex.Request.URL.String() + "`\n"
 
 	for k, v := range ex.Request.Header {
@@ -31,15 +32,19 @@ func handleSlack(ex *exchange.Exchange) {
 		"text": message,
 	})))
 	if err != nil {
-		ex.WriteLn("Error sending message to Slack: " + err.Error())
-		return
+		return response.Response{
+			Status: http.StatusInternalServerError,
+			Body:   "Error sending message to Slack: " + err.Error(),
+		}
 	}
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		ex.WriteLn("Error reading response from Slack: " + err.Error())
-		return
+		return response.Response{
+			Status: http.StatusInternalServerError,
+			Body:   "Error reading response from Slack: " + err.Error(),
+		}
 	}
 
-	ex.WriteBytes(responseBody)
+	return response.Response{Body: responseBody}
 }

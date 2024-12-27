@@ -134,5 +134,5 @@ func InfoJSON(ex *exchange.Exchange) response.Response {
 	result.Json = jsonData
 	result.Files = files
 
-	return response.JSON(http.StatusOK, nil, result)
+	return response.Response{Status: http.StatusOK, Body: result}
 }

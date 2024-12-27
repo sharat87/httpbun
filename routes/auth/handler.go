@@ -29,10 +29,12 @@ func handleAuthBasic(ex *exchange.Exchange) response.Response {
 		}, nil)
 	}
 
-	return response.JSON(http.StatusOK, nil, map[string]any{
-		"authenticated": isAuthenticated,
-		"user":          givenUsername,
-	})
+	return response.Response{
+		Body: map[string]any{
+			"authenticated": isAuthenticated,
+			"user":          givenUsername,
+		},
+	}
 }
 
 func handleAuthBearer(ex *exchange.Exchange) response.Response {
@@ -47,10 +49,12 @@ func handleAuthBearer(ex *exchange.Exchange) response.Response {
 
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 
-	return response.JSON(http.StatusOK, nil, map[string]any{
-		"authenticated": token != "" && (expectedToken == "" || expectedToken == token),
-		"token":         token,
-	})
+	return response.Response{
+		Body: map[string]any{
+			"authenticated": token != "" && (expectedToken == "" || expectedToken == token),
+			"token":         token,
+		},
+	}
 }
 
 func handleAuthDigest(ex *exchange.Exchange) response.Response {

@@ -38,31 +38,28 @@ func GetRoutes() []Route {
 	var routes []Route
 
 	allRoutes := map[string]exchange.HandlerFn{
-		"/health": handleHealth,
-
-		"/b(ase)?64(/(?P<encoded>.*))?":                handleDecodeBase64,
-		"/bytes(/(?P<size>.+))?":                       handleRandomBytes,
-		"/drip(-(?P<mode>lines))?(?P<extra>/.*)?":      handleDrip,
-		"/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?": handleLinks,
-		"/range/(?P<count>\\d+)/?":                     handleRange,
-
-		"/info": handleInfo,
-
-		"/(?P<hook>hooks.slack.com/services/.*)": handleSlack,
+		"/drip(-(?P<mode>lines))?(?P<extra>/.*)?": handleDrip,
 	}
 
 	allRoutes2 := map[string]exchange.HandlerFn2{
-		`/assets/(?P<path>.+)`: handleAsset,
+		"/health": handleHealth,
+		"/info":   handleInfo,
 
-		`(/(index\.html)?)?`: handleIndex,
+		"/b(ase)?64(/(?P<encoded>.*))?":                handleDecodeBase64,
+		"/bytes(/(?P<size>.+))?":                       handleRandomBytes,
+		"/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?": handleLinks,
+		"/range/(?P<count>\\d+)/?":                     handleRange,
+
+		`/assets/(?P<path>.+)`: handleAsset,
+		`(/(index\.html)?)?`:   handleIndex,
 
 		"/delay/(?P<delay>[^/]+)": handleDelayedResponse,
 
-		"/payload": handlePayload,
-
-		"/status/(?P<codes>[\\w,]+)": handleStatus,
-
+		"/payload":                      handlePayload,
+		"/status/(?P<codes>[\\w,]+)":    handleStatus,
 		"/ip(\\.(?P<format>txt|json))?": handleIp,
+
+		"/(?P<hook>hooks.slack.com/services/.*)": handleSlack,
 	}
 
 	maps.Copy(allRoutes2, method.Routes)
@@ -104,13 +101,13 @@ func handleIndex(ex *exchange.Exchange) response.Response {
 func handleAsset(ex *exchange.Exchange) response.Response {
 	path := ex.Field("path")
 	if strings.Contains(path, "..") {
-		ex.RespondBadRequest("Assets path cannot contain '..'.")
+		return response.BadRequest("Assets path cannot contain '..'.")
 	}
 	return assets.WriteAsset(path)
 }
 
-func handleHealth(ex *exchange.Exchange) {
-	ex.WriteLn("ok")
+func handleHealth(_ *exchange.Exchange) response.Response {
+	return response.Response{Body: "ok"}
 }
 
 func handlePayload(ex *exchange.Exchange) response.Response {
@@ -156,10 +153,13 @@ func handleStatus(ex *exchange.Exchange) response.Response {
 		return response.New(status, nil, []byte(http.StatusText(status)))
 
 	} else {
-		return response.JSON(status, nil, map[string]any{
-			"code":        status,
-			"description": http.StatusText(status),
-		})
+		return response.Response{
+			Status: status,
+			Body: map[string]any{
+				"code":        status,
+				"description": http.StatusText(status),
+			},
+		}
 
 	}
 }
@@ -167,41 +167,50 @@ func handleStatus(ex *exchange.Exchange) response.Response {
 func handleIp(ex *exchange.Exchange) response.Response {
 	origin := ex.FindIncomingIPAddress()
 	if ex.Field("format") == "txt" {
-		ex.Write(origin)
 		return response.New(http.StatusOK, nil, []byte(origin))
 	} else {
-		return response.JSON(http.StatusOK, nil, map[string]any{
-			"origin": origin,
-		})
+		return response.Response{
+			Status: http.StatusOK,
+			Body: map[string]any{
+				"origin": origin,
+			},
+		}
 	}
 }
 
-func handleDecodeBase64(ex *exchange.Exchange) {
+func handleDecodeBase64(ex *exchange.Exchange) response.Response {
 	encoded := ex.Field("encoded")
 	if encoded == "" {
 		encoded = "SFRUUEJVTiBpcyBhd2Vzb21lciE="
 	}
+
 	if decoded, err := base64.StdEncoding.DecodeString(encoded); err != nil {
-		ex.Write("Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
+		return response.BadRequest("Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
 	} else {
-		ex.WriteBytes(decoded)
+		return response.Response{
+			Body: decoded,
+		}
 	}
 }
 
-func handleRandomBytes(ex *exchange.Exchange) {
+func handleRandomBytes(ex *exchange.Exchange) response.Response {
 	sizeField := ex.Field("size")
 	if sizeField == "" {
-		ex.RespondBadRequest("specify size in bytes, example `/bytes/10`")
-		return
+		return response.BadRequest("specify size in bytes, example `/bytes/10`")
 	}
+
 	n, err := strconv.Atoi(sizeField)
 	if err != nil {
-		ex.RespondBadRequest("Invalid size: " + sizeField)
-		return
+		return response.BadRequest("Invalid size: " + sizeField)
 	}
-	ex.ResponseWriter.Header().Set("content-type", "application/octet-stream")
-	ex.ResponseWriter.Header().Set("content-length", fmt.Sprint(n))
-	ex.WriteBytes(util.RandomBytes(n))
+
+	return response.Response{
+		Header: http.Header{
+			c.ContentType:   []string{"application/octet-stream"},
+			c.ContentLength: []string{fmt.Sprint(n)},
+		},
+		Body: util.RandomBytes(n),
+	}
 }
 
 func handleDelayedResponse(ex *exchange.Exchange) response.Response {
@@ -287,23 +296,29 @@ func handleDrip(ex *exchange.Exchange) {
 	}
 }
 
-func handleLinks(ex *exchange.Exchange) {
+func handleLinks(ex *exchange.Exchange) response.Response {
 	count, _ := strconv.Atoi(ex.Field("count"))
 	offset, _ := strconv.Atoi(ex.Field("offset"))
 
-	ex.Write("<html><head><title>Links</title></head><body>")
+	var parts []string
+
+	parts = append(parts, "<html><head><title>Links</title></head><body>")
 	for i := 0; i < count; i++ {
 		if offset == i {
-			ex.Write(strconv.Itoa(i))
+			parts = append(parts, strconv.Itoa(i))
 		} else {
-			ex.WriteF("<a href='/links/%d/%d'>%d</a>", count, i, i)
+			parts = append(parts, fmt.Sprintf("<a href='/links/%d/%d'>%d</a>", count, i, i))
 		}
-		ex.Write(" ")
+		parts = append(parts, " ")
 	}
-	ex.Write("</body></html>")
+	parts = append(parts, "</body></html>")
+
+	return response.Response{
+		Body: strings.Join(parts, ""),
+	}
 }
 
-func handleRange(ex *exchange.Exchange) {
+func handleRange(ex *exchange.Exchange) response.Response {
 	// TODO: Cache range response, don't have to generate over and over again.
 	count, _ := strconv.Atoi(ex.Field("count"))
 
@@ -313,17 +328,21 @@ func handleRange(ex *exchange.Exchange) {
 		count = 0
 	}
 
-	ex.ResponseWriter.Header().Set("content-type", "application/octet-stream")
-
+	var b []byte
 	if count > 0 {
-		r := rand.New(rand.NewSource(42))
-		b := make([]byte, count)
-		r.Read(b)
-		ex.WriteBytes(b)
+		b = make([]byte, count)
+		rand.New(rand.NewSource(42)).Read(b)
+	}
+
+	return response.Response{
+		Header: http.Header{
+			c.ContentType: []string{"application/octet-stream"},
+		},
+		Body: b,
 	}
 }
 
-func handleInfo(ex *exchange.Exchange) {
+func handleInfo(_ *exchange.Exchange) response.Response {
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "Error: " + err.Error()
@@ -339,8 +358,10 @@ func handleInfo(ex *exchange.Exchange) {
 		}
 	}
 
-	ex.WriteJSON(map[string]any{
-		"hostname": hostname,
-		"env":      env,
-	})
+	return response.Response{
+		Body: map[string]any{
+			"hostname": hostname,
+			"env":      env,
+		},
+	}
 }
