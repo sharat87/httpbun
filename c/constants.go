@@ -1,6 +1,7 @@
 package c
 
 const ContentType = "Content-Type"
+const ContentLength = "Content-Length"
 const Location = "Location"
 const WWWAuthenticate = "WWW-Authenticate"
 

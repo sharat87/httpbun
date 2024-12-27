@@ -17,10 +17,12 @@ func TestResponseHeaders(t *testing.T) {
 	s.Equal([]string{"two"}, resp.Header.Values("One"))
 	s.Equal([]string{"four"}, resp.Header.Values("Three"))
 	s.JSONEq(`{
-		"Content-Length": "103",
-		"Content-Type": "application/json",
-		"One": "two",
-		"Three": "four"
+		"responseHeaders": {
+			"Content-Length": "138",
+			"Content-Type": "application/json",
+			"One": "two",
+			"Three": "four"
+		}
 	}`, body)
 }
 
@@ -33,8 +35,10 @@ func TestResponseHeadersRepeated(t *testing.T) {
 	s.Equal(c.ApplicationJSON, resp.Header.Get(c.ContentType))
 	s.Equal([]string{"two", "four"}, resp.Header.Values("One"))
 	s.JSONEq(`{
-		"Content-Length": "106",
-		"Content-Type": "application/json",
-		"One": ["two", "four"]
+		"responseHeaders": {
+			"Content-Length": "145",
+			"Content-Type": "application/json",
+			"One": ["two", "four"]
+		}
 	}`, body)
 }

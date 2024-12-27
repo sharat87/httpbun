@@ -4,26 +4,28 @@ import (
 	"fmt"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/util"
 	"net/http"
 )
 
-var Routes = map[string]exchange.HandlerFn{
+var Routes = map[string]exchange.HandlerFn2{
 	"/headers":                            handleHeaders,
 	"/(response|respond-with)-headers?/?": handleResponseHeaders,
 }
 
-func handleHeaders(ex *exchange.Exchange) {
-	ex.WriteJSON(map[string]any{"headers": ex.ExposableHeadersMap()})
+func handleHeaders(ex *exchange.Exchange) response.Response {
+	return response.Response{Body: map[string]any{"headers": ex.ExposableHeadersMap()}}
 }
 
-func handleResponseHeaders(ex *exchange.Exchange) {
+func handleResponseHeaders(ex *exchange.Exchange) response.Response {
+	responseHeaders := http.Header{}
 	data := make(map[string]any)
 
 	for name, values := range ex.Request.URL.Query() {
 		name = http.CanonicalHeaderKey(name)
 		for _, value := range values {
-			ex.ResponseWriter.Header().Add(name, value)
+			responseHeaders.Add(name, value)
 		}
 		if len(values) > 1 {
 			data[name] = values
@@ -32,19 +34,22 @@ func handleResponseHeaders(ex *exchange.Exchange) {
 		}
 	}
 
-	ex.ResponseWriter.Header().Set(c.ContentType, c.ApplicationJSON)
+	responseHeaders.Set(c.ContentType, c.ApplicationJSON)
 	data[c.ContentType] = c.ApplicationJSON
 
 	var jsonContent []byte
 
 	for {
-		jsonContent = util.ToJsonMust(data)
+		jsonContent = util.ToJsonMust(map[string]any{"responseHeaders": data})
 		newContentLength := fmt.Sprint(len(jsonContent))
-		if data["Content-Length"] == newContentLength {
+		if data[c.ContentLength] == newContentLength {
 			break
 		}
-		data["Content-Length"] = newContentLength
+		data[c.ContentLength] = newContentLength
 	}
 
-	ex.WriteBytes(jsonContent)
+	return response.Response{
+		Header: responseHeaders,
+		Body:   jsonContent,
+	}
 }

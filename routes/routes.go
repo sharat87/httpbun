@@ -66,13 +66,13 @@ func GetRoutes() []Route {
 	}
 
 	maps.Copy(allRoutes2, method.Routes)
-	maps.Copy(allRoutes, headers.Routes)
+	maps.Copy(allRoutes2, headers.Routes)
 	maps.Copy(allRoutes2, cache.Routes)
 	maps.Copy(allRoutes2, auth.Routes)
-	maps.Copy(allRoutes, redirect.Routes)
+	maps.Copy(allRoutes2, redirect.Routes)
 	maps.Copy(allRoutes2, mix.Routes)
 	maps.Copy(allRoutes2, static.Routes)
-	maps.Copy(allRoutes, cookies.Routes)
+	maps.Copy(allRoutes2, cookies.Routes)
 	maps.Copy(allRoutes2, run.Routes)
 	maps.Copy(allRoutes, sse.Routes)
 

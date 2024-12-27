@@ -85,21 +85,21 @@ func (ex Exchange) Field(name string) string {
 	return ex.fields[name]
 }
 
-func (ex Exchange) Redirect(target string) {
+func (ex Exchange) RedirectResponse(target string) *response.Response {
 	if strings.HasPrefix(target, "/") {
 		target = ex.ServerSpec.PathPrefix + target
 	}
 
-	ex.ResponseWriter.Header().Set("Location", target)
-	ex.ResponseWriter.WriteHeader(http.StatusFound)
-
-	_, err := fmt.Fprintf(ex.ResponseWriter, `<!doctype html>
+	return &response.Response{
+		Status: http.StatusFound,
+		Header: http.Header{
+			"Location": {target},
+		},
+		Body: fmt.Sprintf(`<!doctype html>
 <title>Redirecting...</title>
 <h1>Redirecting...</h1>
 <p>You should be redirected automatically to target URL: <a href=%q>%s</a>.  If not click the link.</p>
-`, target, target)
-	if err != nil {
-		log.Printf("Error writing redirect HTML to HTTP response %v", err)
+`, target, target),
 	}
 }
 
