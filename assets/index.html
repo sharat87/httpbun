@@ -2,13 +2,18 @@
 
 <h1><img alt=Logo src='{{.pathPrefix}}/assets/icon-180.png'> Httpbun</h1>
 
-<p>This is a service to help easily test the behaviour of HTTP clients like browsers, libraries, developer tools or
-    anything else. Inspired by <a href='http://httpbin.org' target=_blank rel=noopener>httpbin</a>. I made this because
-    httpbin lacked some things I needed, like:</p>
+<p>A service to help test the behaviour of HTTP clients like browsers, libraries, developer tools or anything else.
+    Inspired by <a href='http://httpbin.org' target=_blank rel=noopener>httpbin</a>. Built because httpbin lacked some
+    things I needed, like:</p>
 
 <ol>
-    <li>The <code>/mix</code> endpoint, and the <a href="{{.pathPrefix}}/mixer">Mixer</a>.
-    <li>The <code>/run</code> endpoint, and the <a href="{{.pathPrefix}}/runner">Runner</a>.
+    <li>The <code>/mix</code> endpoint, and the <a href="{{.pathPrefix}}/mixer">Mixer</a>, with powerful ingredients like:
+    <ul>
+        <li>A RequestBin-like functionality with the <code>slack</code> directive.
+        <li>Build response body by writing a Golang template, with the <code>t</code> directive.
+        <li>Learn more at the <a href=help/mixer>Mixer guide</a>.
+    </ul>
+    <li>The <code>/run</code> endpoint, and the <a href="{{.pathPrefix}}/runner">Runner</a>. (Beta).
     <li>The <a href=#payload>/payload endpoint</a>.
     <li>Allowing request body in <a href=#get>/get endpoint</a>.
     <li>Accept <em>any</em> method in <a href=#headers>/headers</a> and most other such endpoints.
@@ -54,7 +59,7 @@ Hosted versions:
             <li><code>end</code>: Takes no value, marks the end of directive processing. Path segment after this is ignored
                 by Httpbun.
         </ol>
-        <br>Learn more in the <a href=mixer-guide>guide</a>, and use the <a href=mixer>mixer</a> for a UI to build these URLs.
+        <br>Learn more in the <a href=help/mixer>guide</a>, and use the <a href=mixer>mixer</a> for a UI to build these URLs.
     </dd>
 
 </dl>
