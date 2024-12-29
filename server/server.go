@@ -3,10 +3,13 @@ package server
 import (
 	"context"
 	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/routes"
 	"github.com/sharat87/httpbun/routes/responses"
 	"github.com/sharat87/httpbun/server/spec"
+	"github.com/sharat87/httpbun/util"
 	"log"
+	"maps"
 	"net"
 	"net/http"
 	"os"
@@ -101,12 +104,19 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// Skip all route checking when root-is-any is enabled.
 	if s.spec.RootIsAny {
-		ex.Finish(responses.InfoJSON(ex))
+		info, err := responses.InfoJSON(ex)
+		if err != nil {
+			ex.Finish(response.BadRequest(err.Error()))
+		} else {
+			ex.Finish(response.Response{Body: info})
+		}
 		return
 	}
 
 	for _, route := range s.routes {
-		if ex.MatchAndLoadFields(route.Pat) {
+		fields, isMatch := util.MatchRoutePat(route.Pat, ex.RoutedPath)
+		if isMatch {
+			maps.Copy(ex.Fields, fields)
 			ex.Finish(route.Fn(ex))
 			return
 		}

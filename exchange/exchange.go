@@ -18,8 +18,8 @@ import (
 
 type Exchange struct {
 	Request        *http.Request
-	ResponseWriter http.ResponseWriter
-	fields         map[string]string
+	responseWriter http.ResponseWriter
+	Fields         map[string]string // todo: this should be private!
 	cappedBody     io.Reader
 	RoutedPath     string
 	ServerSpec     spec.Spec
@@ -30,8 +30,8 @@ type HandlerFn func(ex *Exchange) response.Response
 func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchange {
 	ex := &Exchange{
 		Request:        req,
-		ResponseWriter: w,
-		fields:         map[string]string{},
+		responseWriter: w,
+		Fields:         map[string]string{},
 		cappedBody:     io.LimitReader(req.Body, 10000),
 		RoutedPath:     strings.TrimPrefix(req.URL.EscapedPath(), serverSpec.PathPrefix),
 		ServerSpec:     serverSpec,
@@ -45,41 +45,33 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 	// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
 	originHeader := ex.HeaderValueLast("Origin")
 	if originHeader != "" {
-		ex.ResponseWriter.Header().Set("Access-Control-Allow-Origin", originHeader)
-		ex.ResponseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
+		ex.responseWriter.Header().Set("Access-Control-Allow-Origin", originHeader)
+		ex.responseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
 	}
 
 	accessControlHeaders := ex.Request.Header.Get("Access-Control-Request-Headers")
 	if accessControlHeaders != "" {
-		ex.ResponseWriter.Header().Set("Access-Control-Allow-Headers", accessControlHeaders)
+		ex.responseWriter.Header().Set("Access-Control-Allow-Headers", accessControlHeaders)
 	}
 
 	accessControlMethods := ex.Request.Header.Get("Access-Control-Request-Method")
 	if accessControlMethods != "" {
-		ex.ResponseWriter.Header().Set("Access-Control-Allow-Methods", accessControlMethods)
+		ex.responseWriter.Header().Set("Access-Control-Allow-Methods", accessControlMethods)
 	}
 
-	ex.ResponseWriter.Header().Set("X-Powered-By", "httpbun/"+serverSpec.Commit)
+	ex.responseWriter.Header().Set("X-Powered-By", "httpbun/"+serverSpec.Commit)
 
 	return ex
 }
 
 func (ex Exchange) MatchAndLoadFields(routePat regexp.Regexp) bool {
-	match := routePat.FindStringSubmatch(ex.RoutedPath)
-	if match != nil {
-		names := routePat.SubexpNames()
-		for i, name := range names {
-			if name != "" {
-				ex.fields[name] = match[i]
-			}
-		}
-		return true
-	}
-	return false
+	fields, isMatch := util.MatchRoutePat(routePat, ex.RoutedPath)
+	maps.Copy(ex.Fields, fields)
+	return isMatch
 }
 
 func (ex Exchange) Field(name string) string {
-	return ex.fields[name]
+	return ex.Fields[name]
 }
 
 func (ex Exchange) RedirectResponse(target string) *response.Response {
@@ -228,14 +220,14 @@ func (ex Exchange) Finish(resp response.Response) {
 		status = http.StatusOK
 	}
 
-	maps.Copy(ex.ResponseWriter.Header(), resp.Header)
+	maps.Copy(ex.responseWriter.Header(), resp.Header)
 
 	for _, cookie := range resp.Cookies {
-		ex.ResponseWriter.Header().Add("Set-Cookie", cookie.String())
+		ex.responseWriter.Header().Add("Set-Cookie", cookie.String())
 	}
 
 	if resp.Writer != nil {
-		resp.Writer(response.NewBodyWriter(ex.ResponseWriter))
+		resp.Writer(response.NewBodyWriter(ex.responseWriter))
 		return
 	}
 
@@ -248,16 +240,16 @@ func (ex Exchange) Finish(resp response.Response) {
 	case string:
 		body = []byte(resp.Body.(string))
 	default:
-		ex.ResponseWriter.Header().Set("Content-Type", "application/json")
+		ex.responseWriter.Header().Set("Content-Type", "application/json")
 		body = util.ToJsonMust(resp.Body)
 	}
 
 	// Set `Content-Length` header, to disable chunked transfer. See https://github.com/sharat87/httpbun/issues/13
-	ex.ResponseWriter.Header().Set("Content-Length", fmt.Sprint(len(body)))
+	ex.responseWriter.Header().Set("Content-Length", fmt.Sprint(len(body)))
 
-	ex.ResponseWriter.WriteHeader(status)
+	ex.responseWriter.WriteHeader(status)
 
-	_, err := ex.ResponseWriter.Write(body)
+	_, err := ex.responseWriter.Write(body)
 	if err != nil {
 		log.Printf("Error writing bytes to exchange response: %v\n", err)
 	}

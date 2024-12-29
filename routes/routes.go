@@ -70,8 +70,11 @@ func GetRoutes() []Route {
 	var routes []Route
 
 	for pat, fn := range routeMap {
+		if !strings.HasPrefix(pat, "(?s)^") {
+			pat = "(?s)^" + pat + "$"
+		}
 		routes = append(routes, Route{
-			Pat: *regexp.MustCompile("(?s)^" + pat + "$"),
+			Pat: *regexp.MustCompile(pat),
 			Fn:  fn,
 		})
 	}
@@ -88,7 +91,7 @@ func handleAsset(ex *exchange.Exchange) response.Response {
 	if strings.Contains(path, "..") {
 		return response.BadRequest("Assets path cannot contain '..'.")
 	}
-	return assets.WriteAsset(path)
+	return *assets.WriteAsset(path)
 }
 
 func handleHealth(_ *exchange.Exchange) response.Response {

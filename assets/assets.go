@@ -62,13 +62,16 @@ func Render(name string, ex exchange.Exchange, data map[string]any) response.Res
 	)
 }
 
-func WriteAsset(name string) response.Response {
+func WriteAsset(name string) *response.Response {
 	file, err := assets.Open(name)
 	if err != nil {
 		if strings.HasSuffix(err.Error(), " file does not exist") {
-			return response.New(http.StatusNotFound, nil, nil)
+			return &response.Response{Status: http.StatusNotFound}
 		} else {
-			return response.New(http.StatusInternalServerError, nil, []byte(fmt.Sprintf("Error opening asset file %v", err)))
+			return &response.Response{
+				Status: http.StatusInternalServerError,
+				Body:   fmt.Sprintf("Error opening asset file %v", err),
+			}
 		}
 	}
 	defer func(file fs.File) {
@@ -80,8 +83,11 @@ func WriteAsset(name string) response.Response {
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		return response.New(http.StatusInternalServerError, nil, []byte(fmt.Sprintf("Error reading asset file %v", err)))
+		return &response.Response{
+			Status: http.StatusInternalServerError,
+			Body:   fmt.Sprintf("Error reading asset file %v", err),
+		}
 	}
 
-	return response.New(http.StatusOK, nil, data)
+	return &response.Response{Body: data}
 }

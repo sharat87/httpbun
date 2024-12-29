@@ -14,7 +14,15 @@ var Routes = map[string]exchange.HandlerFn{
 	"/put":             handleValidMethod,
 	"/patch":           handleValidMethod,
 	"/delete":          handleValidMethod,
-	`/any(thing)?\b.*`: responses.InfoJSON,
+	`/any(thing)?\b.*`: handleAnything,
+}
+
+func handleAnything(ex *exchange.Exchange) response.Response {
+	info, err := responses.InfoJSON(ex)
+	if err != nil {
+		return response.BadRequest(err.Error())
+	}
+	return response.Response{Body: info}
 }
 
 func handleValidMethod(ex *exchange.Exchange) response.Response {
@@ -22,12 +30,19 @@ func handleValidMethod(ex *exchange.Exchange) response.Response {
 	if ex.Request.Method != allowedMethod {
 		allowedMethods := allowedMethod + ", " + http.MethodOptions
 		if ex.Request.Method != http.MethodOptions {
-			return response.New(http.StatusMethodNotAllowed, http.Header{
-				"Allow":                        []string{allowedMethods},
-				"Access-Control-Allow-Methods": []string{allowedMethods},
-			}, nil)
+			return response.Response{
+				Status: http.StatusMethodNotAllowed,
+				Header: http.Header{
+					"Allow":                        []string{allowedMethods},
+					"Access-Control-Allow-Methods": []string{allowedMethods},
+				},
+			}
 		}
 	}
 
-	return responses.InfoJSON(ex)
+	info, err := responses.InfoJSON(ex)
+	if err != nil {
+		return response.BadRequest(err.Error())
+	}
+	return response.Response{Body: info}
 }

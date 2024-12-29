@@ -24,8 +24,10 @@ func handleCookies(ex *exchange.Exchange) response.Response {
 }
 
 func handleCookiesDelete(ex *exchange.Exchange) response.Response {
+	res := ex.RedirectResponse("/cookies")
+
 	for name := range ex.Request.URL.Query() {
-		http.SetCookie(ex.ResponseWriter, &http.Cookie{
+		res.Cookies = append(res.Cookies, http.Cookie{
 			Name:    name,
 			Value:   "",
 			Path:    "/",
@@ -34,7 +36,7 @@ func handleCookiesDelete(ex *exchange.Exchange) response.Response {
 		})
 	}
 
-	return *ex.RedirectResponse("/cookies")
+	return *res
 }
 
 func handleCookiesSet(ex *exchange.Exchange) response.Response {

@@ -102,10 +102,9 @@ func handleMix(ex *exchange.Exchange) response.Response {
 		return response.BadRequest(err.Error())
 	}
 
-	var status int
-	headers := http.Header{}
-	cookies := map[string]string{}
-	var deleteCookies []string
+	res := &response.Response{
+		Header: http.Header{},
+	}
 	var redirectTo string
 	var payload []byte
 	var delay time.Duration
@@ -124,7 +123,7 @@ func handleMix(ex *exchange.Exchange) response.Response {
 				code = codes[0]
 			}
 
-			status, err = strconv.Atoi(code)
+			res.Status, err = strconv.Atoi(code)
 			if err != nil {
 				return response.BadRequest(err.Error())
 			}
@@ -134,17 +133,27 @@ func handleMix(ex *exchange.Exchange) response.Response {
 			if err != nil {
 				return response.BadRequest(err.Error())
 			}
-			headers.Add(entry.Args[0], headerValue)
+			res.Header.Add(entry.Args[0], headerValue)
 
 		case "c":
 			cookieValue, err := url.QueryUnescape(entry.Args[1])
 			if err != nil {
 				return response.BadRequest(err.Error())
 			}
-			cookies[entry.Args[0]] = cookieValue
+			res.Cookies = append(res.Cookies, http.Cookie{
+				Name:  entry.Args[0],
+				Value: cookieValue,
+				Path:  "/",
+			})
 
 		case "cd":
-			deleteCookies = append(deleteCookies, entry.Args[0])
+			res.Cookies = append(res.Cookies, http.Cookie{
+				Name:    entry.Args[0],
+				Value:   "",
+				Path:    "/",
+				Expires: time.Unix(0, 0),
+				MaxAge:  -1, // This will produce `Max-Age: 0` in the cookie.
+			})
 
 		case "r":
 			if redirectTo != "" {
@@ -185,46 +194,22 @@ func handleMix(ex *exchange.Exchange) response.Response {
 	}
 
 	if redirectTo != "" {
-		if status == 0 {
-			status = http.StatusTemporaryRedirect
+		if res.Status == 0 {
+			res.Status = http.StatusTemporaryRedirect
 		}
-		headers.Set("Location", redirectTo)
-	}
-
-	if status == 0 {
-		status = http.StatusOK
+		res.Header.Set("Location", redirectTo)
 	}
 
 	if delay > 0 {
 		time.Sleep(delay)
 	}
 
-	if _, ok := headers["Content-Length"]; !ok {
-		if headers == nil {
-			headers = http.Header{}
-		}
-		headers.Set("Content-Length", strconv.Itoa(len(payload)))
+	if _, ok := res.Header["Content-Length"]; !ok {
+		res.Header.Set("Content-Length", strconv.Itoa(len(payload)))
 	}
 
-	for key, value := range cookies {
-		http.SetCookie(ex.ResponseWriter, &http.Cookie{
-			Name:  key,
-			Value: value,
-			Path:  "/",
-		})
-	}
-
-	for _, name := range deleteCookies {
-		http.SetCookie(ex.ResponseWriter, &http.Cookie{
-			Name:    name,
-			Value:   "",
-			Path:    "/",
-			Expires: time.Unix(0, 0),
-			MaxAge:  -1, // This will produce `Max-Age: 0` in the cookie.
-		})
-	}
-
-	return response.New(status, headers, payload)
+	res.Body = payload
+	return *res
 }
 
 func handleMixer(ex *exchange.Exchange) response.Response {

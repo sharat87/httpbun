@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/response"
 	"io"
 	"mime"
 	"mime/multipart"
-	"net/http"
 	"net/url"
 	"strings"
 	"unicode/utf8"
@@ -27,7 +25,7 @@ type Info struct {
 	Files   map[string]any `json:"files"`
 }
 
-func InfoJSON(ex *exchange.Exchange) response.Response {
+func InfoJSON(ex *exchange.Exchange) (*Info, error) {
 	args := make(map[string]any)
 	for name, values := range ex.Request.URL.Query() {
 		if len(values) > 1 {
@@ -51,7 +49,7 @@ func InfoJSON(ex *exchange.Exchange) response.Response {
 	}
 	contentType, params, err := mime.ParseMediaType(contentTypeHeaderValue)
 	if err != nil {
-		return response.BadRequest("Error parsing content type %q %v.", ex.HeaderValueLast(c.ContentType), err)
+		return nil, fmt.Errorf("error parsing content type %q %v", ex.HeaderValueLast(c.ContentType), err)
 	}
 
 	form := make(map[string]any)
@@ -86,7 +84,7 @@ func InfoJSON(ex *exchange.Exchange) response.Response {
 		reader := multipart.NewReader(ex.Request.Body, params["boundary"])
 		allFileData, err := reader.ReadForm(32 << 20)
 		if err != nil {
-			return response.BadRequest("Error reading multipart form data: %v", err)
+			return nil, fmt.Errorf("error reading multipart form data: %v", err)
 		}
 
 		for name, fileHeaders := range allFileData.File {
@@ -134,5 +132,5 @@ func InfoJSON(ex *exchange.Exchange) response.Response {
 	result.Json = jsonData
 	result.Files = files
 
-	return response.Response{Status: http.StatusOK, Body: result}
+	return &result, nil
 }

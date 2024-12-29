@@ -17,8 +17,11 @@ var Routes = map[string]exchange.HandlerFn{
 
 func handleImageSvg(ex *exchange.Exchange) response.Response {
 	// todo: why isn't this SVG content-type being set by itself, like all the other assets. Is it the extension in the URL?
-	ex.ResponseWriter.Header().Set(c.ContentType, "image/svg+xml")
-	return assets.WriteAsset("svg-logo.svg")
+	res := assets.WriteAsset("svg-logo.svg")
+	res.Header = http.Header{
+		c.ContentType: []string{"image/svg+xml"},
+	}
+	return *res
 }
 
 func handleRobotsTxt(ex *exchange.Exchange) response.Response {

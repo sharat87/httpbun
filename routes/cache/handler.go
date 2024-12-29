@@ -19,16 +19,28 @@ func handleCache(ex *exchange.Exchange) response.Response {
 			ex.HeaderValueLast("If-None-Match") == ""
 
 	if shouldSendData {
-		return responses.InfoJSON(ex)
+		info, err := responses.InfoJSON(ex)
+		if err != nil {
+			return response.BadRequest(err.Error())
+		}
+		return response.Response{Body: info}
 	} else {
-		return response.New(http.StatusNotModified, nil, nil)
+		return response.Response{Status: http.StatusNotModified}
 	}
 }
 
 func handleCacheControl(ex *exchange.Exchange) response.Response {
-	// todo: setting header here is an abstraction leak
-	ex.ResponseWriter.Header().Set("Cache-Control", "public, max-age="+ex.Field("age"))
-	return responses.InfoJSON(ex)
+	res, err := responses.InfoJSON(ex)
+	if err != nil {
+		return response.BadRequest(err.Error())
+	}
+
+	return response.Response{
+		Header: http.Header{
+			"Cache-Control": {"public, max-age=" + ex.Field("age")},
+		},
+		Body: res,
+	}
 }
 
 func handleEtag(ex *exchange.Exchange) response.Response {
@@ -37,8 +49,12 @@ func handleEtag(ex *exchange.Exchange) response.Response {
 	etagInHeader := ex.HeaderValueLast("If-None-Match")
 
 	if etagInUrl == etagInHeader {
-		return response.New(http.StatusNotModified, nil, nil)
+		return response.Response{Status: http.StatusNotModified}
 	} else {
-		return responses.InfoJSON(ex)
+		info, err := responses.InfoJSON(ex)
+		if err != nil {
+			return response.BadRequest(err.Error())
+		}
+		return response.Response{Body: info}
 	}
 }
