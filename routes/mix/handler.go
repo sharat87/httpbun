@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"encoding/base64"
 	"github.com/sharat87/httpbun/assets"
+	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/response"
+	"github.com/sharat87/httpbun/util"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -29,12 +32,13 @@ var Routes = map[string]exchange.HandlerFn{
 }
 
 var singleValueDirectives = map[string]any{
-	"s":   nil,
-	"cd":  nil,
-	"r":   nil,
-	"b64": nil,
-	"d":   nil,
-	"t":   nil,
+	"s":     nil,
+	"cd":    nil,
+	"r":     nil,
+	"b64":   nil,
+	"d":     nil,
+	"t":     nil,
+	"slack": nil,
 }
 
 var pairValueDirectives = map[string]any{
@@ -174,6 +178,9 @@ func handleMix(ex *exchange.Exchange) response.Response {
 				return response.BadRequest(err.Error())
 			}
 
+		case "slack":
+			sendRequestToSlack(entry.Args[0], ex)
+
 		}
 	}
 
@@ -240,4 +247,42 @@ func renderTemplate(ex *exchange.Exchange, templateContent string) ([]byte, erro
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func sendRequestToSlack(param string, ex *exchange.Exchange) {
+	message := "*From*: `" + ex.Request.RemoteAddr + "`\n\n```\n" + ex.Request.Method + " " + ex.FullUrl() + "\n"
+
+	for k, v := range ex.Request.Header {
+		message += k + ": " + v[0] + "\n"
+	}
+
+	incomingBody, err := io.ReadAll(ex.Request.Body)
+	if err == nil {
+		if len(incomingBody) > 0 {
+			message += "\n" + string(incomingBody) + "\n```\n"
+		} else {
+			message += "```\n\n_No request body._\n"
+		}
+	} else {
+		message += "```\n\n_*Error reading body: " + err.Error() + "*_\n"
+	}
+
+	message += "\n-- Httpbun (<" + ex.FindScheme() + "://" + ex.Request.Host + "|" + ex.Request.Host + ">)\n"
+
+	if strings.HasPrefix(param, "xoxb-") {
+		// param is Slack API token
+		// not supported yet
+	} else if strings.Count(param, "/") == 2 {
+		// param is Slack webhook URL
+		resp, err := http.DefaultClient.Post(
+			"https://hooks.slack.com/services/"+param,
+			c.ApplicationJSON,
+			bytes.NewReader(util.ToJsonMust(map[string]any{
+				"text": message,
+			})),
+		)
+		if err != nil {
+			log.Printf("Error sending message to Slack: %v :: %v", err, resp)
+		}
+	}
 }

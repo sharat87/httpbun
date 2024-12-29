@@ -1,4 +1,4 @@
-const pathPrefix = "{{.pathPrefix}}"
+const pathPrefix = "{{.spec.PathPrefix}}"
 
 customElements.define("url-pane", class extends HTMLElement {
 	constructor() {
@@ -30,7 +30,7 @@ customElements.define("url-pane", class extends HTMLElement {
 	}
 
 	set path(path) {
-		const url = `${location.protocol}//${location.host}${pathPrefix ? "/" + pathPrefix : ""}${path}`
+		const url = `${location.protocol}//${location.host}${pathPrefix}${path}`
 		this.a && (this.a.href = this.a.innerText = url)
 
 		this.lengthWarning.style.display = url.length > 2000 ? "" : "none"

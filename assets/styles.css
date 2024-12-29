@@ -163,6 +163,15 @@ footer {
 
 form label {
 	text-align: right;
+	height: 1.4em;
+	line-height: 1.4em;
+	margin: 3px 0;
+}
+
+.entry {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .4em;
 }
 
 summary {
@@ -176,6 +185,8 @@ input, textarea {
 
 input {
 	font: inherit;
+	height: 1.4em;
+	line-height: 1.4em;
 }
 
 textarea {

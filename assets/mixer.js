@@ -11,11 +11,11 @@ class EntryElement extends HTMLElement {
 
 	connectedCallback() {
 		this.directive = this.tagName.substring("entry-".length).toLowerCase()
-		this.className = "entry flex"
+		this.className = "entry"
 
-		this.innerHTML = this.formControl()
+		this.innerHTML = "<div>" + this.formControl() + "</div>"
 
-		const label = el(`<label style="flex:0 0 min(20%, 9em);text-align:right">${LABELS[this.directive]}</label>`)
+		const label = el(`<label style="flex:0 0 min(20%, 9em)">${LABELS[this.directive]}</label>`)
 		this.insertBefore(label, this.firstChild)
 
 		const delBtn = el(`<button class=del>&times;</button>`)
@@ -38,7 +38,11 @@ class EntryElement extends HTMLElement {
 
 customElements.define("entry-s", class extends EntryElement {
 	formControl() {
-		return `<input placeholder='One or more status codes, comma separated' required value=200>`
+		return [
+			`<input placeholder='One or more status codes, comma separated' required value=200>`,
+			"<small>A single status integer, like <code>200</code> or <code>400</code>, or a comma-separated list of",
+			" statuses, like <code>200, 400, 401</code>, out of which a random one will be used.</small>",
+		].join("")
 	}
 
 	get value() {
@@ -52,7 +56,7 @@ customElements.define("entry-s", class extends EntryElement {
 
 customElements.define("entry-h", class extends EntryElement {
 	formControl() {
-		return `<input required pattern='^[-_a-zA-Z0-9]+$' placeholder=key>:<input placeholder=value>`
+		return `<div class=flex><input required pattern='^[-_a-zA-Z0-9]+$' placeholder=key>:<input placeholder=value></div>`
 	}
 
 	get value() {
@@ -70,7 +74,7 @@ customElements.define("entry-h", class extends EntryElement {
 
 customElements.define("entry-c", class extends EntryElement {
 	formControl() {
-		return `<input required placeholder=name>:<input placeholder=value>`
+		return `<div class=flex><input required placeholder=name>:<input placeholder=value></div>`
 	}
 
 	get value() {
@@ -156,6 +160,23 @@ customElements.define("entry-d", class extends EntryElement {
 	}
 })
 
+customElements.define("entry-slack", class extends EntryElement {
+	formControl() {
+		return [
+			`<input pattern="^https://hooks.slack.com/services/[/\w]+" required placeholder="Slack webhook URL">`,
+			`<small>Full request details will be posted as a message to this Slack webhook.</small>`,
+		].join("")
+	}
+
+	get value() {
+		return encodeURIComponent(this.querySelector("input").value.match(/services\/(.+)$/)[1])
+	}
+
+	set value(v) {
+		this.querySelector("input").value = "https://hooks.slack.com/services/" + decodeURIComponent(v)
+	}
+})
+
 addBtnsEl.addEventListener("click", (event) => {
 	if (event.target.dataset.directive)
 		formEl.append(document.createElement("entry-" + event.target.dataset.directive))
@@ -186,7 +207,7 @@ function loadFromURL() {
 function recomputeURL() {
 	const url = new URL(location.href)
 	url.search = url.hash = ""
-	const pathItems = [pathPrefix, "/mix"]
+	const pathItems = ["/mix"]
 
 	for (const p of formEl.querySelectorAll("p, .entry")) {
 		pathItems.push(p.path)

@@ -21,10 +21,19 @@
 	<button data-directive=b64 no-repeat>Body</button>
 	<button data-directive=t no-repeat>Template</button>
 	<button data-directive=d no-repeat>Delay</button>
+	<button data-directive=slack no-repeat>Slack Request Log</button>
 </p>
 
 <style>
-.entry :is(input, textarea) {
+.entry > :nth-child(2) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.entry small {
+    color: #888;
+}
+.entry input {
     flex: 1;
 }
 .entry + .entry {
@@ -36,7 +45,7 @@
 </style>
 
 <script>
-{{template "common.js"}}
+{{template "common.js" .}}
 {{template "mixer.js"}}
 </script>
 

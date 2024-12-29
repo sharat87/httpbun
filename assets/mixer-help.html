@@ -24,6 +24,7 @@
 <p>This URL responds with status <code>401</code>, content type as <code>text/html</code>, and the response body
     containing just <code>&lt;script&gt;alert(42)&lt;/script&gt;</code> in it. This URL is suddenly handy to test an API
     client’s XSS protection from such responses.</p>
+
 <h3>Directive <code>s</code></h3>
 <ul>
     <li>1️⃣ Non-repeatable.
@@ -34,6 +35,7 @@
     <code>400</code> etc., and the <code>/mix</code> URL will respond with that status code. This can also be a CSV of
     multiple numbers, like <code>200,400,500</code>, in which case the response status will be a random choice among
     them.</p>
+
 <h3>Directive <code>h</code></h3>
 <ul>
     <li>♾️ Repeatable.
@@ -45,6 +47,7 @@
     special characters, <i>especially</i> <code>/</code> and <code>:</code>, must be URL encoded. For example, if wanted
     <code>text/html</code> as the header value, we have to use <code>text%2Fhtml</code> in the <code>/mix</code> URL.
     The Mixer UI can handle this encoding automatically.</p>
+
 <h3>Directive <code>c</code></h3>
 <ul>
     <li>♾️ Repeatable.
@@ -55,6 +58,7 @@
 <p>The response will set a cookie, with given name and value. Essentially, this works by sending a <code>Set-Cookie:
     name=value; Path=/</code> header in the response. Nothing that can’t already be achieved with the <code>h</code>
     directive, but this exists for convenience.</p>
+
 <h3>Directive <code>cd</code></h3>
 <ul>
     <li>♾️ Repeatable.
@@ -65,6 +69,7 @@
 <p>Deletes the cookie with the given name. Essentially, this works by sending a <code>Set-Cookie</code> header with this
     name, and expiry date set to 1-Jan-1970, so the cookie will be immediately deemed expired, and generally deleted by
     clients.</p>
+
 <h3>Directive <code>r</code></h3>
 <ul>
     <li>1️⃣ Non-repeatable.
@@ -75,6 +80,7 @@
 <p>Responds with a redirect to the given URL. This is the same as <code>/mix/s=301/h:Location=url-here</code>, but
     exists for the convenience. To control the response states used, use a separate <code>s</code> directive method
     instead.</p>
+
 <h3>Directive <code>d</code></h3>
 <ul>
     <li>1️⃣ Non-repeatable.
@@ -84,6 +90,7 @@
 </ul>
 <p>Delays response from the server by given number of seconds. Decimal point values are allowed. Must be between 0 and
     10.</p>
+
 <h3>Directive <code>b64</code></h3>
 <ul>
     <li>1️⃣ Non-repeatable.
@@ -93,6 +100,7 @@
 </ul>
 <p>The body of the response will be the base64-decoded content of the given value. The given value <i>has</i> to be
     valid base64-encoded data, including trailing <code>=</code> if applicable.</p>
+
 <h3>Directive <code>t</code></h3>
 <ul>
     <li>1️⃣ Non-repeatable.
@@ -104,6 +112,20 @@
     be rendered, and the result will be the response body.</p>
 <p>This is a very powerful directive, and offers rich and creative ways of constructing the response body. This
     directive is very much beta, and the API is subject to change (or disappear) with little notice.</p>
+
+<h3>Directive <code>slack</code></h3>
+<ul>
+    <li>1️⃣ Non-repeatable.
+    <li>Syntax: <code>/slack=</code>.
+</ul>
+<p>This directive should be set to the "token" part of a Slack webhook URL, after being URL encoded. Or when using the
+    mixer, just enter the Slack webhook URL.</p>
+<p>If provided, the full request will be sent as a message to Slack. This provides functionality like a RequestBin. For
+    example, if we use a <code>/mix</code> URL as the webhook endpoint on any service, we can get a nice log of all
+    requests made to it on Slack.</p>
+<p>Note that Slack webhook URLs should be treated like secrets, like passwords. In that sense, <code>/mix</code> URLs
+    that us the <code>slack</code> directive, should also be treated like passwords. Exercise prudence.</p>
+
 <h3>Directive <code>end</code></h3>
 <ul>
     <li>1️⃣ Non-repeatable.
@@ -115,10 +137,14 @@
     behaviour.</p>
 <p>This directive is useful when we have to submit a URL to a client, that then appends more path to the end of it,
     which we want Httpbun to ignore.</p>
-<h3>Template API</h3><p>This is the reference for APIs available in the <code>t</code> directive. Note that the whole
+
+<h3>Template API</h3>
+<p>This is the reference for APIs available in the <code>t</code> directive. Note that the whole
     <code>t</code> directive itself, is very beta, very up-in-the-air, and may even disappear one day. It’s an
     experiment only, for now.</p>
-<h4>Function <code>seq</code></h4><p>A function that produces a list of sequential numbers. Can take one, two or three
+
+<h4>Function <code>seq</code></h4>
+<p>A function that produces a list of sequential numbers. Can take one, two or three
     numeric parameters.</p>
 <ol>
     <li>One number argument: Generate natural numbers from <code>0</code> (including) to the given number (excluding),
@@ -135,6 +161,7 @@
     <li><code>IsFirst</code>: If this item is the very first item in the generated list, this is <code>true</code>.
     <li><code>IsLast</code>: Similar to above, but for the very last item.
 </ul>
+
 <h4>Function <code>toJSON</code></h4><p>Takes a single argument, of any type, and attempts to serialise it to JSON.
     Returns the JSON string.</p>
 <pre><code>{{`{{seq 3 | toJSON}}`}}</code></pre>

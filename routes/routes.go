@@ -54,8 +54,6 @@ func GetRoutes() []Route {
 		"/payload":                      handlePayload,
 		"/status/(?P<codes>[\\w,]+)":    handleStatus,
 		"/ip(\\.(?P<format>txt|json))?": handleIp,
-
-		"/(?P<hook>hooks.slack.com/services/.*)": handleSlack,
 	}
 
 	maps.Copy(routeMap, method.Routes)
