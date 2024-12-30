@@ -8,7 +8,7 @@ import (
 func NewForTest(req http.Request, fields map[string]string) Exchange {
 	return Exchange{
 		Request:    &req,
-		Fields:     fields,
+		fields:     fields,
 		cappedBody: io.LimitReader(req.Body, 10000),
 	}
 }

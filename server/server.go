@@ -7,9 +7,7 @@ import (
 	"github.com/sharat87/httpbun/routes"
 	"github.com/sharat87/httpbun/routes/responses"
 	"github.com/sharat87/httpbun/server/spec"
-	"github.com/sharat87/httpbun/util"
 	"log"
-	"maps"
 	"net"
 	"net/http"
 	"os"
@@ -114,9 +112,7 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	for _, route := range s.routes {
-		fields, isMatch := util.MatchRoutePat(route.Pat, ex.RoutedPath)
-		if isMatch {
-			maps.Copy(ex.Fields, fields)
+		if ex.MatchAndLoadFields(route.Pat) {
 			ex.Finish(route.Fn(ex))
 			return
 		}

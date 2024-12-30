@@ -14,8 +14,9 @@ vars:
 
 tasks:
   run:
+    deps:
+      - fmt
     cmds:
-      - task: fmt
       - go mod tidy
       - go run {{.LD_FLAGS}} . --bind localhost:3090
 
@@ -33,10 +34,13 @@ tasks:
   fmt:
     cmds:
       - go fmt ./...
+    sources:
+      - "**/*.go"
 
   test:
     cmds:
-      - go test -count=1 -vet=all ./...
+      # The `-count=1` is to disable test caching.
+      - go test -cover -count=1 -vet=all ./...
 
   patch:
     cmds:

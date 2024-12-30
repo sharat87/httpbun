@@ -11,7 +11,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -19,7 +18,7 @@ import (
 type Exchange struct {
 	Request        *http.Request
 	responseWriter http.ResponseWriter
-	Fields         map[string]string // todo: this should be private!
+	fields         map[string]string // todo: this should be private!
 	cappedBody     io.Reader
 	RoutedPath     string
 	ServerSpec     spec.Spec
@@ -31,7 +30,7 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 	ex := &Exchange{
 		Request:        req,
 		responseWriter: w,
-		Fields:         map[string]string{},
+		fields:         map[string]string{},
 		cappedBody:     io.LimitReader(req.Body, 10000),
 		RoutedPath:     strings.TrimPrefix(req.URL.EscapedPath(), serverSpec.PathPrefix),
 		ServerSpec:     serverSpec,
@@ -64,14 +63,16 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 	return ex
 }
 
-func (ex Exchange) MatchAndLoadFields(routePat regexp.Regexp) bool {
+func (ex Exchange) MatchAndLoadFields(routePat string) bool {
 	fields, isMatch := util.MatchRoutePat(routePat, ex.RoutedPath)
-	maps.Copy(ex.Fields, fields)
+	if isMatch {
+		maps.Copy(ex.fields, fields)
+	}
 	return isMatch
 }
 
 func (ex Exchange) Field(name string) string {
-	return ex.Fields[name]
+	return ex.fields[name]
 }
 
 func (ex Exchange) RedirectResponse(target string) *response.Response {

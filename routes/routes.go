@@ -23,14 +23,13 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type Route struct {
-	Pat regexp.Regexp
+	Pat string
 	Fn  exchange.HandlerFn
 }
 
@@ -74,7 +73,7 @@ func GetRoutes() []Route {
 			pat = "(?s)^" + pat + "$"
 		}
 		routes = append(routes, Route{
-			Pat: *regexp.MustCompile(pat),
+			Pat: pat,
 			Fn:  fn,
 		})
 	}
