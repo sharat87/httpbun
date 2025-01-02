@@ -109,6 +109,7 @@ pre {
 }
 
 ::placeholder {
+	font-family: system-ui;
 	font-style: italic;
 }
 

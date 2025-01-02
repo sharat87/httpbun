@@ -25,10 +25,12 @@ type entry struct {
 	Args []string `json:"args"`
 }
 
+const PatMix = `/mix\b.*`
+
 var Routes = map[string]exchange.HandlerFn{
-	`/mix\b(?P<conf>.*)`:      handleMix,
-	`/mixer((?P<conf>/.*)|$)`: handleMixer,
-	`/help/mixer`:             handleMixerHelp,
+	PatMix:           handleMix,
+	`/mixer\b(/.*)?`: handleMixer,
+	`/help/mixer`:    handleMixerHelp,
 }
 
 var singleValueDirectives = map[string]any{
@@ -49,8 +51,6 @@ var pairValueDirectives = map[string]any{
 func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
 	// We need raw path here, with percent encoding intact.
 	path := strings.TrimPrefix(ex.RoutedPath, "/mix")
-	query := ex.Request.URL.RawQuery
-
 	var source, itemSep string
 	var unescape func(string) (string, error)
 
@@ -59,7 +59,7 @@ func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
 		itemSep = "/"
 		unescape = url.PathUnescape
 	} else {
-		source = query
+		source = ex.Request.URL.RawQuery
 		itemSep = "&"
 		unescape = url.QueryUnescape
 	}
@@ -208,7 +208,10 @@ func handleMix(ex *exchange.Exchange) response.Response {
 		res.Header.Set("Content-Length", strconv.Itoa(len(payload)))
 	}
 
-	res.Body = payload
+	if len(payload) > 0 {
+		res.Body = payload
+	}
+
 	return *res
 }
 

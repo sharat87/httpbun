@@ -68,16 +68,16 @@ func TestFieldParsingInvalidPath(t *testing.T) {
 func TestValidBasicAuth(t *testing.T) {
 	s := assert.New(t)
 
-	ex := exchange.NewForTest(
+	resp := exchange.InvokeHandlerForTest(
+		"basic-auth/jam/bread",
 		http.Request{
 			Header: http.Header{
 				"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte("jam:bread"))},
 			},
 		},
-		map[string]string{"user": "jam", "pass": "bread"},
+		BasicAuthRoute,
+		Routes[BasicAuthRoute],
 	)
-
-	resp := handleAuthBasic(&ex)
 
 	s.Equal(0, resp.Status)
 }
@@ -85,16 +85,16 @@ func TestValidBasicAuth(t *testing.T) {
 func TestValidBasicAuthWithSpecialChars(t *testing.T) {
 	s := assert.New(t)
 
-	ex := exchange.NewForTest(
+	resp := exchange.InvokeHandlerForTest(
+		"basic-auth/hello%20world@example.com/p@ss%2Fw0rd%21",
 		http.Request{
 			Header: http.Header{
 				"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte("hello world@example.com:p@ss/w0rd!"))},
 			},
 		},
-		map[string]string{"user": "hello world@example.com", "pass": "p@ss/w0rd!"},
+		BasicAuthRoute,
+		Routes[BasicAuthRoute],
 	)
-
-	resp := handleAuthBasic(&ex)
 
 	s.Equal(0, resp.Status)
 }
@@ -102,12 +102,12 @@ func TestValidBasicAuthWithSpecialChars(t *testing.T) {
 func TestMissingAuthHeader(t *testing.T) {
 	s := assert.New(t)
 
-	ex := exchange.NewForTest(
+	resp := exchange.InvokeHandlerForTest(
+		"basic-auth/a/b",
 		http.Request{},
-		map[string]string{},
+		BasicAuthRoute,
+		Routes[BasicAuthRoute],
 	)
-
-	resp := handleAuthBasic(&ex)
 
 	s.Equal(401, resp.Status)
 	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get(c.WWWAuthenticate))

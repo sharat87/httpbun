@@ -169,11 +169,12 @@ customElements.define("entry-slack", class extends EntryElement {
 	}
 
 	get value() {
-		return encodeURIComponent(this.querySelector("input").value.match(/services\/(.+)$/)[1])
+		const rawPath = this.querySelector("input").value.match(/services\/(.+)$/);
+		return rawPath ? encodeURIComponent(rawPath[1]) : ""
 	}
 
 	set value(v) {
-		this.querySelector("input").value = "https://hooks.slack.com/services/" + decodeURIComponent(v)
+		this.querySelector("input").value = v ? "https://hooks.slack.com/services/" + decodeURIComponent(v) : ""
 	}
 })
 

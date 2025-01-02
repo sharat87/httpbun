@@ -40,25 +40,29 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 		req.URL.Host = req.Host
 	}
 
-	// Need to set the exact origin, since `*` won't work if request includes credentials.
-	// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
-	originHeader := ex.HeaderValueLast("Origin")
-	if originHeader != "" {
-		ex.responseWriter.Header().Set("Access-Control-Allow-Origin", originHeader)
-		ex.responseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
-	}
+	if ex.responseWriter != nil {
+		// todo: these common headers should be part of a "middleware" system
 
-	accessControlHeaders := ex.Request.Header.Get("Access-Control-Request-Headers")
-	if accessControlHeaders != "" {
-		ex.responseWriter.Header().Set("Access-Control-Allow-Headers", accessControlHeaders)
-	}
+		// Need to set the exact origin, since `*` won't work if request includes credentials.
+		// See <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials>.
+		originHeader := ex.HeaderValueLast("Origin")
+		if originHeader != "" {
+			ex.responseWriter.Header().Set("Access-Control-Allow-Origin", originHeader)
+			ex.responseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
 
-	accessControlMethods := ex.Request.Header.Get("Access-Control-Request-Method")
-	if accessControlMethods != "" {
-		ex.responseWriter.Header().Set("Access-Control-Allow-Methods", accessControlMethods)
-	}
+		accessControlHeaders := ex.Request.Header.Get("Access-Control-Request-Headers")
+		if accessControlHeaders != "" {
+			ex.responseWriter.Header().Set("Access-Control-Allow-Headers", accessControlHeaders)
+		}
 
-	ex.responseWriter.Header().Set("X-Powered-By", "httpbun/"+serverSpec.Commit)
+		accessControlMethods := ex.Request.Header.Get("Access-Control-Request-Method")
+		if accessControlMethods != "" {
+			ex.responseWriter.Header().Set("Access-Control-Allow-Methods", accessControlMethods)
+		}
+
+		ex.responseWriter.Header().Set("X-Powered-By", "httpbun/"+serverSpec.Commit)
+	}
 
 	return ex
 }
