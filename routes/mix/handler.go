@@ -114,7 +114,7 @@ func handleMix(ex *exchange.Exchange) response.Response {
 
 		case "s":
 			value := entry.Args[0]
-			codes := regexp.MustCompile("\\d+").FindAllString(value, -1)
+			codes := regexp.MustCompile(`\d+`).FindAllString(value, -1)
 
 			var code string
 			if len(codes) > 1 {
@@ -129,27 +129,18 @@ func handleMix(ex *exchange.Exchange) response.Response {
 			}
 
 		case "h":
-			headerValue, err := url.QueryUnescape(entry.Args[1])
-			if err != nil {
-				return response.BadRequest(err.Error())
-			}
-			res.Header.Add(entry.Args[0], headerValue)
+			res.Header.Add(entry.Args[0], entry.Args[1])
 
 		case "c":
-			cookieValue, err := url.QueryUnescape(entry.Args[1])
-			if err != nil {
-				return response.BadRequest(err.Error())
-			}
 			res.Cookies = append(res.Cookies, http.Cookie{
 				Name:  entry.Args[0],
-				Value: cookieValue,
+				Value: entry.Args[1],
 				Path:  "/",
 			})
 
 		case "cd":
 			res.Cookies = append(res.Cookies, http.Cookie{
 				Name:    entry.Args[0],
-				Value:   "",
 				Path:    "/",
 				Expires: time.Unix(0, 0),
 				MaxAge:  -1, // This will produce `Max-Age: 0` in the cookie.
@@ -173,15 +164,24 @@ func handleMix(ex *exchange.Exchange) response.Response {
 		case "d":
 			seconds, err := strconv.ParseFloat(entry.Args[0], 32)
 			if err != nil {
-				return response.BadRequest(err.Error())
+				if strings.HasSuffix(err.Error(), "invalid syntax") {
+					return response.BadRequest("invalid delay value: '" + entry.Args[0] + "'")
+				} else {
+					return response.BadRequest(err.Error())
+				}
 			}
-			if seconds > 10 {
+			if seconds < 0 {
+				return response.BadRequest("delay must be a positive number")
+			} else if seconds > 10 {
 				return response.BadRequest("delay must be less than 10 seconds")
 			}
 			delay = time.Duration(int(seconds * float64(time.Second)))
 
 		case "t":
 			templateContent, err := base64.StdEncoding.DecodeString(entry.Args[0])
+			if err != nil {
+				return response.BadRequest(err.Error())
+			}
 			payload, err = renderTemplate(ex, string(templateContent))
 			if err != nil {
 				return response.BadRequest(err.Error())
@@ -204,12 +204,11 @@ func handleMix(ex *exchange.Exchange) response.Response {
 		time.Sleep(delay)
 	}
 
-	if _, ok := res.Header["Content-Length"]; !ok {
-		res.Header.Set("Content-Length", strconv.Itoa(len(payload)))
-	}
-
 	if len(payload) > 0 {
 		res.Body = payload
+		if _, ok := res.Header["Content-Length"]; !ok {
+			res.Header.Set("Content-Length", strconv.Itoa(len(payload)))
+		}
 	}
 
 	return *res
