@@ -14,9 +14,11 @@ import (
 
 var BasicAuthRoute = util.RoutePat("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?")
 
+var BearerAuthRoute = util.RoutePat(`/bearer(/(?P<tok>[^/]+))?/?`)
+
 var Routes = map[string]exchange.HandlerFn{
 	BasicAuthRoute:             handleAuthBasic,
-	"/bearer(/(?P<tok>\\w+))?": handleAuthBearer,
+	BearerAuthRoute:            handleAuthBearer,
 	"/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?": handleAuthDigest,
 	"/digest-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?":                handleAuthDigest,
 }
@@ -42,10 +44,17 @@ func handleAuthBasic(ex *exchange.Exchange) response.Response {
 func handleAuthBearer(ex *exchange.Exchange) response.Response {
 	expectedToken := ex.Field("tok")
 
+	if expectedToken == "" {
+		return response.Response{
+			Status: http.StatusNotFound,
+			Body:   "missing/non-empty token, use /bearer/<expected_token> instead",
+		}
+	}
+
 	authHeader := ex.HeaderValueLast("Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		return response.New(http.StatusUnauthorized, http.Header{
-			c.WWWAuthenticate: []string{"Bearer"},
+			c.WWWAuthenticate: []string{"Bearer realm=\"Fake Realm\""},
 		}, nil)
 	}
 
