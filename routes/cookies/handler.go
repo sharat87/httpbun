@@ -7,10 +7,16 @@ import (
 	"time"
 )
 
+const (
+	CookiesRoute       = `/cookies?`
+	CookiesDeleteRoute = `/cookies?/delete`
+	CookiesSetRoute    = `/cookies?/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?`
+)
+
 var Routes = map[string]exchange.HandlerFn{
-	`/cookies?`:        handleCookies,
-	`/cookies?/delete`: handleCookiesDelete,
-	`/cookies?/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?`: handleCookiesSet,
+	CookiesRoute:       handleCookies,
+	CookiesDeleteRoute: handleCookiesDelete,
+	CookiesSetRoute:    handleCookiesSet,
 }
 
 func handleCookies(ex *exchange.Exchange) response.Response {

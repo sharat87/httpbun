@@ -19,9 +19,9 @@ var BearerAuthRoute = util.RoutePat(`/bearer(/(?P<tok>[^/]+))?/?`)
 var DigestAuthRoute = util.RoutePat(`/digest-auth(/((?P<qop>[^/]+)/)?(?P<user>[^/]+)/(?P<pass>[^/]+))?/?`)
 
 var Routes = map[string]exchange.HandlerFn{
-	BasicAuthRoute:             handleAuthBasic,
-	BearerAuthRoute:            handleAuthBearer,
-	DigestAuthRoute:            handleAuthDigest,
+	BasicAuthRoute:  handleAuthBasic,
+	BearerAuthRoute: handleAuthBearer,
+	DigestAuthRoute: handleAuthDigest,
 }
 
 func handleAuthBasic(ex *exchange.Exchange) response.Response {
