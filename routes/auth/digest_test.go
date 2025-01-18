@@ -2,13 +2,48 @@ package auth
 
 import (
 	"github.com/sharat87/httpbun/exchange"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/url"
 	"testing"
 )
 
-func TestComputeDigestAuthResponse(t *testing.T) {
+type DigestSuite struct {
+	suite.Suite
+}
+
+func TestDigestSuite(t *testing.T) {
+	suite.Run(t, new(DigestSuite))
+}
+
+func (s *DigestSuite) TestDigestAuthEmpty() {
+	resp := exchange.InvokeHandlerForTest(
+		"digest-auth",
+		http.Request{},
+		DigestAuthRoute,
+		Routes[DigestAuthRoute],
+	)
+
+	s.Equal(404, resp.Status)
+	s.Equal(0, len(resp.Header))
+	s.Equal("missing/non-empty username/password, use /digest-auth/<username>/<password> instead", resp.Body.(string))
+}
+
+func (s *DigestSuite) TestDigestAuthWithValidUsernameAndPasswordButMissingCredentials() {
+	resp := exchange.InvokeHandlerForTest(
+		"digest-auth/hammer/nails",
+		http.Request{},
+		DigestAuthRoute,
+		Routes[DigestAuthRoute],
+	)
+
+	s.Equal(401, resp.Status)
+	s.Equal(1, len(resp.Header))
+	s.Regexp("^Digest realm=\"httpbun realm\", qop=\"auth\",", resp.Header.Get("WWW-Authenticate"))
+	s.Equal(map[string]any{"authenticated": false, "token": "", "error": "missing authorization header"}, resp.Body)
+}
+
+func (s *DigestSuite) TestComputeDigestAuthResponse() {
 	fakeEx := &exchange.Exchange{
 		Request: &http.Request{
 			Method: "GET",
@@ -16,7 +51,7 @@ func TestComputeDigestAuthResponse(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, fakeEx.BodyString(), "")
+	s.Equal("", fakeEx.BodyString())
 
 	response, err := computeDigestAuthResponse(
 		"user",
@@ -28,15 +63,11 @@ func TestComputeDigestAuthResponse(t *testing.T) {
 		fakeEx,
 	)
 
-	assert.NoError(t, err)
-	assert.Equal(
-		t,
-		"dce226046ab3ff3eed7e033afddd0d32",
-		response,
-	)
+	s.NoError(err)
+	s.Equal("dce226046ab3ff3eed7e033afddd0d32", response)
 }
 
-func TestComputeDigestAuthIntResponse(t *testing.T) {
+func (s *DigestSuite) TestComputeDigestAuthIntResponse() {
 	fakeEx := &exchange.Exchange{
 		Request: &http.Request{
 			Method: "GET",
@@ -44,7 +75,7 @@ func TestComputeDigestAuthIntResponse(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, fakeEx.BodyString(), "")
+	s.Equal("", fakeEx.BodyString())
 
 	response, err := computeDigestAuthResponse(
 		"user",
@@ -56,10 +87,6 @@ func TestComputeDigestAuthIntResponse(t *testing.T) {
 		fakeEx,
 	)
 
-	assert.NoError(t, err)
-	assert.Equal(
-		t,
-		"eb5e13db29633478dacd26d232602146",
-		response,
-	)
+	s.NoError(err)
+	s.Equal("eb5e13db29633478dacd26d232602146", response)
 }

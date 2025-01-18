@@ -98,5 +98,5 @@ func TestMissingBearerAuthHeader(t *testing.T) {
 	)
 
 	s.Equal(401, resp.Status)
-	s.Equal("Bearer realm=\"Fake Realm\"", resp.Header.Get(c.WWWAuthenticate))
+	s.Equal("Bearer realm=\"httpbun realm\"", resp.Header.Get(c.WWWAuthenticate))
 }

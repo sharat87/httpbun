@@ -16,11 +16,12 @@ var BasicAuthRoute = util.RoutePat("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/
 
 var BearerAuthRoute = util.RoutePat(`/bearer(/(?P<tok>[^/]+))?/?`)
 
+var DigestAuthRoute = util.RoutePat(`/digest-auth(/((?P<qop>[^/]+)/)?(?P<user>[^/]+)/(?P<pass>[^/]+))?/?`)
+
 var Routes = map[string]exchange.HandlerFn{
 	BasicAuthRoute:             handleAuthBasic,
 	BearerAuthRoute:            handleAuthBearer,
-	"/digest-auth/(?P<qop>[^/]+)/(?P<user>[^/]+)/(?P<pass>[^/]+)/?": handleAuthDigest,
-	"/digest-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?":                handleAuthDigest,
+	DigestAuthRoute:            handleAuthDigest,
 }
 
 func handleAuthBasic(ex *exchange.Exchange) response.Response {
@@ -29,7 +30,7 @@ func handleAuthBasic(ex *exchange.Exchange) response.Response {
 
 	if !isAuthenticated {
 		return response.New(http.StatusUnauthorized, http.Header{
-			c.WWWAuthenticate: []string{"Basic realm=\"Fake Realm\""},
+			c.WWWAuthenticate: []string{"Basic realm=\"httpbun realm\""},
 		}, nil)
 	}
 
@@ -54,7 +55,7 @@ func handleAuthBearer(ex *exchange.Exchange) response.Response {
 	authHeader := ex.HeaderValueLast("Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		return response.New(http.StatusUnauthorized, http.Header{
-			c.WWWAuthenticate: []string{"Bearer realm=\"Fake Realm\""},
+			c.WWWAuthenticate: []string{"Bearer realm=\"httpbun realm\""},
 		}, nil)
 	}
 
@@ -71,6 +72,13 @@ func handleAuthBearer(ex *exchange.Exchange) response.Response {
 func handleAuthDigest(ex *exchange.Exchange) response.Response {
 	expectedQop, expectedUsername, expectedPassword := ex.Field("qop"), ex.Field("user"), ex.Field("pass")
 
+	if expectedUsername == "" || expectedPassword == "" {
+		return response.Response{
+			Status: http.StatusNotFound,
+			Body:   "missing/non-empty username/password, use /digest-auth/<username>/<password> instead",
+		}
+	}
+
 	requireCookieParamValue, _ := ex.QueryParamSingle("require-cookie")
 	requireCookie := requireCookieParamValue == "true" || requireCookieParamValue == "1" || requireCookieParamValue == "t"
 
@@ -82,7 +90,7 @@ func handleAuthDigest(ex *exchange.Exchange) response.Response {
 	if vals := ex.Request.Header["Authorization"]; len(vals) == 1 {
 		authHeader = vals[0]
 	} else {
-		return unauthorizedDigest(expectedQop, requireCookie, "")
+		return unauthorizedDigest(expectedQop, requireCookie, "missing authorization header")
 	}
 
 	givenDetails := parseDigestAuthHeader(authHeader)
@@ -142,7 +150,7 @@ func handleAuthDigest(ex *exchange.Exchange) response.Response {
 }
 
 // unauthorizedDigest builds a response with status 401 Unauthorized and WWW-Authenticate header, for Digest auth.
-func unauthorizedDigest(expectedQop string, setCookie bool, body string) response.Response {
+func unauthorizedDigest(expectedQop string, setCookie bool, error string) response.Response {
 	qop := expectedQop
 	if qop == "" {
 		qop = "auth"
@@ -162,11 +170,11 @@ func unauthorizedDigest(expectedQop string, setCookie bool, body string) respons
 	return response.Response{
 		Status: http.StatusUnauthorized,
 		Header: http.Header{c.WWWAuthenticate: []string{
-			"Digest realm=\"testrealm@host.com\", qop=\"" + qop + "\", nonce=\"" + newNonce +
+			"Digest realm=\"httpbun realm\", qop=\"" + qop + "\", nonce=\"" + newNonce +
 				"\", opaque=\"" + opaque + "\", algorithm=MD5, stale=FALSE",
 		}},
 		Cookies: cookies,
-		Body:    body,
+		Body:    map[string]any{"authenticated": false, "token": "", "error": error},
 	}
 }
 

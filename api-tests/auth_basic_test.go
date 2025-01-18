@@ -35,7 +35,7 @@ func TestBasicAuthIncorrectPassword(t *testing.T) {
 	})
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
 	s.NotContains(resp.Header, c.ContentType)
-	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get(c.WWWAuthenticate))
+	s.Equal("Basic realm=\"httpbun realm\"", resp.Header.Get(c.WWWAuthenticate))
 	s.Equal("", body)
 }
 
@@ -49,7 +49,7 @@ func TestBasicAuthIncorrectUsername(t *testing.T) {
 	})
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
 	s.NotContains(resp.Header, c.ContentType)
-	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get(c.WWWAuthenticate))
+	s.Equal("Basic realm=\"httpbun realm\"", resp.Header.Get(c.WWWAuthenticate))
 	s.Equal("", body)
 }
 
@@ -63,7 +63,7 @@ func TestBasicAuthIncorrectCreds(t *testing.T) {
 	})
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
 	s.NotContains(resp.Header, c.ContentType)
-	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get(c.WWWAuthenticate))
+	s.Equal("Basic realm=\"httpbun realm\"", resp.Header.Get(c.WWWAuthenticate))
 	s.Equal("", body)
 }
 
@@ -74,6 +74,6 @@ func TestBasicAuthMissingCreds(t *testing.T) {
 	})
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
 	s.NotContains(resp.Header, c.ContentType)
-	s.Equal("Basic realm=\"Fake Realm\"", resp.Header.Get(c.WWWAuthenticate))
+	s.Equal("Basic realm=\"httpbun realm\"", resp.Header.Get(c.WWWAuthenticate))
 	s.Equal("", body)
 }
