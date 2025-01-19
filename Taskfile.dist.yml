@@ -3,12 +3,12 @@ version: "3"
 
 vars:
   COMMIT:
-    sh: |
+    sh: |-
       git rev-parse HEAD
   NOW:
-    sh: |
+    sh: |-
       date -u +%FT%TZ
-  LD_FLAGS: |-
+  LD_FLAGS: >-
     -ldflags '-X github.com/sharat87/httpbun/server/spec.Commit={{.COMMIT}} -X github.com/sharat87/httpbun/server/spec.Date={{.NOW}}'
 
 

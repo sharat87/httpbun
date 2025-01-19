@@ -63,7 +63,6 @@ func ComputeFgForBg(c string) string {
 
 	luma := 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b) // per ITU-R BT.709
 
-	log.Printf("R: %v, G: %v, B: %v, Luma: %v", r, g, b, luma)
 	if luma > 100 {
 		return "#222e"
 	} else {

@@ -24,23 +24,35 @@
 	<button data-directive=slack no-repeat>Slack Request Log</button>
 </p>
 
+<datalist id="content-types">
+	<option value="application/javascript"></option>
+	<option value="application/json"></option>
+	<option value="application/octet-stream"></option>
+	<option value="application/x-www-form-urlencoded"></option>
+	<option value="application/xml"></option>
+	<option value="image/svg+xml"></option>
+	<option value="text/html"></option>
+	<option value="text/plain"></option>
+	<option value="text/xml"></option>
+</datalist>
+
 <style>
 .entry {
-    align-items: start;
+	align-items: start;
 }
 .entry > :nth-child(2) {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
 }
 .entry small {
-    color: #888;
+	color: #888;
 }
 .entry input {
-    flex: 1;
+	flex: 1;
 }
 .entry + .entry {
-    margin-top: .6em;
+	margin-top: .6em;
 }
 </style>
 

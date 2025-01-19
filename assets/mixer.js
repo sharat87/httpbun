@@ -13,23 +13,26 @@ class EntryElement extends HTMLElement {
 		this.directive = this.tagName.substring("entry-".length).toLowerCase()
 		this.className = "entry"
 
-		this.innerHTML = "<div>" + this.formControl() + "</div>"
+		this.innerHTML = "<div>" + (this.formControl() || "") + "</div>"
+		const formRoot = this.firstElementChild
 
 		const label = el(`<label style="flex:0 0 min(20%, 9em)">${LABELS[this.directive]}</label>`)
-		this.insertBefore(label, this.firstChild)
+		this.insertBefore(label, formRoot)
 
 		const delBtn = el(`<button class=del>&times;</button>`)
 		delBtn.addEventListener("click", this.remove.bind(this))
 		this.append(delBtn)
 
-		const input = this.querySelector("input, textarea")
+		this.initUI(formRoot)
+
+		const input = formRoot.querySelector("input, textarea")
 		label.setAttribute("for", input.id = "e" + Math.random())
 		input.focus()
 	}
 
-	formControl() {
-		throw new Error("formControl unimplemented")
-	}
+	initUI(root) {}
+
+	formControl() {}
 
 	get path() {
 		return this.directive ? "/" + this.directive + "=" + this.value : ""
@@ -55,20 +58,32 @@ customElements.define("entry-s", class extends EntryElement {
 })
 
 customElements.define("entry-h", class extends EntryElement {
-	formControl() {
-		return `<div class=flex><input required pattern='^[-_a-zA-Z0-9]+$' placeholder=key>:<input placeholder=value></div>`
+	initUI(parent) {
+		parent.innerHTML = "<div class=flex></div>"
+		const root = parent.firstElementChild
+
+		const keyInput = this.keyInput = el(`<input required pattern='^[-_a-zA-Z0-9]+$' placeholder=key>`)
+		const valInput = this.valInput = el(`<input placeholder=value>`)
+		root.append(keyInput, el(`<span>:</span>`), valInput)
+
+		const contentTypeHeaders = new Set(["content-type", "accept"])
+		keyInput.addEventListener("input", (event) => {
+			if (contentTypeHeaders.has(keyInput.value?.toLocaleLowerCase())) {
+				valInput.setAttribute("list", "content-types")
+			} else {
+				valInput.removeAttribute("list")
+			}
+		})
 	}
 
 	get value() {
-		const inputs = this.querySelectorAll("input")
-		return inputs[0].value + ":" + encodeURIComponent(inputs[1].value)
+		return this.keyInput.value + ":" + encodeURIComponent(this.valInput.value)
 	}
 
 	set value(v) {
 		const [_, name, value] = v.match(/^(.+?):(.+)$/)
-		const inputs = this.querySelectorAll("input")
-		inputs[0].value = name
-		inputs[1].value = decodeURIComponent(value)
+		this.keyInput.value = name
+		this.valInput.value = decodeURIComponent(value)
 	}
 })
 

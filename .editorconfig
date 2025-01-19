@@ -9,7 +9,7 @@ indent_size = 4
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[{*.md,*.html}]
+[*.md]
 indent_style = space
 
 [{*.yml,*.yaml}]
