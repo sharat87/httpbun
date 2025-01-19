@@ -3,20 +3,14 @@ package util
 import (
 	"net/url"
 	"regexp"
+	"sync"
 )
 
-var PatCache = map[string]regexp.Regexp{}
-
-func RoutePat(pat string) string {
-	return "(?s)^" + pat + "$"
-}
+var patCache = map[string]regexp.Regexp{}
+var cacheLock = sync.RWMutex{}
 
 func MatchRoutePat(pat string, path string) (map[string]string, bool) {
-	re, isCacheHit := PatCache[pat]
-	if !isCacheHit {
-		re = *regexp.MustCompile(pat)
-		PatCache[pat] = re
-	}
+	re := getPattern("^" + pat + "$")
 
 	match := re.FindStringSubmatch(path)
 	if match == nil {
@@ -37,4 +31,20 @@ func MatchRoutePat(pat string, path string) (map[string]string, bool) {
 	}
 
 	return result, true
+}
+
+func getPattern(pat string) regexp.Regexp {
+	// this implementation is fine since we don't ever delete items from cache.
+	cacheLock.RLock()
+	re, isCacheHit := patCache[pat]
+	cacheLock.RUnlock()
+
+	if !isCacheHit {
+		cacheLock.Lock()
+		defer cacheLock.Unlock()
+		re = *regexp.MustCompile(pat)
+		patCache[pat] = re
+	}
+
+	return re
 }

@@ -12,11 +12,11 @@ import (
 	"github.com/sharat87/httpbun/util"
 )
 
-var BasicAuthRoute = util.RoutePat("/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?")
+var BasicAuthRoute = "/basic-auth/(?P<user>[^/]+)/(?P<pass>[^/]+)/?"
 
-var BearerAuthRoute = util.RoutePat(`/bearer(/(?P<tok>[^/]+))?/?`)
+var BearerAuthRoute = `/bearer(/(?P<tok>[^/]+))?/?`
 
-var DigestAuthRoute = util.RoutePat(`/digest-auth(/((?P<qop>[^/]+)/)?(?P<user>[^/]+)/(?P<pass>[^/]+))?/?`)
+var DigestAuthRoute = `/digest-auth(/((?P<qop>[^/]+)/)?(?P<user>[^/]+)/(?P<pass>[^/]+))?/?`
 
 var Routes = map[string]exchange.HandlerFn{
 	BasicAuthRoute:  handleAuthBasic,
