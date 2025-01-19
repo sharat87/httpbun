@@ -1,10 +1,11 @@
 package cache
 
 import (
+	"net/http"
+
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/routes/responses"
-	"net/http"
 )
 
 var Routes = map[string]exchange.HandlerFn{

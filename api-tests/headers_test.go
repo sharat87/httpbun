@@ -1,10 +1,12 @@
 package api_tests
 
 import (
-	"github.com/sharat87/httpbun/c"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sharat87/httpbun/c"
 )
 
 func TestHeaders(t *testing.T) {

@@ -1,11 +1,13 @@
 package api_tests
 
 import (
-	"github.com/sharat87/httpbun/c"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sharat87/httpbun/c"
 )
 
 func TestAllMethods(t *testing.T) {

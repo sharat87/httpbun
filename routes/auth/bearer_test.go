@@ -2,13 +2,15 @@ package auth
 
 import (
 	"encoding/base64"
-	"github.com/sharat87/httpbun/c"
 	"net/http"
 	"testing"
 
+	"github.com/sharat87/httpbun/c"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/util"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestBearerEmpty(t *testing.T) {

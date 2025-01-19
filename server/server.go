@@ -2,17 +2,18 @@ package server
 
 import (
 	"context"
-	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/response"
-	"github.com/sharat87/httpbun/routes"
-	"github.com/sharat87/httpbun/routes/responses"
-	"github.com/sharat87/httpbun/server/spec"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
+	"github.com/sharat87/httpbun/routes"
+	"github.com/sharat87/httpbun/routes/responses"
+	"github.com/sharat87/httpbun/server/spec"
 )
 
 type Server struct {

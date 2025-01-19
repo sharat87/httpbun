@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/sharat87/httpbun/server"
-	"github.com/sharat87/httpbun/server/spec"
 	"log"
 	"runtime"
+
+	"github.com/sharat87/httpbun/server"
+	"github.com/sharat87/httpbun/server/spec"
 )
 
 func main() {

@@ -3,6 +3,15 @@ package routes
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
+	"maps"
+	"math/rand"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
@@ -19,14 +28,6 @@ import (
 	"github.com/sharat87/httpbun/routes/static"
 	"github.com/sharat87/httpbun/routes/svg"
 	"github.com/sharat87/httpbun/util"
-	"log"
-	"maps"
-	"math/rand"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Route struct {

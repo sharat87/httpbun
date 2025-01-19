@@ -3,14 +3,15 @@ package responses
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
 	"io"
 	"mime"
 	"mime/multipart"
 	"net/url"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/sharat87/httpbun/c"
+	"github.com/sharat87/httpbun/exchange"
 )
 
 type Info struct {

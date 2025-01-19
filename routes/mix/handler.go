@@ -3,11 +3,6 @@ package mix
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/sharat87/httpbun/assets"
-	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/response"
-	"github.com/sharat87/httpbun/util"
 	"io"
 	"log"
 	"math/rand"
@@ -18,6 +13,12 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/sharat87/httpbun/assets"
+	"github.com/sharat87/httpbun/c"
+	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
+	"github.com/sharat87/httpbun/util"
 )
 
 type entry struct {

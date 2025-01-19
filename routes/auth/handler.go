@@ -2,10 +2,11 @@ package auth
 
 import (
 	"fmt"
-	"github.com/sharat87/httpbun/response"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/sharat87/httpbun/response"
 
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"

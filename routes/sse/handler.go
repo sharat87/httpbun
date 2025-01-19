@@ -2,12 +2,13 @@ package sse
 
 import (
 	"fmt"
-	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/response"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/sharat87/httpbun/c"
+	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 )
 
 var Routes = map[string]exchange.HandlerFn{

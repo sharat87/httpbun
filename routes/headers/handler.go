@@ -2,11 +2,12 @@ package headers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/util"
-	"net/http"
 )
 
 var Routes = map[string]exchange.HandlerFn{

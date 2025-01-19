@@ -4,12 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/dop251/goja"
+
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/response"
-	"net/http"
-	"time"
 )
 
 const restPathPattern = `/(?P<encoded>[-\w]+=*)(?P<extraPath>.*)`

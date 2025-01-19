@@ -2,10 +2,11 @@ package redirect
 
 import (
 	"fmt"
-	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/response"
 	"net/http"
 	"strconv"
+
+	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 )
 
 const MaxRedirectCount = 20

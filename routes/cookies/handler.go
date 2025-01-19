@@ -1,10 +1,11 @@
 package cookies
 
 import (
-	"github.com/sharat87/httpbun/exchange"
-	"github.com/sharat87/httpbun/response"
 	"net/http"
 	"time"
+
+	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/response"
 )
 
 const (

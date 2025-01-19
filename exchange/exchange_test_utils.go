@@ -1,11 +1,12 @@
 package exchange
 
 import (
+	"net/http"
+	"net/url"
+
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/server/spec"
 	"github.com/sharat87/httpbun/util"
-	"net/http"
-	"net/url"
 )
 
 func InvokeHandlerForTest(path string, req http.Request, routePat string, fn HandlerFn) response.Response {

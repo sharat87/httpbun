@@ -1,11 +1,12 @@
 package svg
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/util"
-	"net/http"
-	"strings"
 )
 
 var Routes = map[string]exchange.HandlerFn{

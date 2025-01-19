@@ -1,10 +1,11 @@
 package static
 
 import (
+	"net/http"
+
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/response"
-	"net/http"
 )
 
 var Routes = map[string]exchange.HandlerFn{

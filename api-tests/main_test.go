@@ -1,14 +1,15 @@
 package api_tests
 
 import (
-	"github.com/sharat87/httpbun/server"
-	"github.com/sharat87/httpbun/server/spec"
 	"io"
 	"log"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/sharat87/httpbun/server"
+	"github.com/sharat87/httpbun/server/spec"
 )
 
 //goland:noinspection HttpUrlsUsage

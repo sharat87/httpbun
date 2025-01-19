@@ -2,10 +2,12 @@ package mix
 
 import (
 	"encoding/base64"
-	"github.com/sharat87/httpbun/exchange"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sharat87/httpbun/exchange"
 )
 
 func TestMixEmpty(t *testing.T) {

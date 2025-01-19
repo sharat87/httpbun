@@ -1,10 +1,11 @@
 package api_tests
 
 import (
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMixStatus(t *testing.T) {

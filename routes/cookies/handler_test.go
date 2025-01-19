@@ -1,10 +1,12 @@
 package cookies
 
 import (
-	"github.com/sharat87/httpbun/exchange"
-	"github.com/stretchr/testify/suite"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
+
+	"github.com/sharat87/httpbun/exchange"
 )
 
 type CookiesSuite struct {

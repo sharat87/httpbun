@@ -2,9 +2,6 @@ package exchange
 
 import (
 	"fmt"
-	"github.com/sharat87/httpbun/response"
-	"github.com/sharat87/httpbun/server/spec"
-	"github.com/sharat87/httpbun/util"
 	"io"
 	"log"
 	"maps"
@@ -13,6 +10,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/sharat87/httpbun/response"
+	"github.com/sharat87/httpbun/server/spec"
+	"github.com/sharat87/httpbun/util"
 )
 
 type Exchange struct {
