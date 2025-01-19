@@ -2,9 +2,7 @@ package spec
 
 import (
 	"flag"
-	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/sharat87/httpbun/util"
@@ -50,11 +48,7 @@ func ParseArgs() Spec {
 		// A silly way to reproducibly turn a piece of text into a color.
 		color := "#" + util.Md5sum(spec.Banner)[:6]
 		spec.BannerBg = color
-		if isLight(color) {
-			spec.BannerFg = "#222"
-		} else {
-			spec.BannerFg = "#eeee"
-		}
+		spec.BannerFg = util.ComputeFgForBg(color)
 	}
 
 	spec.PathPrefix = strings.Trim(spec.PathPrefix, "/")
@@ -63,19 +57,4 @@ func ParseArgs() Spec {
 	}
 
 	return *spec
-}
-
-func isLight(c string) bool {
-	rgb, err := strconv.ParseInt(c[1:], 16, 32)
-	if err != nil {
-		fmt.Println("Error parsing color:", err)
-		return false
-	}
-	r := (rgb >> 16) & 0xff
-	g := (rgb >> 8) & 0xff
-	b := rgb & 0xff
-
-	luma := 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b) // per ITU-R BT.709
-
-	return luma < 40
 }

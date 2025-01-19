@@ -17,6 +17,7 @@ import (
 	"github.com/sharat87/httpbun/routes/run"
 	"github.com/sharat87/httpbun/routes/sse"
 	"github.com/sharat87/httpbun/routes/static"
+	"github.com/sharat87/httpbun/routes/svg"
 	"github.com/sharat87/httpbun/util"
 	"log"
 	"maps"
@@ -55,16 +56,17 @@ func GetRoutes() []Route {
 		"/ip(\\.(?P<format>txt|json))?": handleIp,
 	}
 
-	maps.Copy(routeMap, method.Routes)
-	maps.Copy(routeMap, headers.Routes)
-	maps.Copy(routeMap, cache.Routes)
 	maps.Copy(routeMap, auth.Routes)
-	maps.Copy(routeMap, redirect.Routes)
-	maps.Copy(routeMap, mix.Routes)
-	maps.Copy(routeMap, static.Routes)
+	maps.Copy(routeMap, cache.Routes)
 	maps.Copy(routeMap, cookies.Routes)
+	maps.Copy(routeMap, headers.Routes)
+	maps.Copy(routeMap, method.Routes)
+	maps.Copy(routeMap, mix.Routes)
+	maps.Copy(routeMap, redirect.Routes)
 	maps.Copy(routeMap, run.Routes)
 	maps.Copy(routeMap, sse.Routes)
+	maps.Copy(routeMap, static.Routes)
+	maps.Copy(routeMap, svg.Routes)
 
 	var routes []Route
 

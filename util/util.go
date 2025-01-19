@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 )
 
 func ToJsonMust(data any) []byte {
@@ -48,4 +49,24 @@ func CommitHashShorten(hash string) string {
 		return hash[:7]
 	}
 	return hash
+}
+
+func ComputeFgForBg(c string) string {
+	rgb, err := strconv.ParseInt(c[1:], 16, 32)
+	if err != nil {
+		fmt.Println("Error parsing color:", err)
+		return "black"
+	}
+	r := (rgb >> 16) & 0xff
+	g := (rgb >> 8) & 0xff
+	b := rgb & 0xff
+
+	luma := 0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b) // per ITU-R BT.709
+
+	log.Printf("R: %v, G: %v, B: %v, Luma: %v", r, g, b, luma)
+	if luma > 100 {
+		return "#222e"
+	} else {
+		return "#eeee"
+	}
 }

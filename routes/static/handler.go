@@ -1,7 +1,6 @@
 package static
 
 import (
-	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/exchange"
 	"github.com/sharat87/httpbun/response"
@@ -12,16 +11,6 @@ var Routes = map[string]exchange.HandlerFn{
 	"/deny":       handleRobotsDeny,
 	"/robots.txt": handleRobotsTxt,
 	"/html":       handleHtml,
-	"/image/svg":  handleImageSvg,
-}
-
-func handleImageSvg(ex *exchange.Exchange) response.Response {
-	// todo: why isn't this SVG content-type being set by itself, like all the other assets. Is it the extension in the URL?
-	res := assets.WriteAsset("svg-logo.svg")
-	res.Header = http.Header{
-		c.ContentType: []string{"image/svg+xml"},
-	}
-	return *res
 }
 
 func handleRobotsTxt(ex *exchange.Exchange) response.Response {

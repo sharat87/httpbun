@@ -207,6 +207,13 @@ Hosted versions:
     <dt id=html>/html</dt>
     <dd>Returns a small HTML document than can trigger XSS, in vulnerable places.</dd>
 
+    <dt id=svg>/svg/<span class=var>{text}</span></dt>
+    <dd>Renders an SVG circle image with fill color determined by the <code>text</code>. The first two letters of the
+        text are also shown at the center of the circle. Examples:
+        <img src="svg/bun" style="height:1.5em;vertical-align:middle"> for <code>svg/bun</code>,
+        <img src="svg/foo" style="height:1.5em;vertical-align:middle"> for <code>svg/foo</code>.
+    </dd>
+
     <dt id=robots>/robots.txt</dt>
     <dd>Returns some robots.txt rules.</dd>
 
