@@ -7,17 +7,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 )
 
 func TestMixEmpty(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)
@@ -28,11 +28,11 @@ func TestMixEmpty(t *testing.T) {
 func TestMixStatusAndBody(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/s=200/b64=b2s=",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(200, resp.Status)
@@ -43,11 +43,11 @@ func TestMixStatusAndBody(t *testing.T) {
 func TestMixOnlyBody(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/b64=b2s=",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)
@@ -58,11 +58,11 @@ func TestMixOnlyBody(t *testing.T) {
 func TestMixInvalidBody(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/b64=invalid",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(400, resp.Status)
@@ -73,11 +73,11 @@ func TestMixInvalidBody(t *testing.T) {
 func TestMixSingleHeader(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/h=x-one:great",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)
@@ -89,11 +89,11 @@ func TestMixSingleHeader(t *testing.T) {
 func TestMixMultipleHeadersWithSpecialChars(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/h=x-special-header:value%20with%20spaces/h=content-type:application%2Fjson%3Bcharset%3Dutf-8/h=x-symbols:!%40%23%24%25",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)
@@ -107,11 +107,11 @@ func TestMixMultipleHeadersWithSpecialChars(t *testing.T) {
 func TestMixRepeatedHeader(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/h=x-multi:value1/h=x-multi:value2/h=x-multi:value3",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)
@@ -127,11 +127,11 @@ func TestMixRepeatedHeader(t *testing.T) {
 func TestMixSetCookie(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/c=session:abc123",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)
@@ -146,11 +146,11 @@ func TestMixSetCookie(t *testing.T) {
 func TestMixSetCookieWithSpecialChars(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/c=complex-cookie:value%20with%20spaces%20%26%20symbols%21%40%23%25",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)
@@ -165,11 +165,11 @@ func TestMixSetCookieWithSpecialChars(t *testing.T) {
 func TestMixMultipleCookies(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/c=cookie1:value1/c=cookie2:value2/c=cookie3:value3",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)
@@ -187,11 +187,11 @@ func TestMixMultipleCookies(t *testing.T) {
 func TestMixRedirect(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/r=https%3A%2F%2Fexample.com",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(307, resp.Status)
@@ -204,11 +204,11 @@ func TestMixRedirect(t *testing.T) {
 func TestMixRedirectWithCustomStatus(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/s=301/r=https%3A%2F%2Fexample.com",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(301, resp.Status)
@@ -221,11 +221,11 @@ func TestMixRedirectWithCustomStatus(t *testing.T) {
 func TestMixRedirectWithQueryAndFragment(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/r=https%3A%2F%2Fexample.com%2Fpath%3Fkey%3Dvalue%26other%3Dthing%20value%23fragment",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(307, resp.Status)
@@ -238,11 +238,11 @@ func TestMixRedirectWithQueryAndFragment(t *testing.T) {
 func TestMixMultipleRedirectsError(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/r=https%3A%2F%2Fexample1.com/r=https%3A%2F%2Fexample2.com",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(400, resp.Status)
@@ -251,11 +251,11 @@ func TestMixMultipleRedirectsError(t *testing.T) {
 func TestMixCookieDeletion(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/cd=cookie1/cd=cookie2",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)
@@ -272,11 +272,11 @@ func TestMixCookieDeletion(t *testing.T) {
 func TestMixDelay(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/d=0.1",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)
@@ -287,11 +287,11 @@ func TestMixDelay(t *testing.T) {
 func TestMixDelayInvalid(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/d=invalid",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(400, resp.Status)
@@ -302,11 +302,11 @@ func TestMixDelayInvalid(t *testing.T) {
 func TestMixDelayNegative(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/d=-1",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(400, resp.Status)
@@ -317,11 +317,11 @@ func TestMixDelayNegative(t *testing.T) {
 func TestMixDelayTooLarge(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/d=11",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(400, resp.Status)
@@ -332,11 +332,11 @@ func TestMixDelayTooLarge(t *testing.T) {
 func TestMixTemplateDirectiveInvalid(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/t=invalid",
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(400, resp.Status)
@@ -348,11 +348,11 @@ func TestMixTemplateDirectiveInvalid(t *testing.T) {
 func TestMixTemplateDirective(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"mix/t="+base64.StdEncoding.EncodeToString([]byte(`length is {{len "abc"}}`)),
 		http.Request{},
 		PatMix,
-		Routes[PatMix],
+		handleMix,
 	)
 
 	s.Equal(0, resp.Status)

@@ -5,21 +5,21 @@ import (
 	"net/http"
 
 	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/util"
 )
 
-var Routes = map[string]exchange.HandlerFn{
-	"/headers":                            handleHeaders,
-	"/(response|respond-with)-headers?/?": handleResponseHeaders,
+var RouteList = []ex.Route{
+	ex.NewRoute("/headers", handleHeaders),
+	ex.NewRoute("/(response|respond-with)-headers?/?", handleResponseHeaders),
 }
 
-func handleHeaders(ex *exchange.Exchange) response.Response {
+func handleHeaders(ex *ex.Exchange) response.Response {
 	return response.Response{Body: map[string]any{"headers": ex.ExposableHeadersMap()}}
 }
 
-func handleResponseHeaders(ex *exchange.Exchange) response.Response {
+func handleResponseHeaders(ex *ex.Exchange) response.Response {
 	responseHeaders := http.Header{}
 	data := make(map[string]any)
 

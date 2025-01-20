@@ -9,12 +9,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/util"
 )
 
 func TestFieldParsing(t *testing.T) {
-	fields, isMatch := util.MatchRoutePat(BasicAuthRoute, "/basic-auth/jam/bread")
+	fields, isMatch := util.MatchRoutePat(ex.MakePat(BasicAuthRoute), "/basic-auth/jam/bread")
 
 	s := assert.New(t)
 	s.True(isMatch)
@@ -24,7 +24,7 @@ func TestFieldParsing(t *testing.T) {
 }
 
 func TestFieldParsingWithTrailingSlash(t *testing.T) {
-	fields, isMatch := util.MatchRoutePat(BasicAuthRoute, "/basic-auth/jam/bread/")
+	fields, isMatch := util.MatchRoutePat(ex.MakePat(BasicAuthRoute), "/basic-auth/jam/bread/")
 
 	s := assert.New(t)
 	s.True(isMatch)
@@ -34,7 +34,7 @@ func TestFieldParsingWithTrailingSlash(t *testing.T) {
 }
 
 func TestFieldParsingWithSpecialChars(t *testing.T) {
-	fields, isMatch := util.MatchRoutePat(BasicAuthRoute, "/basic-auth/user@example.com/p@ssw0rd")
+	fields, isMatch := util.MatchRoutePat(ex.MakePat(BasicAuthRoute), "/basic-auth/user@example.com/p@ssw0rd")
 
 	s := assert.New(t)
 	s.True(isMatch)
@@ -44,7 +44,7 @@ func TestFieldParsingWithSpecialChars(t *testing.T) {
 }
 
 func TestFieldParsingWithUrlEncodedChars(t *testing.T) {
-	fields, isMatch := util.MatchRoutePat(BasicAuthRoute, "/basic-auth/hello%20world/pass%2Fword%21")
+	fields, isMatch := util.MatchRoutePat(ex.MakePat(BasicAuthRoute), "/basic-auth/hello%20world/pass%2Fword%21")
 
 	s := assert.New(t)
 	s.True(isMatch)
@@ -54,14 +54,14 @@ func TestFieldParsingWithUrlEncodedChars(t *testing.T) {
 }
 
 func TestFieldParsingNoMatch(t *testing.T) {
-	_, isMatch := util.MatchRoutePat(BasicAuthRoute, "/basic-auth/")
+	_, isMatch := util.MatchRoutePat(ex.MakePat(BasicAuthRoute), "/basic-auth/")
 
 	s := assert.New(t)
 	s.False(isMatch)
 }
 
 func TestFieldParsingInvalidPath(t *testing.T) {
-	_, isMatch := util.MatchRoutePat(BasicAuthRoute, "/wrong-path/user/pass")
+	_, isMatch := util.MatchRoutePat(ex.MakePat(BasicAuthRoute), "/wrong-path/user/pass")
 
 	s := assert.New(t)
 	s.False(isMatch)
@@ -70,7 +70,7 @@ func TestFieldParsingInvalidPath(t *testing.T) {
 func TestValidBasicAuth(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"basic-auth/jam/bread",
 		http.Request{
 			Header: http.Header{
@@ -78,7 +78,7 @@ func TestValidBasicAuth(t *testing.T) {
 			},
 		},
 		BasicAuthRoute,
-		Routes[BasicAuthRoute],
+		handleAuthBasic,
 	)
 
 	s.Equal(0, resp.Status)
@@ -87,7 +87,7 @@ func TestValidBasicAuth(t *testing.T) {
 func TestValidBasicAuthWithSpecialChars(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"basic-auth/hello%20world@example.com/p@ss%2Fw0rd%21",
 		http.Request{
 			Header: http.Header{
@@ -95,7 +95,7 @@ func TestValidBasicAuthWithSpecialChars(t *testing.T) {
 			},
 		},
 		BasicAuthRoute,
-		Routes[BasicAuthRoute],
+		handleAuthBasic,
 	)
 
 	s.Equal(0, resp.Status)
@@ -104,11 +104,11 @@ func TestValidBasicAuthWithSpecialChars(t *testing.T) {
 func TestMissingAuthHeader(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"basic-auth/a/b",
 		http.Request{},
 		BasicAuthRoute,
-		Routes[BasicAuthRoute],
+		handleAuthBasic,
 	)
 
 	s.Equal(401, resp.Status)

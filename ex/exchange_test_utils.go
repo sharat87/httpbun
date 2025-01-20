@@ -1,4 +1,4 @@
-package exchange
+package ex
 
 import (
 	"net/http"
@@ -24,7 +24,7 @@ func InvokeHandlerForTest(path string, req http.Request, routePat string, fn Han
 	)
 
 	var isMatch bool
-	ex.fields, isMatch = util.MatchRoutePat(routePat, ex.RoutedPath)
+	ex.fields, isMatch = util.MatchRoutePat(MakePat(routePat), ex.RoutedPath)
 	if !isMatch {
 		panic("Route pattern did not match path")
 	}

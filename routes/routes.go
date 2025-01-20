@@ -4,17 +4,17 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
-	"maps"
 	"math/rand"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/routes/auth"
 	"github.com/sharat87/httpbun/routes/cache"
@@ -30,65 +30,47 @@ import (
 	"github.com/sharat87/httpbun/util"
 )
 
-type Route struct {
-	Pat string
-	Fn  exchange.HandlerFn
+func GetRoutes() []ex.Route {
+	return slices.Concat(
+		[]ex.Route{
+			ex.NewRoute("/health", handleHealth),
+			ex.NewRoute("/info", handleInfo),
+
+			ex.NewRoute("/b(ase)?64(/(?P<encoded>.*))?", handleDecodeBase64),
+			ex.NewRoute("/bytes(/(?P<size>.+))?", handleRandomBytes),
+			ex.NewRoute("/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?", handleLinks),
+			ex.NewRoute("/range/(?P<count>\\d+)/?", handleRange),
+
+			ex.NewRoute("/drip(-(?P<mode>lines))?(?P<extra>/.*)?", handleDrip),
+
+			ex.NewRoute(`/assets/(?P<path>.+)`, handleAsset),
+			ex.NewRoute(`(/(index\.html)?)?`, handleIndex),
+
+			ex.NewRoute("/delay/(?P<delay>[^/]+)", handleDelayedResponse),
+
+			ex.NewRoute("/payload", handlePayload),
+			ex.NewRoute("/status/(?P<codes>[\\w,]+)", handleStatus),
+			ex.NewRoute("/ip(\\.(?P<format>txt|json))?", handleIp),
+		},
+		auth.RouteList,
+		cache.RouteList,
+		cookies.RouteList,
+		headers.RouteList,
+		method.RouteList,
+		mix.RouteList,
+		redirect.RouteList,
+		run.RouteList,
+		sse.RouteList,
+		static.RouteList,
+		svg.RouteList,
+	)
 }
 
-func GetRoutes() []Route {
-	routeMap := map[string]exchange.HandlerFn{
-		"/health": handleHealth,
-		"/info":   handleInfo,
-
-		"/b(ase)?64(/(?P<encoded>.*))?":                handleDecodeBase64,
-		"/bytes(/(?P<size>.+))?":                       handleRandomBytes,
-		"/links/(?P<count>\\d+)(/(?P<offset>\\d+))?/?": handleLinks,
-		"/range/(?P<count>\\d+)/?":                     handleRange,
-
-		"/drip(-(?P<mode>lines))?(?P<extra>/.*)?": handleDrip,
-
-		`/assets/(?P<path>.+)`: handleAsset,
-		`(/(index\.html)?)?`:   handleIndex,
-
-		"/delay/(?P<delay>[^/]+)": handleDelayedResponse,
-
-		"/payload":                      handlePayload,
-		"/status/(?P<codes>[\\w,]+)":    handleStatus,
-		"/ip(\\.(?P<format>txt|json))?": handleIp,
-	}
-
-	maps.Copy(routeMap, auth.Routes)
-	maps.Copy(routeMap, cache.Routes)
-	maps.Copy(routeMap, cookies.Routes)
-	maps.Copy(routeMap, headers.Routes)
-	maps.Copy(routeMap, method.Routes)
-	maps.Copy(routeMap, mix.Routes)
-	maps.Copy(routeMap, redirect.Routes)
-	maps.Copy(routeMap, run.Routes)
-	maps.Copy(routeMap, sse.Routes)
-	maps.Copy(routeMap, static.Routes)
-	maps.Copy(routeMap, svg.Routes)
-
-	var routes []Route
-
-	for pat, fn := range routeMap {
-		if !strings.HasPrefix(pat, "(?s)^") {
-			pat = "(?s)^" + pat + "$"
-		}
-		routes = append(routes, Route{
-			Pat: pat,
-			Fn:  fn,
-		})
-	}
-
-	return routes
-}
-
-func handleIndex(ex *exchange.Exchange) response.Response {
+func handleIndex(ex *ex.Exchange) response.Response {
 	return assets.Render("index.html", *ex, nil)
 }
 
-func handleAsset(ex *exchange.Exchange) response.Response {
+func handleAsset(ex *ex.Exchange) response.Response {
 	path := ex.Field("path")
 	if strings.Contains(path, "..") {
 		return response.BadRequest("Assets path cannot contain '..'.")
@@ -96,17 +78,17 @@ func handleAsset(ex *exchange.Exchange) response.Response {
 	return *assets.WriteAsset(path)
 }
 
-func handleHealth(_ *exchange.Exchange) response.Response {
+func handleHealth(_ *ex.Exchange) response.Response {
 	return response.Response{Body: "ok"}
 }
 
-func handlePayload(ex *exchange.Exchange) response.Response {
+func handlePayload(ex *ex.Exchange) response.Response {
 	return response.New(http.StatusOK, http.Header{
 		c.ContentType: ex.Request.Header[c.ContentType],
 	}, ex.BodyBytes())
 }
 
-func handleStatus(ex *exchange.Exchange) response.Response {
+func handleStatus(ex *ex.Exchange) response.Response {
 	input := ex.Field("codes")
 	if len(input) > 99 {
 		return response.BadRequest("Too many status codes")
@@ -154,7 +136,7 @@ func handleStatus(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleIp(ex *exchange.Exchange) response.Response {
+func handleIp(ex *ex.Exchange) response.Response {
 	origin := ex.FindIncomingIPAddress()
 	if ex.Field("format") == "txt" {
 		return response.New(http.StatusOK, nil, []byte(origin))
@@ -168,7 +150,7 @@ func handleIp(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleDecodeBase64(ex *exchange.Exchange) response.Response {
+func handleDecodeBase64(ex *ex.Exchange) response.Response {
 	encoded := ex.Field("encoded")
 	if encoded == "" {
 		encoded = "SFRUUEJVTiBpcyBhd2Vzb21lciE="
@@ -183,7 +165,7 @@ func handleDecodeBase64(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleRandomBytes(ex *exchange.Exchange) response.Response {
+func handleRandomBytes(ex *ex.Exchange) response.Response {
 	sizeField := ex.Field("size")
 	if sizeField == "" {
 		return response.BadRequest("specify size in bytes, example `/bytes/10`")
@@ -203,7 +185,7 @@ func handleRandomBytes(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleDelayedResponse(ex *exchange.Exchange) response.Response {
+func handleDelayedResponse(ex *ex.Exchange) response.Response {
 	n, err := strconv.ParseFloat(ex.Field("delay"), 32)
 
 	if err != nil {
@@ -218,7 +200,7 @@ func handleDelayedResponse(ex *exchange.Exchange) response.Response {
 	return response.New(http.StatusOK, nil, []byte("OK"))
 }
 
-func handleDrip(ex *exchange.Exchange) response.Response {
+func handleDrip(ex *ex.Exchange) response.Response {
 	// Test with `curl -N localhost:3090/drip`.
 
 	extra := ex.Field("extra")
@@ -285,7 +267,7 @@ func handleDrip(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleLinks(ex *exchange.Exchange) response.Response {
+func handleLinks(ex *ex.Exchange) response.Response {
 	count, _ := strconv.Atoi(ex.Field("count"))
 	offset, _ := strconv.Atoi(ex.Field("offset"))
 
@@ -307,7 +289,7 @@ func handleLinks(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleRange(ex *exchange.Exchange) response.Response {
+func handleRange(ex *ex.Exchange) response.Response {
 	// TODO: Cache range response, don't have to generate over and over again.
 	count, _ := strconv.Atoi(ex.Field("count"))
 
@@ -331,7 +313,7 @@ func handleRange(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleInfo(_ *exchange.Exchange) response.Response {
+func handleInfo(_ *ex.Exchange) response.Response {
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "Error: " + err.Error()

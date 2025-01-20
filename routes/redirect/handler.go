@@ -5,18 +5,18 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 )
 
 const MaxRedirectCount = 20
 
-var Routes = map[string]exchange.HandlerFn{
-	`/redirect(-to)?/?`: handleRedirectTo,
-	`/(?P<mode>relative-|absolute-)?redirect/(?P<count>\d+)`: handleRedirectCount,
+var RouteList = []ex.Route{
+	ex.NewRoute(`/redirect(-to)?/?`, handleRedirectTo),
+	ex.NewRoute(`/(?P<mode>relative-|absolute-)?redirect/(?P<count>\d+)`, handleRedirectCount),
 }
 
-func handleRedirectTo(ex *exchange.Exchange) response.Response {
+func handleRedirectTo(ex *ex.Exchange) response.Response {
 	query := ex.Request.URL.Query()
 	urls := query["url"]
 	if len(urls) < 1 || urls[0] == "" {
@@ -47,7 +47,7 @@ func handleRedirectTo(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleRedirectCount(ex *exchange.Exchange) response.Response {
+func handleRedirectCount(ex *ex.Exchange) response.Response {
 	isAbsolute := ex.Field("mode") == "absolute-"
 	n, _ := strconv.Atoi(ex.Field("count"))
 

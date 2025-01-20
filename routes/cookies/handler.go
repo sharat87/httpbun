@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 )
 
@@ -14,13 +14,13 @@ const (
 	CookiesSetRoute    = `/cookies?/set(/(?P<name>[^/]+)/(?P<value>[^/]+))?`
 )
 
-var Routes = map[string]exchange.HandlerFn{
-	CookiesRoute:       handleCookies,
-	CookiesDeleteRoute: handleCookiesDelete,
-	CookiesSetRoute:    handleCookiesSet,
+var RouteList = []ex.Route{
+	ex.NewRoute(CookiesRoute, handleCookies),
+	ex.NewRoute(CookiesDeleteRoute, handleCookiesDelete),
+	ex.NewRoute(CookiesSetRoute, handleCookiesSet),
 }
 
-func handleCookies(ex *exchange.Exchange) response.Response {
+func handleCookies(ex *ex.Exchange) response.Response {
 	items := make(map[string]string)
 	for _, cookie := range ex.Request.Cookies() {
 		items[cookie.Name] = cookie.Value
@@ -30,7 +30,7 @@ func handleCookies(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleCookiesDelete(ex *exchange.Exchange) response.Response {
+func handleCookiesDelete(ex *ex.Exchange) response.Response {
 	res := ex.RedirectResponse("/cookies")
 
 	for name := range ex.Request.URL.Query() {
@@ -46,7 +46,7 @@ func handleCookiesDelete(ex *exchange.Exchange) response.Response {
 	return *res
 }
 
-func handleCookiesSet(ex *exchange.Exchange) response.Response {
+func handleCookiesSet(ex *ex.Exchange) response.Response {
 	var cookies []http.Cookie
 
 	if ex.Field("name") == "" {

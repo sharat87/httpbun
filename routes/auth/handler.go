@@ -9,7 +9,7 @@ import (
 	"github.com/sharat87/httpbun/response"
 
 	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/util"
 )
 
@@ -19,13 +19,13 @@ var BearerAuthRoute = `/bearer(/(?P<tok>[^/]+))?/?`
 
 var DigestAuthRoute = `/digest-auth(/((?P<qop>[^/]+)/)?(?P<user>[^/]+)/(?P<pass>[^/]+))?/?`
 
-var Routes = map[string]exchange.HandlerFn{
-	BasicAuthRoute:  handleAuthBasic,
-	BearerAuthRoute: handleAuthBearer,
-	DigestAuthRoute: handleAuthDigest,
+var RouteList = []ex.Route{
+	ex.NewRoute(BasicAuthRoute, handleAuthBasic),
+	ex.NewRoute(BearerAuthRoute, handleAuthBearer),
+	ex.NewRoute(DigestAuthRoute, handleAuthDigest),
 }
 
-func handleAuthBasic(ex *exchange.Exchange) response.Response {
+func handleAuthBasic(ex *ex.Exchange) response.Response {
 	givenUsername, givenPassword, ok := ex.Request.BasicAuth()
 	isAuthenticated := ok && givenUsername == ex.Field("user") && givenPassword == ex.Field("pass")
 
@@ -43,7 +43,7 @@ func handleAuthBasic(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleAuthBearer(ex *exchange.Exchange) response.Response {
+func handleAuthBearer(ex *ex.Exchange) response.Response {
 	expectedToken := ex.Field("tok")
 
 	if expectedToken == "" {
@@ -70,7 +70,7 @@ func handleAuthBearer(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleAuthDigest(ex *exchange.Exchange) response.Response {
+func handleAuthDigest(ex *ex.Exchange) response.Response {
 	expectedQop, expectedUsername, expectedPassword := ex.Field("qop"), ex.Field("user"), ex.Field("pass")
 
 	if expectedUsername == "" || expectedPassword == "" {
@@ -196,7 +196,7 @@ func parseDigestAuthHeader(header string) map[string]string {
 }
 
 // Digest auth response computer.
-func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce, qop string, ex *exchange.Exchange) (string, error) {
+func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce, qop string, ex *ex.Exchange) (string, error) {
 	method := ex.Request.Method
 	path := ex.Request.URL.Path
 	entityBody := ex.BodyString()

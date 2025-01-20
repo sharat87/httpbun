@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 )
 
@@ -29,7 +29,7 @@ func prepare() template.Template {
 	return *t
 }
 
-func Render(name string, ex exchange.Exchange, data map[string]any) response.Response {
+func Render(name string, ex ex.Exchange, data map[string]any) response.Response {
 	if data == nil {
 		data = make(map[string]any)
 	}

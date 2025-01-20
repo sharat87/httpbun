@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 )
 
-var Routes = map[string]exchange.HandlerFn{
-	`/sse`: handleServerSentEvents,
+var RouteList = []ex.Route{
+	ex.NewRoute("/sse", handleServerSentEvents),
 }
 
-func handleServerSentEvents(ex *exchange.Exchange) response.Response {
+func handleServerSentEvents(ex *ex.Exchange) response.Response {
 	return response.Response{
 		Header: map[string][]string{
 			"Cache-Control": {"no-store"},

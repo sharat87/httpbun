@@ -16,7 +16,7 @@ import (
 
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/util"
 )
@@ -28,10 +28,10 @@ type entry struct {
 
 const PatMix = `/mix\b.*`
 
-var Routes = map[string]exchange.HandlerFn{
-	PatMix:           handleMix,
-	`/mixer\b(/.*)?`: handleMixer,
-	`/help/mixer`:    handleMixerHelp,
+var RouteList = []ex.Route{
+	ex.NewRoute(PatMix, handleMix),
+	ex.NewRoute(`/mixer\b(/.*)?`, handleMixer),
+	ex.NewRoute(`/help/mixer`, handleMixerHelp),
 }
 
 var singleValueDirectives = map[string]any{
@@ -49,7 +49,7 @@ var pairValueDirectives = map[string]any{
 	"c": nil,
 }
 
-func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
+func computeMixEntries(ex *ex.Exchange) ([]entry, error) {
 	// We need raw path here, with percent encoding intact.
 	path := strings.TrimPrefix(ex.RoutedPath, "/mix")
 	var source, itemSep string
@@ -97,7 +97,7 @@ func computeMixEntries(ex *exchange.Exchange) ([]entry, error) {
 	return entries, nil
 }
 
-func handleMix(ex *exchange.Exchange) response.Response {
+func handleMix(ex *ex.Exchange) response.Response {
 	entries, err := computeMixEntries(ex)
 	if err != nil {
 		return response.BadRequest(err.Error())
@@ -215,15 +215,15 @@ func handleMix(ex *exchange.Exchange) response.Response {
 	return *res
 }
 
-func handleMixer(ex *exchange.Exchange) response.Response {
+func handleMixer(ex *ex.Exchange) response.Response {
 	return assets.Render("mixer.html", *ex, nil)
 }
 
-func handleMixerHelp(ex *exchange.Exchange) response.Response {
+func handleMixerHelp(ex *ex.Exchange) response.Response {
 	return assets.Render("mixer-help.html", *ex, nil)
 }
 
-func renderTemplate(ex *exchange.Exchange, templateContent string) ([]byte, error) {
+func renderTemplate(ex *ex.Exchange, templateContent string) ([]byte, error) {
 	tpl, err := template.New("mix").Funcs(templateFuncMap).Parse(templateContent)
 	if err != nil {
 		ex.Finish(response.BadRequest(err.Error()))
@@ -237,7 +237,7 @@ func renderTemplate(ex *exchange.Exchange, templateContent string) ([]byte, erro
 	return buf.Bytes(), nil
 }
 
-func sendRequestToSlack(param string, ex *exchange.Exchange) {
+func sendRequestToSlack(param string, ex *ex.Exchange) {
 	message := "*From*: `" + ex.Request.RemoteAddr + "`\n\n```\n" + ex.Request.Method + " " + ex.FullUrl() + "\n"
 
 	for k, v := range ex.Request.Header {

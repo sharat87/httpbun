@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 )
 
 type DigestSuite struct {
@@ -19,11 +19,11 @@ func TestDigestSuite(t *testing.T) {
 }
 
 func (s *DigestSuite) TestDigestAuthEmpty() {
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"digest-auth",
 		http.Request{},
 		DigestAuthRoute,
-		Routes[DigestAuthRoute],
+		handleAuthDigest,
 	)
 
 	s.Equal(404, resp.Status)
@@ -32,11 +32,11 @@ func (s *DigestSuite) TestDigestAuthEmpty() {
 }
 
 func (s *DigestSuite) TestDigestAuthWithValidUsernameAndPasswordButMissingCredentials() {
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"digest-auth/hammer/nails",
 		http.Request{},
 		DigestAuthRoute,
-		Routes[DigestAuthRoute],
+		handleAuthDigest,
 	)
 
 	s.Equal(401, resp.Status)
@@ -46,7 +46,7 @@ func (s *DigestSuite) TestDigestAuthWithValidUsernameAndPasswordButMissingCreden
 }
 
 func (s *DigestSuite) TestComputeDigestAuthResponse() {
-	fakeEx := &exchange.Exchange{
+	fakeEx := &ex.Exchange{
 		Request: &http.Request{
 			Method: "GET",
 			URL:    &url.URL{Path: "/digest-auth/auth/user/pass"},
@@ -70,7 +70,7 @@ func (s *DigestSuite) TestComputeDigestAuthResponse() {
 }
 
 func (s *DigestSuite) TestComputeDigestAuthIntResponse() {
-	fakeEx := &exchange.Exchange{
+	fakeEx := &ex.Exchange{
 		Request: &http.Request{
 			Method: "GET",
 			URL:    &url.URL{Path: "/digest-auth/auth-int/user/pass"},

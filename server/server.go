@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/routes"
 	"github.com/sharat87/httpbun/routes/responses"
@@ -19,7 +19,7 @@ import (
 type Server struct {
 	*http.Server
 	spec    spec.Spec
-	routes  []routes.Route
+	routes  []ex.Route
 	closeCh chan error
 }
 
@@ -91,7 +91,7 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ex := exchange.New(w, req, s.spec)
+	ex := ex.New(w, req, s.spec)
 
 	incomingIP := ex.FindIncomingIPAddress()
 	log.Printf(

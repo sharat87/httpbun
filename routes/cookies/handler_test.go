@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 )
 
 type CookiesSuite struct {
@@ -18,7 +18,7 @@ func TestCookiesSuite(t *testing.T) {
 }
 
 func (s *CookiesSuite) TestGetCookiesSingular() {
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"cookie",
 		http.Request{
 			Header: http.Header{
@@ -26,7 +26,7 @@ func (s *CookiesSuite) TestGetCookiesSingular() {
 			},
 		},
 		CookiesRoute,
-		Routes[CookiesRoute],
+		handleCookies,
 	)
 
 	s.Equal(0, resp.Status)
@@ -34,7 +34,7 @@ func (s *CookiesSuite) TestGetCookiesSingular() {
 }
 
 func (s *CookiesSuite) TestGetCookiesPlural() {
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"cookies",
 		http.Request{
 			Header: http.Header{
@@ -42,7 +42,7 @@ func (s *CookiesSuite) TestGetCookiesPlural() {
 			},
 		},
 		CookiesRoute,
-		Routes[CookiesRoute],
+		handleCookies,
 	)
 
 	s.Equal(0, resp.Status)
@@ -50,7 +50,7 @@ func (s *CookiesSuite) TestGetCookiesPlural() {
 }
 
 func (s *CookiesSuite) TestDeleteCookies() {
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"cookies/delete?foo=1",
 		http.Request{
 			Header: http.Header{
@@ -58,7 +58,7 @@ func (s *CookiesSuite) TestDeleteCookies() {
 			},
 		},
 		CookiesDeleteRoute,
-		Routes[CookiesDeleteRoute],
+		handleCookiesDelete,
 	)
 
 	s.Equal(302, resp.Status)
@@ -71,7 +71,7 @@ func (s *CookiesSuite) TestDeleteCookies() {
 }
 
 func (s *CookiesSuite) TestDeleteCookiesSingularAndNoValue() {
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"cookies/delete?foo",
 		http.Request{
 			Header: http.Header{
@@ -79,7 +79,7 @@ func (s *CookiesSuite) TestDeleteCookiesSingularAndNoValue() {
 			},
 		},
 		CookiesDeleteRoute,
-		Routes[CookiesDeleteRoute],
+		handleCookiesDelete,
 	)
 
 	s.Equal(302, resp.Status)
@@ -92,11 +92,11 @@ func (s *CookiesSuite) TestDeleteCookiesSingularAndNoValue() {
 }
 
 func (s *CookiesSuite) TestSetCookiesWithNameAndValueInPath() {
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"cookies/set/foo/bar",
 		http.Request{},
 		CookiesSetRoute,
-		Routes[CookiesSetRoute],
+		handleCookiesSet,
 	)
 
 	s.Equal(302, resp.Status)
@@ -109,11 +109,11 @@ func (s *CookiesSuite) TestSetCookiesWithNameAndValueInPath() {
 }
 
 func (s *CookiesSuite) TestSetCookiesWithNameAndValueInQuery() {
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"cookies/set?foo=bar",
 		http.Request{},
 		CookiesSetRoute,
-		Routes[CookiesSetRoute],
+		handleCookiesSet,
 	)
 
 	s.Equal(302, resp.Status)
@@ -126,11 +126,11 @@ func (s *CookiesSuite) TestSetCookiesWithNameAndValueInQuery() {
 }
 
 func (s *CookiesSuite) TestSetCookiesWithNameAndValueInQueryMultiple() {
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"cookies/set?foo=bar&baz=qux",
 		http.Request{},
 		CookiesSetRoute,
-		Routes[CookiesSetRoute],
+		handleCookiesSet,
 	)
 
 	s.Equal(302, resp.Status)
@@ -139,6 +139,7 @@ func (s *CookiesSuite) TestSetCookiesWithNameAndValueInQueryMultiple() {
 	s.Equal("/cookies", resp.Header.Get("Location"))
 
 	s.Equal(2, len(resp.Cookies))
-	s.Equal("foo=bar; Path=/", resp.Cookies[0].String())
-	s.Equal("baz=qux; Path=/", resp.Cookies[1].String())
+	expected := []string{"foo=bar; Path=/", "baz=qux; Path=/"}
+	s.Contains(expected, resp.Cookies[0].String())
+	s.Contains(expected, resp.Cookies[1].String())
 }

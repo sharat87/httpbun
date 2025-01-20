@@ -4,23 +4,23 @@ import (
 	"net/http"
 
 	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 )
 
-var Routes = map[string]exchange.HandlerFn{
-	"/deny":       handleRobotsDeny,
-	"/robots.txt": handleRobotsTxt,
-	"/html":       handleHtml,
+var RouteList = []ex.Route{
+	ex.NewRoute("/deny", handleRobotsDeny),
+	ex.NewRoute("/robots.txt", handleRobotsTxt),
+	ex.NewRoute("/html", handleHtml),
 }
 
-func handleRobotsTxt(ex *exchange.Exchange) response.Response {
+func handleRobotsTxt(ex *ex.Exchange) response.Response {
 	return response.New(http.StatusOK, http.Header{
 		c.ContentType: []string{c.TextPlain},
 	}, []byte("User-agent: *\nDisallow: /deny\nDisallow: /mix/\nDisallow: /run/"))
 }
 
-func handleRobotsDeny(ex *exchange.Exchange) response.Response {
+func handleRobotsDeny(ex *ex.Exchange) response.Response {
 	return response.New(http.StatusOK, http.Header{
 		c.ContentType: []string{c.TextPlain},
 	}, []byte(`
@@ -36,7 +36,7 @@ func handleRobotsDeny(ex *exchange.Exchange) response.Response {
      YOU SHOULDN'T BE HERE`))
 }
 
-func handleHtml(ex *exchange.Exchange) response.Response {
+func handleHtml(ex *ex.Exchange) response.Response {
 	return response.New(http.StatusOK, http.Header{
 		c.ContentType: []string{c.TextHTML},
 	}, []byte(`<!DOCTYPE html>

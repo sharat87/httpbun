@@ -9,9 +9,7 @@ import (
 var patCache = map[string]regexp.Regexp{}
 var cacheLock = sync.RWMutex{}
 
-func MatchRoutePat(pat string, path string) (map[string]string, bool) {
-	re := getPattern("^" + pat + "$")
-
+func MatchRoutePat(re regexp.Regexp, path string) (map[string]string, bool) {
 	match := re.FindStringSubmatch(path)
 	if match == nil {
 		return nil, false

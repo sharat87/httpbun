@@ -9,18 +9,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/util"
 )
 
 func TestBearerEmpty(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"bearer",
 		http.Request{},
 		BearerAuthRoute,
-		Routes[BearerAuthRoute],
+		handleAuthBearer,
 	)
 
 	s.Equal(404, resp.Status)
@@ -29,7 +29,7 @@ func TestBearerEmpty(t *testing.T) {
 }
 
 func TestBearerFieldParsing(t *testing.T) {
-	fields, isMatch := util.MatchRoutePat(BearerAuthRoute, "/bearer/dummy_token")
+	fields, isMatch := util.MatchRoutePat(ex.MakePat(BearerAuthRoute), "/bearer/dummy_token")
 
 	s := assert.New(t)
 	s.True(isMatch)
@@ -38,7 +38,7 @@ func TestBearerFieldParsing(t *testing.T) {
 }
 
 func TestBearerFieldParsingWithTrailingSlash(t *testing.T) {
-	fields, isMatch := util.MatchRoutePat(BearerAuthRoute, "/bearer/dummy_token/")
+	fields, isMatch := util.MatchRoutePat(ex.MakePat(BearerAuthRoute), "/bearer/dummy_token/")
 
 	s := assert.New(t)
 	s.True(isMatch)
@@ -47,7 +47,7 @@ func TestBearerFieldParsingWithTrailingSlash(t *testing.T) {
 }
 
 func TestBearerFieldParsingWithSpecialChars(t *testing.T) {
-	fields, isMatch := util.MatchRoutePat(BearerAuthRoute, "/bearer/spe%20cial@token#123%24%25")
+	fields, isMatch := util.MatchRoutePat(ex.MakePat(BearerAuthRoute), "/bearer/spe%20cial@token#123%24%25")
 
 	s := assert.New(t)
 	s.True(isMatch)
@@ -58,7 +58,7 @@ func TestBearerFieldParsingWithSpecialChars(t *testing.T) {
 func TestValidBearerAuth(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"bearer/dummy_token",
 		http.Request{
 			Header: http.Header{
@@ -66,7 +66,7 @@ func TestValidBearerAuth(t *testing.T) {
 			},
 		},
 		BearerAuthRoute,
-		Routes[BearerAuthRoute],
+		handleAuthBearer,
 	)
 
 	s.Equal(0, resp.Status)
@@ -75,7 +75,7 @@ func TestValidBearerAuth(t *testing.T) {
 func TestValidBearerAuthWithSpecialChars(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"bearer/spe%20cial@token#123%24%25",
 		http.Request{
 			Header: http.Header{
@@ -83,7 +83,7 @@ func TestValidBearerAuthWithSpecialChars(t *testing.T) {
 			},
 		},
 		BearerAuthRoute,
-		Routes[BearerAuthRoute],
+		handleAuthBearer,
 	)
 
 	s.Equal(0, resp.Status)
@@ -92,11 +92,11 @@ func TestValidBearerAuthWithSpecialChars(t *testing.T) {
 func TestMissingBearerAuthHeader(t *testing.T) {
 	s := assert.New(t)
 
-	resp := exchange.InvokeHandlerForTest(
+	resp := ex.InvokeHandlerForTest(
 		"bearer/dummy_token",
 		http.Request{},
 		BearerAuthRoute,
-		Routes[BearerAuthRoute],
+		handleAuthBearer,
 	)
 
 	s.Equal(401, resp.Status)

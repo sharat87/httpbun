@@ -1,4 +1,4 @@
-package exchange
+package ex
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -26,6 +27,11 @@ type Exchange struct {
 }
 
 type HandlerFn func(ex *Exchange) response.Response
+
+type Route struct {
+	Pat regexp.Regexp
+	Fn  HandlerFn
+}
 
 func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchange {
 	ex := &Exchange{
@@ -68,7 +74,7 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 	return ex
 }
 
-func (ex Exchange) MatchAndLoadFields(routePat string) bool {
+func (ex Exchange) MatchAndLoadFields(routePat regexp.Regexp) bool {
 	fields, isMatch := util.MatchRoutePat(routePat, ex.RoutedPath)
 	if isMatch {
 		maps.Copy(ex.fields, fields)
@@ -259,4 +265,12 @@ func (ex Exchange) Finish(resp response.Response) {
 	if err != nil {
 		log.Printf("Error writing bytes to exchange response: %v\n", err)
 	}
+}
+
+func NewRoute(pat string, fn HandlerFn) Route {
+	return Route{MakePat(pat), fn}
+}
+
+func MakePat(pat string) regexp.Regexp {
+	return *regexp.MustCompile("^" + pat + "$")
 }

@@ -3,18 +3,18 @@ package cache
 import (
 	"net/http"
 
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/routes/responses"
 )
 
-var Routes = map[string]exchange.HandlerFn{
-	"/cache":                handleCache,
-	"/cache/(?P<age>\\d+)":  handleCacheControl,
-	"/etag/(?P<etag>[^/]+)": handleEtag,
+var RouteList = []ex.Route{
+	ex.NewRoute("/cache", handleCache),
+	ex.NewRoute("/cache/(?P<age>\\d+)", handleCacheControl),
+	ex.NewRoute("/etag/(?P<etag>[^/]+)", handleEtag),
 }
 
-func handleCache(ex *exchange.Exchange) response.Response {
+func handleCache(ex *ex.Exchange) response.Response {
 	shouldSendData :=
 		ex.HeaderValueLast("If-Modified-Since") == "" &&
 			ex.HeaderValueLast("If-None-Match") == ""
@@ -30,7 +30,7 @@ func handleCache(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleCacheControl(ex *exchange.Exchange) response.Response {
+func handleCacheControl(ex *ex.Exchange) response.Response {
 	res, err := responses.InfoJSON(ex)
 	if err != nil {
 		return response.BadRequest(err.Error())
@@ -44,7 +44,7 @@ func handleCacheControl(ex *exchange.Exchange) response.Response {
 	}
 }
 
-func handleEtag(ex *exchange.Exchange) response.Response {
+func handleEtag(ex *ex.Exchange) response.Response {
 	// TODO: Handle If-Match header in etag endpoint: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match>.
 	etagInUrl := ex.Field("etag")
 	etagInHeader := ex.HeaderValueLast("If-None-Match")

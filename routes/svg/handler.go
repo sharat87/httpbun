@@ -4,16 +4,20 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/util"
 )
 
-var Routes = map[string]exchange.HandlerFn{
+var Routes = map[string]ex.HandlerFn{
 	"/svg/(?P<seed>.+)": handleSVGSeeded,
 }
 
-func handleSVGSeeded(ex *exchange.Exchange) response.Response {
+var RouteList = []ex.Route{
+	ex.NewRoute(`/svg/(?P<seed>.+)`, handleSVGSeeded),
+}
+
+func handleSVGSeeded(ex *ex.Exchange) response.Response {
 	seed := ex.Field("seed")
 
 	color := "#" + util.Md5sum(seed)[:6]

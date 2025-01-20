@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/sharat87/httpbun/c"
-	"github.com/sharat87/httpbun/exchange"
+	"github.com/sharat87/httpbun/ex"
 )
 
 type Info struct {
@@ -26,7 +26,7 @@ type Info struct {
 	Files   map[string]any `json:"files"`
 }
 
-func InfoJSON(ex *exchange.Exchange) (*Info, error) {
+func InfoJSON(ex *ex.Exchange) (*Info, error) {
 	args := make(map[string]any)
 	for name, values := range ex.Request.URL.Query() {
 		if len(values) > 1 {
