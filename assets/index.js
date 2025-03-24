@@ -47,6 +47,11 @@ customElements.define("try-it-out", class extends HTMLElement {
 		fetch(url, {
 			method: this.form.method.value || "GET",
 		})
+			.then(async response => {
+				// Force chunked reading of response body, so streaming endpoints work as expected.
+				const reader = response.body.getReader();
+				while (!(await reader.read()).done) {}
+			})
 	}
 })
 
