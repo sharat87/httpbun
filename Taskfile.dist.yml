@@ -46,7 +46,8 @@ tasks:
   patch:
     cmds:
       - sed 's:\(delete(req.Header, "Host")\)$://\1:' "$(go env GOROOT)/src/net/http/server.go" > x
-      - mv x "$(go env GOROOT)/src/net/http/server.go"
+      - |-
+        $(if [[ -n "$CI" ]] then echo sudo; fi) mv x "$(go env GOROOT)/src/net/http/server.go"
 
   unpatch:
     cmds:
