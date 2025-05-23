@@ -66,7 +66,7 @@ func (s *DigestSuite) TestComputeDigestAuthResponse() {
 	)
 
 	s.NoError(err)
-	s.Equal("dce226046ab3ff3eed7e033afddd0d32", response)
+	s.Equal("c5d791b53f3e025c29bb9d812e2ccee1", response)
 }
 
 func (s *DigestSuite) TestComputeDigestAuthIntResponse() {
@@ -90,5 +90,5 @@ func (s *DigestSuite) TestComputeDigestAuthIntResponse() {
 	)
 
 	s.NoError(err)
-	s.Equal("eb5e13db29633478dacd26d232602146", response)
+	s.Equal("feb28fc95b61742fa4afd0ad8b630026", response)
 }

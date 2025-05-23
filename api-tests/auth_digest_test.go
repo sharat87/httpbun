@@ -16,7 +16,7 @@ func TestDigestAuthSuccess(t *testing.T) {
 		Path: "digest-auth/auth/dave/diamond",
 		Headers: map[string][]string{
 			"Cookie":        {"nonce=d9fc96d7fe39099441042eea21006d77"},
-			"Authorization": {"Digest username=\"dave\", realm=\"httpbun realm\", nonce=\"d9fc96d7fe39099441042eea21006d77\", uri=\"/digest-auth/auth/dave/diamond\", algorithm=MD5, response=\"10c1132a06ac0de7c39a07e8553f0f14\", opaque=\"362d9b0fe6787b534eb27677f4210b61\", qop=auth, nc=00000001, cnonce=\"bb2ec71d21a27e19\""},
+			"Authorization": {"Digest username=\"dave\", realm=\"httpbun realm\", nonce=\"d9fc96d7fe39099441042eea21006d77\", uri=\"/digest-auth/auth/dave/diamond\", algorithm=MD5, response=\"57bca3e3d15d4a5123275ce36347ed00\", opaque=\"362d9b0fe6787b534eb27677f4210b61\", qop=auth, nc=00000001, cnonce=\"bb2ec71d21a27e19\""},
 		},
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)

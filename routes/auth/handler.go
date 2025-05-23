@@ -19,6 +19,8 @@ var BearerAuthRoute = `/bearer(/(?P<tok>[^/]+))?/?`
 
 var DigestAuthRoute = `/digest-auth(/((?P<qop>[^/]+)/)?(?P<user>[^/]+)/(?P<pass>[^/]+))?/?`
 
+const REALM = "httpbun realm"
+
 var RouteList = []ex.Route{
 	ex.NewRoute(BasicAuthRoute, handleAuthBasic),
 	ex.NewRoute(BearerAuthRoute, handleAuthBearer),
@@ -31,7 +33,7 @@ func handleAuthBasic(ex *ex.Exchange) response.Response {
 
 	if !isAuthenticated {
 		return response.New(http.StatusUnauthorized, http.Header{
-			c.WWWAuthenticate: []string{"Basic realm=\"httpbun realm\""},
+			c.WWWAuthenticate: []string{"Basic realm=\"" + REALM + "\""},
 		}, nil)
 	}
 
@@ -56,7 +58,7 @@ func handleAuthBearer(ex *ex.Exchange) response.Response {
 	authHeader := ex.HeaderValueLast("Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		return response.New(http.StatusUnauthorized, http.Header{
-			c.WWWAuthenticate: []string{"Bearer realm=\"httpbun realm\""},
+			c.WWWAuthenticate: []string{"Bearer realm=\"" + REALM + "\""},
 		}, nil)
 	}
 
@@ -171,7 +173,7 @@ func unauthorizedDigest(expectedQop string, setCookie bool, error string) respon
 	return response.Response{
 		Status: http.StatusUnauthorized,
 		Header: http.Header{c.WWWAuthenticate: []string{
-			"Digest realm=\"httpbun realm\", qop=\"" + qop + "\", nonce=\"" + newNonce +
+			"Digest realm=\"" + REALM + "\", qop=\"" + qop + "\", nonce=\"" + newNonce +
 				"\", opaque=\"" + opaque + "\", algorithm=MD5, stale=FALSE",
 		}},
 		Cookies: cookies,
@@ -206,7 +208,7 @@ func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce,
 		return "", fmt.Errorf("unsupported qop: %q", qop)
 	}
 
-	ha1 := util.Md5sum(username + ":" + "testrealm@host.com" + ":" + password)
+	ha1 := util.Md5sum(username + ":" + REALM + ":" + password)
 
 	var ha2 string
 	if qop == "" || qop == "auth" {
