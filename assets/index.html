@@ -248,7 +248,8 @@ Hosted versions:
 
     <dt id=sse>/sse</dt>
     <dd>Responds with 10 <a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events">
-        Server sent events</a>, each after 1s of delay. The count and delay aren't configurable today.
+        Server sent events</a>, each after 1s of delay. The count and delay can be set as query params. Count should be between 1
+        and 100. Delay should be between 1 and 10.
     </dd>
 
     <dt id=links>/links/<span class=var>{count}</span></dt>
