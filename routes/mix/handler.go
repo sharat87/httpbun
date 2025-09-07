@@ -100,7 +100,7 @@ func computeMixEntries(ex *ex.Exchange) ([]entry, error) {
 func handleMix(ex *ex.Exchange) response.Response {
 	entries, err := computeMixEntries(ex)
 	if err != nil {
-		return response.BadRequest(err.Error())
+		return response.BadRequest("%s", err.Error())
 	}
 
 	res := &response.Response{
@@ -126,7 +126,7 @@ func handleMix(ex *ex.Exchange) response.Response {
 
 			res.Status, err = strconv.Atoi(code)
 			if err != nil {
-				return response.BadRequest(err.Error())
+				return response.BadRequest("%s", err.Error())
 			}
 
 		case "h":
@@ -153,22 +153,22 @@ func handleMix(ex *ex.Exchange) response.Response {
 			}
 			redirectTo, err = url.QueryUnescape(entry.Args[0])
 			if err != nil {
-				return response.BadRequest(err.Error())
+				return response.BadRequest("%s", err.Error())
 			}
 
 		case "b64":
 			payload, err = base64.StdEncoding.DecodeString(entry.Args[0])
 			if err != nil {
-				return response.BadRequest(err.Error())
+				return response.BadRequest("%s", err.Error())
 			}
 
 		case "d":
 			seconds, err := strconv.ParseFloat(entry.Args[0], 32)
 			if err != nil {
 				if strings.HasSuffix(err.Error(), "invalid syntax") {
-					return response.BadRequest("invalid delay value: '" + entry.Args[0] + "'")
+					return response.BadRequest("invalid delay value: '%s'", entry.Args[0])
 				} else {
-					return response.BadRequest(err.Error())
+					return response.BadRequest("%s", err.Error())
 				}
 			}
 			if seconds < 0 {
@@ -181,11 +181,11 @@ func handleMix(ex *ex.Exchange) response.Response {
 		case "t":
 			templateContent, err := base64.StdEncoding.DecodeString(entry.Args[0])
 			if err != nil {
-				return response.BadRequest(err.Error())
+				return response.BadRequest("%s", err.Error())
 			}
 			payload, err = renderTemplate(ex, string(templateContent))
 			if err != nil {
-				return response.BadRequest(err.Error())
+				return response.BadRequest("%s", err.Error())
 			}
 
 		case "slack":
@@ -226,7 +226,7 @@ func handleMixerHelp(ex *ex.Exchange) response.Response {
 func renderTemplate(ex *ex.Exchange, templateContent string) ([]byte, error) {
 	tpl, err := template.New("mix").Funcs(templateFuncMap).Parse(templateContent)
 	if err != nil {
-		ex.Finish(response.BadRequest(err.Error()))
+		ex.Finish(response.BadRequest("%s", err.Error()))
 		return nil, err
 	}
 	buf := &bytes.Buffer{}

@@ -22,7 +22,7 @@ func handleCache(ex *ex.Exchange) response.Response {
 	if shouldSendData {
 		info, err := responses.InfoJSON(ex)
 		if err != nil {
-			return response.BadRequest(err.Error())
+			return response.BadRequest("%s", err.Error())
 		}
 		return response.Response{Body: info}
 	} else {
@@ -33,7 +33,7 @@ func handleCache(ex *ex.Exchange) response.Response {
 func handleCacheControl(ex *ex.Exchange) response.Response {
 	res, err := responses.InfoJSON(ex)
 	if err != nil {
-		return response.BadRequest(err.Error())
+		return response.BadRequest("%s", err.Error())
 	}
 
 	return response.Response{
@@ -54,7 +54,7 @@ func handleEtag(ex *ex.Exchange) response.Response {
 	} else {
 		info, err := responses.InfoJSON(ex)
 		if err != nil {
-			return response.BadRequest(err.Error())
+			return response.BadRequest("%s", err.Error())
 		}
 		return response.Response{Body: info}
 	}

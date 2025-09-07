@@ -105,7 +105,7 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if s.spec.RootIsAny {
 		info, err := responses.InfoJSON(ex)
 		if err != nil {
-			ex.Finish(response.BadRequest(err.Error()))
+			ex.Finish(response.BadRequest("%s", err.Error()))
 		} else {
 			ex.Finish(response.Response{Body: info})
 		}

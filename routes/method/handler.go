@@ -21,7 +21,7 @@ var RouteList = []ex.Route{
 func handleAnything(ex *ex.Exchange) response.Response {
 	info, err := responses.InfoJSON(ex)
 	if err != nil {
-		return response.BadRequest(err.Error())
+		return response.BadRequest("%s", err.Error())
 	}
 	return response.Response{Body: info}
 }
@@ -43,7 +43,7 @@ func handleValidMethod(ex *ex.Exchange) response.Response {
 
 	info, err := responses.InfoJSON(ex)
 	if err != nil {
-		return response.BadRequest(err.Error())
+		return response.BadRequest("%s", err.Error())
 	}
 	return response.Response{Body: info}
 }

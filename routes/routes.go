@@ -104,10 +104,10 @@ func handleStatus(ex *ex.Exchange) response.Response {
 		}
 		code, err := strconv.Atoi(part)
 		if err != nil {
-			return response.BadRequest("Invalid status code: " + part)
+			return response.BadRequest("Invalid status code: %s", part)
 		}
 		if code < 100 || code > 599 {
-			return response.BadRequest("Invalid status code: " + part)
+			return response.BadRequest("Invalid status code: %s", part)
 		}
 		codes = append(codes, code)
 	}
@@ -173,7 +173,7 @@ func handleRandomBytes(ex *ex.Exchange) response.Response {
 
 	n, err := strconv.Atoi(sizeField)
 	if err != nil {
-		return response.BadRequest("Invalid size: " + sizeField)
+		return response.BadRequest("Invalid size: %s", sizeField)
 	}
 
 	return response.Response{
@@ -189,7 +189,7 @@ func handleDelayedResponse(ex *ex.Exchange) response.Response {
 	n, err := strconv.ParseFloat(ex.Field("delay"), 32)
 
 	if err != nil {
-		return response.BadRequest("Invalid delay: " + err.Error())
+		return response.BadRequest("Invalid delay: %s", err.Error())
 	}
 
 	if n < 0 || n > 300 {
@@ -206,12 +206,13 @@ func handleDrip(ex *ex.Exchange) response.Response {
 	extra := ex.Field("extra")
 	if extra != "" {
 		// todo: docs duplicated from index.html
-		return response.BadRequest("Unknown extra path: " + extra +
+		return response.BadRequest("Unknown extra path: %s" +
 			"\nUse `/drip` or `/drip-lines` with query params:\n" +
 			"  duration: Total number of seconds over which to stream the data. Default: 2.\n" +
 			"  numbytes: Total number of bytes to stream. Default: 10.\n" +
 			"  code: The HTTP status code to be used in their response. Default: 200.\n" +
 			"  delay: An initial delay, in seconds. Default: 2.\n",
+			extra,
 		)
 	}
 
@@ -219,22 +220,22 @@ func handleDrip(ex *ex.Exchange) response.Response {
 
 	duration, err := ex.QueryParamInt("duration", 2)
 	if err != nil {
-		return response.BadRequest(err.Error())
+		return response.BadRequest("%s", err.Error())
 	}
 
 	numbytes, err := ex.QueryParamInt("numbytes", 10)
 	if err != nil {
-		return response.BadRequest(err.Error())
+		return response.BadRequest("%s", err.Error())
 	}
 
 	code, err := ex.QueryParamInt("code", 200)
 	if err != nil {
-		return response.BadRequest(err.Error())
+		return response.BadRequest("%s", err.Error())
 	}
 
 	delay, err := ex.QueryParamInt("delay", 2)
 	if err != nil {
-		return response.BadRequest(err.Error())
+		return response.BadRequest("%s", err.Error())
 	}
 
 	if delay > 0 {

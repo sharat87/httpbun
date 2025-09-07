@@ -3,7 +3,6 @@ package run
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -28,7 +27,7 @@ func handleRunner(ex *ex.Exchange) response.Response {
 func handleRunJS(ex *ex.Exchange) response.Response {
 	src, err := base64.URLEncoding.DecodeString(ex.Field("encoded"))
 	if err != nil {
-		return response.BadRequest("Invalid encoded data: " + err.Error())
+		return response.BadRequest("Invalid encoded data: %s", err.Error())
 	}
 
 	rt := goja.New()
@@ -38,12 +37,12 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 
 	rawFn, err := rt.RunString("R => {\n" + string(src) + "\n}")
 	if err != nil {
-		return response.BadRequest("Evaluation error: " + err.Error())
+		return response.BadRequest("Evaluation error: %s", err.Error())
 	}
 
 	fn, ok := goja.AssertFunction(rawFn)
 	if !ok {
-		return response.BadRequest("Unable to load JS: " + err.Error())
+		return response.BadRequest("Unable to load JS: %s", err.Error())
 	}
 
 	rParam := map[string]any{
@@ -54,7 +53,7 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 
 	rawResult, err := fn(goja.Undefined(), rt.ToValue(rParam))
 	if err != nil {
-		return response.BadRequest("Evaluation error: " + err.Error())
+		return response.BadRequest("Evaluation error: %s", err.Error())
 	}
 
 	result := rawResult.Export().(map[string]any)
@@ -87,13 +86,13 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 						headers.Add(k, vString)
 					}
 				} else {
-					return response.BadRequest("Invalid header value type for key: " + k)
+					return response.BadRequest("Invalid header value type for key: %s", k)
 				}
 			}
 		case nil:
 			headers = nil
 		default:
-			return response.BadRequest("Invalid headers value: " + fmt.Sprintf("%v", headersRaw))
+			return response.BadRequest("Invalid headers value: %v", headersRaw)
 		}
 	}
 
@@ -105,7 +104,7 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 		default:
 			body, err = json.Marshal(bodyTyped)
 			if err != nil {
-				return response.BadRequest("Body JSON stringify error: " + err.Error())
+				return response.BadRequest("Body JSON stringify error: %s", err.Error())
 			}
 		}
 	}
