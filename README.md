@@ -14,6 +14,8 @@ docker run -p 80:80 sharat87/httpbun
 
 A project by [Shri](https://sharats.me).
 
+:warning: If you are using this from your CI, please don't. Run a local version using the above Docker command, within your CI system, and use that "locally".
+
 ## Building
 
 There's a `Taskfile.dist.yml` included in the project, which is a [Taskfile](https://taskfile.dev). Once you have `task` installed, running `task run` will start a local server from source. There's also:

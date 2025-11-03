@@ -98,7 +98,7 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		"From %s %s %s",
 		incomingIP,
 		req.Method,
-		req.URL.String(),
+		req.URL.String()[2:],
 	)
 
 	// Skip all route checking when root-is-any is enabled.

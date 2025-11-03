@@ -259,10 +259,6 @@ func (ex Exchange) Finish(resp response.Response) {
 	// Set `Content-Length` header, to disable chunked transfer. See https://github.com/sharat87/httpbun/issues/13
 	ex.responseWriter.Header().Set("Content-Length", fmt.Sprint(len(body)))
 
-	if ex.Request.Host == "httpbun.org" {
-		ex.responseWriter.Header().Set("X-Notice", "httpbun.org is deprecated. Please use httpbun.com instead.")
-	}
-
 	ex.responseWriter.WriteHeader(status)
 
 	_, err := ex.responseWriter.Write(body)
