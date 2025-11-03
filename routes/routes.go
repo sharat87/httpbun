@@ -176,6 +176,10 @@ func handleRandomBytes(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Invalid size: %s", sizeField)
 	}
 
+	if n > 90 {
+		return response.BadRequest("Size can't be greater than 90")
+	}
+
 	return response.Response{
 		Header: http.Header{
 			c.ContentType:   []string{"application/octet-stream"},
