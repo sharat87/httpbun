@@ -225,7 +225,9 @@ Hosted versions:
 
     <dt id=bytes>/bytes/<span class=var>{count}</span></dt>
     <dd>Returns <code>count</code> random bytes in the response. The <code>Content-Type</code> header is set to
-        <code>application/octet-stream</code>. The randomness is not cryptographically secure.
+        <code>application/octet-stream</code>. The randomness is <strong>not</strong> cryptographically secure.
+        The maximum number of bytes can be set with <a href='#endpoint-bytes-size-limit'><code>--endpoint-bytes-size-limit</code>
+        CLI argument</a>, defaults to 90.
     </dd>
 
     <dt id=delay>/delay/<span class=var>{seconds}</span></dt>
@@ -346,6 +348,9 @@ Hosted versions:
 
     <dt id=banner>--banner</dt>
     <dd>Sets a banner on the homepage. Only used for decorative purposes.</dd>
+
+    <dt id=endpoint-bytes-size-limit>--endpoint-bytes-size-limit</dt>
+    <dd>Maximum number of bytes allowed in the <a href='#bytes'><code>/bytes</code> endpoint</a>.</dd>
 
 </dl>
 

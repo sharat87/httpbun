@@ -1,6 +1,5 @@
 version: "3"
 
-
 vars:
   COMMIT:
     sh: |-
@@ -10,7 +9,6 @@ vars:
       date -u +%FT%TZ
   LD_FLAGS: >-
     -ldflags '-X github.com/sharat87/httpbun/server/spec.Commit={{.COMMIT}} -X github.com/sharat87/httpbun/server/spec.Date={{.NOW}}'
-
 
 tasks:
   run:

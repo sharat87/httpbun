@@ -176,8 +176,8 @@ func handleRandomBytes(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Invalid size: %s", sizeField)
 	}
 
-	if n > 90 {
-		return response.BadRequest("Size can't be greater than 90")
+	if n > ex.ServerSpec.EndpointBytesSizeLimit {
+		return response.BadRequest(fmt.Sprintf("Size can't be greater than %v", ex.ServerSpec.EndpointBytesSizeLimit))
 	}
 
 	return response.Response{
@@ -210,11 +210,11 @@ func handleDrip(ex *ex.Exchange) response.Response {
 	extra := ex.Field("extra")
 	if extra != "" {
 		// todo: docs duplicated from index.html
-		return response.BadRequest("Unknown extra path: %s" +
-			"\nUse `/drip` or `/drip-lines` with query params:\n" +
-			"  duration: Total number of seconds over which to stream the data. Default: 2.\n" +
-			"  numbytes: Total number of bytes to stream. Default: 10.\n" +
-			"  code: The HTTP status code to be used in their response. Default: 200.\n" +
+		return response.BadRequest("Unknown extra path: %s"+
+			"\nUse `/drip` or `/drip-lines` with query params:\n"+
+			"  duration: Total number of seconds over which to stream the data. Default: 2.\n"+
+			"  numbytes: Total number of bytes to stream. Default: 10.\n"+
+			"  code: The HTTP status code to be used in their response. Default: 200.\n"+
 			"  delay: An initial delay, in seconds. Default: 2.\n",
 			extra,
 		)

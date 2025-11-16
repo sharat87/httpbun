@@ -29,6 +29,9 @@ type Spec struct {
 	Commit      string
 	CommitShort string
 	Date        string
+
+	// Route configurations
+	EndpointBytesSizeLimit int
 }
 
 func ParseArgs() Spec {
@@ -42,6 +45,7 @@ func ParseArgs() Spec {
 	flag.StringVar(&spec.PathPrefix, "path-prefix", "", "Prefix at which to serve the httpbun APIs")
 	flag.BoolVar(&spec.RootIsAny, "root-is-any", false, "Have _all_ endpoints behave like `/any`")
 	flag.StringVar(&spec.Banner, "banner", "", "A banner text to display on the homepage")
+	flag.IntVar(&spec.EndpointBytesSizeLimit, "endpoint-bytes-size-limit", 90, "Size limit on the /bytes endpoint, in number of bytes")
 	flag.Parse()
 
 	if spec.Banner != "" {
