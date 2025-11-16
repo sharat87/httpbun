@@ -39,7 +39,7 @@ tasks:
   test:
     cmds:
       # The `-count=1` is to disable test caching.
-      - go test -cover -count=1 -vet=all ./...
+      - go test -cover -count=1 -vet=all -v ./...
 
   patch:
     cmds:

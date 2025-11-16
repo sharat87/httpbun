@@ -177,7 +177,7 @@ func handleRandomBytes(ex *ex.Exchange) response.Response {
 	}
 
 	if n > ex.ServerSpec.EndpointBytesSizeLimit {
-		return response.BadRequest(fmt.Sprintf("Size can't be greater than %v", ex.ServerSpec.EndpointBytesSizeLimit))
+		return response.BadRequest("Size can't be greater than %v", ex.ServerSpec.EndpointBytesSizeLimit)
 	}
 
 	return response.Response{
