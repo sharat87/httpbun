@@ -99,8 +99,19 @@ func handleAuthDigest(ex *ex.Exchange) response.Response {
 	givenDetails := parseDigestAuthHeader(authHeader)
 
 	// QOP check.
-	if expectedQop != "" && givenDetails["qop"] != expectedQop {
-		return unauthorizedDigest(expectedQop, requireCookie, fmt.Sprintf("Error: %q\n", "Unsupported QOP"))
+	if expectedQop != "" {
+		supportedQops := strings.Split(expectedQop, ",")
+		givenQop := givenDetails["qop"]
+		var isSupported bool
+		for _, qop := range supportedQops {
+			if qop == givenQop {
+				isSupported = true
+				break
+			}
+		}
+		if !isSupported {
+			return unauthorizedDigest(expectedQop, requireCookie, fmt.Sprintf("Error: %q\n", "Unsupported QOP"))
+		}
 	}
 
 	// Nonce check.
@@ -130,7 +141,7 @@ func handleAuthDigest(ex *ex.Exchange) response.Response {
 		givenNonce,
 		givenDetails["nc"],
 		givenDetails["cnonce"],
-		expectedQop,
+		givenDetails["qop"],
 		ex,
 	)
 	if err != nil {
@@ -145,6 +156,7 @@ func handleAuthDigest(ex *ex.Exchange) response.Response {
 	}
 
 	return response.Response{
+		Status: http.StatusOK,
 		Body: map[string]any{
 			"authenticated": true,
 			"user":          expectedUsername,

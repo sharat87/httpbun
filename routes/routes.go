@@ -85,7 +85,8 @@ func handleHealth(_ *ex.Exchange) response.Response {
 func handlePayload(ex *ex.Exchange) response.Response {
 	return response.New(http.StatusOK, http.Header{
 		c.ContentType: ex.Request.Header[c.ContentType],
-	}, ex.BodyBytes())
+	}, ex.BodyBytes(),
+	)
 }
 
 func handleStatus(ex *ex.Exchange) response.Response {
