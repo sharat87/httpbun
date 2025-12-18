@@ -20,6 +20,7 @@
     <li>Accept <em>any</em> method in <a href=#headers>/headers</a> and most other such endpoints.
     <li>Not <a href="https://github.com/postmanlabs/httpbin/blob/f8ec666b4d1b654e4ff6aedd356f510dcac09f83/httpbin/helpers.py#L40">hiding some headers</a> in responses.
     <li>More practical handling of unescaped special characters in <code>x-www-form-urlencoded</code> payloads.
+	<li>A <a href=#llm>mock LLM API endpoint</a>, compatible with OpenAI SDK for chat completions.
 </ol>
 
 Hosted versions:
@@ -308,6 +309,59 @@ Hosted versions:
     <dd>Redirect <code>count</code> times. For example, <code>/redirect/3</code> will redirect three times before
         settling on a response. The redirect URLs specified in the <code>Location</code> header will be
         <em>absolute</em> URLs.
+    </dd>
+
+</dl>
+
+<h3 id=llm>LLM Mock API <a href="#llm">&para;</a></h3>
+
+<dl>
+
+    <dt id=llm-chat-completions>/llm/<span class=var>{...}</span></dt>
+    <dd>A mock LLM API endpoint, compatible with OpenAI SDK for chat completions. Ready to be used as the
+		<code>base_url</code> in calls from the SDK. Useful for testing applications that use
+        the OpenAI SDK without making real API calls.
+        <br>
+        <strong>Custom responses:</strong> Use the <code>httpbun</code> field in the request body to customize the
+        mock response content:
+        <pre>{
+  "model": "gpt-4",
+  "messages": [{"role": "user", "content": "Hello!"}],
+  "httpbun": {"content": "Your custom response here"}
+}</pre>
+        This can also be set in the `extra_body` field of the Python and other supporting OpenAI SDKs. If
+		<code>httpbun.content</code> is not provided, a default placeholder response is returned.
+        <br>
+        <details>
+            <summary><span>Examples</span></summary>
+            <pre># Basic request
+curl -X POST {{.host}}/llm/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-4", "messages": [{"role": "user", "content": "Hello!"}]}'</pre>
+            <pre># With custom response
+curl -X POST {{.host}}/llm/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-4", "messages": [...], "httpbun": {"content": "Custom reply!"}}'</pre>
+            <pre># Streaming
+curl -N {{.host}}/llm/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-4", "messages": [...], "stream": true}'</pre>
+            <pre># Python with OpenAI SDK
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="{{.host}}/llm",
+    api_key="not-needed",
+)
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}],
+    extra_body={"httpbun": {"content": "Hi! How can I help?"}},
+)
+print(response.choices[0].message.content)
+# Output: Hi! How can I help?</pre>
+        </details>
     </dd>
 
 </dl>

@@ -20,6 +20,7 @@ import (
 	"github.com/sharat87/httpbun/routes/cache"
 	"github.com/sharat87/httpbun/routes/cookies"
 	"github.com/sharat87/httpbun/routes/headers"
+	"github.com/sharat87/httpbun/routes/llm"
 	"github.com/sharat87/httpbun/routes/method"
 	"github.com/sharat87/httpbun/routes/mix"
 	"github.com/sharat87/httpbun/routes/redirect"
@@ -56,6 +57,7 @@ func GetRoutes() []ex.Route {
 		cache.RouteList,
 		cookies.RouteList,
 		headers.RouteList,
+		llm.RouteList,
 		method.RouteList,
 		mix.RouteList,
 		redirect.RouteList,
