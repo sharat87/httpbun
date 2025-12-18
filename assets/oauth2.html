@@ -1,0 +1,65 @@
+{{template "_head.html" .}}
+
+<h1><img alt=Logo src='{{.pathPrefix}}/assets/icon-180.png'> OAuth2 Consent &mdash; <a href="{{.pathPrefix}}/">Httpbun</a></h1>
+
+<p>⚠️ This is a mock OAuth2 consent page. It does not actually authorize the application. It is only used to
+	demonstrate and test the OAuth2 flow. <strong>If you do not understand any of that, close this page immediately.</strong></p>
+
+<p>An application is requesting access to your account.</p>
+
+<form method="POST">
+	<input type="hidden" name="client_id" value="{{.clientID}}">
+	<input type="hidden" name="redirect_uri" value="{{.redirectURI}}">
+	<input type="hidden" name="state" value="{{.state}}">
+
+	<table>
+		<tr>
+			<th>OAuth Client ID</th>
+			<td><code>{{.clientID}}</code></td>
+		</tr>
+		<tr>
+			<th>OAuth Scope</th>
+			<td><code>{{.scope}}</code></td>
+		</tr>
+		<tr>
+			<th>Redirect after approval</th>
+			<td><code>{{.redirectURI}}</code></td>
+		</tr>
+		<tr>
+			<th>Email to "fake" login as</th>
+			<td><input type="email" id="email" name="email" required autofocus></td>
+		</tr>
+	</table>
+
+	<p>Do you want to authorize this application?</p>
+
+	<p style="display: flex; gap: 1em;">
+		<button type="submit" name="decision" value="approve">✅️ Approve</button>
+		<button type="submit" name="decision" value="decline">❌️ Decline</button>
+	</p>
+</form>
+
+<style>
+th {
+	text-align: left;
+}
+
+th, td {
+	padding: 0.2em .5em;
+}
+
+button {
+	padding: 0.5em 1em;
+	font-size: 1.2em;
+}
+
+@media (prefers-color-scheme: dark) {
+	input {
+		background: #2a2a2a;
+		border-color: #555;
+		color: #eee;
+	}
+}
+</style>
+
+{{template "_foot.html"}}

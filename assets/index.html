@@ -149,6 +149,74 @@ Hosted versions:
         (default), <code>auth-int</code> or <code>auth,auth-int</code>.
     </dd>
 
+    <dt id=oauth2-authorize>/oauth2/authorize</dt>
+    <dd>Mock OAuth2 authorization endpoint. Displays a consent page where the user enters their email and
+        approves or denies access. The email is later retrievable via the <a href="#oauth2-userinfo">/oauth2/userinfo</a> endpoint.
+        <br><br>
+        <strong>Required query parameters:</strong>
+        <ul>
+            <li><code>response_type</code>: Must be <code>code</code>.</li>
+            <li><code>client_id</code>: Your application's client ID (any non-empty string).</li>
+            <li><code>redirect_uri</code>: The URI to redirect to after authorization.</li>
+        </ul>
+        <strong>Optional query parameters:</strong>
+        <ul>
+            <li><code>state</code>: An opaque value to maintain state between request and callback.</li>
+            <li><code>scope</code>: Requested scope (displayed on consent page, not validated).</li>
+        </ul>
+        On approval, redirects to <code>redirect_uri</code> with <code>code</code> and <code>state</code> parameters.
+        On denial, redirects with <code>error=access_denied</code>.
+        <details>
+            <summary><span>Example</span></summary>
+            <pre>{{.host}}/oauth2/authorize?response_type=code&amp;client_id=my-app&amp;redirect_uri=https://example.com/callback&amp;state=abc123</pre>
+        </details>
+    </dd>
+
+    <dt id=oauth2-token>/oauth2/token</dt>
+    <dd>Mock OAuth2 token endpoint. Exchanges an authorization code for an access token.
+        <br><br>
+        <strong>Required form parameters (POST):</strong>
+        <ul>
+            <li><code>grant_type</code>: Must be <code>authorization_code</code>.</li>
+            <li><code>code</code>: The authorization code received from the authorize endpoint.</li>
+            <li><code>client_id</code>: Your application's client ID (must match the authorization request).</li>
+            <li><code>client_secret</code>: Your application's client secret (any non-empty string).</li>
+            <li><code>redirect_uri</code>: Must match the redirect_uri from the authorization request.</li>
+        </ul>
+        Returns a JSON response with <code>access_token</code>, <code>token_type</code>, and <code>expires_in</code>.
+        <details>
+            <summary><span>Examples</span></summary>
+            <pre>curl -X POST {{.host}}/oauth2/token \
+  -d 'grant_type=authorization_code' \
+  -d 'code=AUTH_CODE_HERE' \
+  -d 'client_id=my-app' \
+  -d 'client_secret=my-secret' \
+  -d 'redirect_uri=https://example.com/callback'</pre>
+            <pre># Response:
+{
+  "access_token": "...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}</pre>
+        </details>
+    </dd>
+
+    <dt id=oauth2-userinfo>/oauth2/userinfo</dt>
+    <dd>Mock OAuth2 userinfo endpoint. Returns the email address that was entered on the consent page.
+        <br><br>
+        <strong>Authorization:</strong> Requires a Bearer token in the <code>Authorization</code> header.
+        <br><br>
+        Returns a JSON response with the user's <code>email</code>.
+        <details>
+            <summary><span>Examples</span></summary>
+            <pre>curl -H 'Authorization: Bearer ACCESS_TOKEN_HERE' {{.host}}/oauth2/userinfo</pre>
+            <pre># Response:
+{
+  "email": "user@example.com"
+}</pre>
+        </details>
+    </dd>
+
 </dl>
 
 <h3 id=client-details>Client Details <a href="#client-details">&para;</a></h3>
