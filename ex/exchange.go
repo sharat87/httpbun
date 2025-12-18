@@ -24,6 +24,7 @@ type Exchange struct {
 	cappedBody     io.Reader
 	RoutedPath     string
 	ServerSpec     spec.Spec
+	bodyBytes      []byte
 }
 
 type HandlerFn func(ex *Exchange) response.Response
@@ -202,19 +203,23 @@ func (ex Exchange) FindIncomingIPAddress() string {
 	return ipStr
 }
 
-func (ex Exchange) BodyBytes() []byte {
-	if ex.cappedBody == nil {
-		return nil
+func (ex *Exchange) BodyBytes() []byte {
+	if ex.bodyBytes == nil {
+		if ex.Request.Body == nil {
+			return nil
+		}
+		if bodyBytes, err := io.ReadAll(ex.cappedBody); err != nil {
+			fmt.Println("Error reading request payload", err)
+			return nil
+		} else {
+			ex.bodyBytes = bodyBytes
+			ex.Request.Body = io.NopCloser(strings.NewReader(string(ex.bodyBytes)))
+		}
 	}
-	if bodyBytes, err := io.ReadAll(ex.cappedBody); err != nil {
-		fmt.Println("Error reading request payload", err)
-		return nil
-	} else {
-		return bodyBytes
-	}
+	return ex.bodyBytes
 }
 
-func (ex Exchange) BodyString() string {
+func (ex *Exchange) BodyString() string {
 	return string(ex.BodyBytes())
 }
 
