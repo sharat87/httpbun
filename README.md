@@ -1,5 +1,5 @@
 <h1>
-  <img alt=Logo src='https://github.com/sharat87/httpbun/raw/master/assets/icon-32.png'>
+  <img alt=Logo src='https://github.com/sharat87/httpbun/raw/main/assets/icon-32.png'>
   Httpbun
 </h1>
 
@@ -40,5 +40,5 @@ duplicating efforts. Thanks!
 
 ## License
 
-[Apache-2.0 License](https://github.com/sharat87/httpbun/blob/master/LICENSE). Project includes a
-[NOTICE](https://github.com/sharat87/httpbun/blob/master/NOTICE) file.
+[Apache-2.0 License](https://github.com/sharat87/httpbun/blob/main/LICENSE). Project includes a
+[NOTICE](https://github.com/sharat87/httpbun/blob/main/NOTICE) file.

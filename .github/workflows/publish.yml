@@ -5,11 +5,11 @@ on:
 
   push:
     branches:
-      - "master"
+      - "main"
 
   pull_request:
     branches:
-      - "master"
+      - "main"
 
 jobs:
 
@@ -38,11 +38,11 @@ jobs:
 
       - name: Build and Push Docker images to GHCR and DockerHub
         if: |
-          success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+          success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           docker buildx create --use
 
-          tag_name="$(echo "${{ github.ref_name }}" | sed 's/^master$/latest/')"
+          tag_name="$(echo "${{ github.ref_name }}" | sed 's/^main$/latest/')"
 
           declare -a tags
           tags+=(--tag "${{ vars.DOCKER_HUB_USERNAME }}/httpbun:$tag_name")
