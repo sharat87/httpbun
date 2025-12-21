@@ -4,7 +4,7 @@
 </h1>
 
 This is an HTTP service with endpoints that are useful when testing any HTTP client, like a browser, a library, or any
-API developer tool. It's heavily inspired by [httpbin](https://httpbin.org).
+API developer tool. It's inspired by [httpbin](https://httpbin.org), but is _so_ much more today.
 
 Hosted at [httpbun.com](https://httpbun.com). Run your own with:
 
@@ -37,10 +37,6 @@ Contributions to httpbun are welcome, for the most part. However, I strongly urg
 whatever you're working to contribute *before* you start working on it. This will ensure we are on the same page and
 your work would be in the right place to be merged in. It'll also ensure we don't end up working on the same thing,
 duplicating efforts. Thanks!
-
-## Plug
-
-If you are interested in API testing and API development, you should check [Prestige](https://prestige.dev) out. It is a text based API testing tool with Javascript templating support. It's also open source at [sharat87/prestige](https://github.com/sharat87/prestige).
 
 ## License
 

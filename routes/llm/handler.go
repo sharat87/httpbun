@@ -14,9 +14,10 @@ import (
 )
 
 var RouteList = []ex.Route{
-	// OpenAI
-	ex.NewRoute("/llm/v1/completions", handleCompletions),
+	// OpenAI, default base_url in SDKs is "https://api.openai.com/v1"
+	ex.NewRoute("/llm/completions", handleCompletions),
 	ex.NewRoute("/llm/chat/completions", handleChatCompletions),
+	ex.NewRoute("/llm/responses", handleResponses),
 }
 
 // CompletionRequest represents the request body for the completions endpoint
@@ -43,6 +44,18 @@ type ChatCompletionRequest struct {
 	Stop        any           `json:"stop"`
 	User        string        `json:"user"`
 	Httpbun     *HttpbunMock  `json:"httpbun,omitempty"`
+}
+
+type ResponsesRequest struct {
+	Model   string         `json:"model"`
+	Input   any            `json:"input"`
+	User    string         `json:"user"`
+	Stream  bool           `json:"stream"`
+	Httpbun *ResponsesMock `json:"httpbun,omitempty"`
+}
+
+type ResponsesMock struct {
+	OutputText string `json:"output_text"`
 }
 
 type ChatMessage struct {
@@ -203,6 +216,90 @@ func handleChatCompletions(ex *ex.Exchange) response.Response {
 	}
 }
 
+func handleResponses(ex *ex.Exchange) response.Response {
+	if ex.Request.Method != http.MethodPost {
+		return response.Response{
+			Status: http.StatusMethodNotAllowed,
+			Header: http.Header{"Allow": []string{http.MethodPost}},
+			Body:   map[string]any{"error": "Method not allowed"},
+		}
+	}
+
+	var req ResponsesRequest
+	if err := json.Unmarshal(ex.BodyBytes(), &req); err != nil {
+		return response.Response{
+			Status: http.StatusBadRequest,
+			Body: map[string]any{
+				"error": map[string]any{
+					"message": "Invalid JSON in request body: " + err.Error(),
+					"type":    "invalid_request_error",
+				},
+			},
+		}
+	}
+
+	if req.Model == "" {
+		req.Model = "gpt-4.1-mini"
+	}
+
+	mockOutputText := "This is a mock responses API response from httpbun. I received your input and I'm responding with this placeholder text."
+	if req.Httpbun != nil && req.Httpbun.OutputText != "" {
+		mockOutputText = req.Httpbun.OutputText
+	}
+
+	inputText := getResponsesInputText(req.Input)
+	inputTokens := estimateTokensWithPadding(inputText)
+	outputTokens := 29
+	totalTokens := inputTokens + outputTokens
+
+	outputMessage := map[string]any{
+		"id":     "msg-" + util.RandomString()[:24],
+		"type":   "message",
+		"role":   "assistant",
+		"status": "completed",
+		"content": []map[string]any{
+			{
+				"type":        "output_text",
+				"text":        mockOutputText,
+				"annotations": []any{},
+				"logprobs":    nil,
+			},
+		},
+	}
+
+	usage := map[string]any{
+		"input_tokens":  inputTokens,
+		"output_tokens": outputTokens,
+		"total_tokens":  totalTokens,
+		"input_tokens_details": map[string]any{
+			"cached_tokens": 0,
+		},
+		"output_tokens_details": map[string]any{
+			"reasoning_tokens": 0,
+		},
+	}
+
+	responseBody := map[string]any{
+		"id":                  "resp-" + util.RandomString()[:24],
+		"object":              "response",
+		"created_at":          float64(time.Now().Unix()),
+		"model":               req.Model,
+		"status":              "completed",
+		"error":               nil,
+		"output":              []any{outputMessage},
+		"output_text":         mockOutputText,
+		"usage":               usage,
+		"parallel_tool_calls": false,
+		"tool_choice":         "auto",
+		"tools":               []any{},
+	}
+
+	return response.Response{
+		Header: http.Header{c.ContentType: []string{c.ApplicationJSON}},
+		Body:   responseBody,
+	}
+}
+
 func streamCompletionResponse(req CompletionRequest, mockText string, promptTokens int) response.Response {
 	return response.Response{
 		Header: http.Header{
@@ -338,6 +435,56 @@ func streamChatCompletionResponse(req ChatCompletionRequest, mockContent string,
 			w.Write("data: [DONE]\n\n")
 		},
 	}
+}
+
+func getResponsesInputText(input any) string {
+	if input == nil {
+		return ""
+	}
+
+	switch value := input.(type) {
+	case string:
+		return value
+	case []any:
+		var parts []string
+		for _, item := range value {
+			text := getResponsesInputText(item)
+			if text != "" {
+				parts = append(parts, text)
+			}
+		}
+		return strings.Join(parts, " ")
+	case map[string]any:
+		if content, ok := value["content"]; ok {
+			contentText := getResponsesInputText(content)
+			if contentText != "" {
+				if role, ok := value["role"].(string); ok && role != "" {
+					return role + ": " + contentText
+				}
+				return contentText
+			}
+		}
+		if text, ok := value["text"].(string); ok {
+			return text
+		}
+		if raw, err := json.Marshal(value); err == nil {
+			return string(raw)
+		}
+	default:
+		if raw, err := json.Marshal(value); err == nil {
+			return string(raw)
+		}
+	}
+
+	return fmt.Sprintf("%v", input)
+}
+
+func estimateTokensWithPadding(text string) int {
+	tokens := estimateTokens(text)
+	if tokens == 0 {
+		return 0
+	}
+	return tokens + 1
 }
 
 // getPromptText extracts the prompt text from the request (handles string or []string)

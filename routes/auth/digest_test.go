@@ -10,8 +10,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sharat87/httpbun/server/spec"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/sharat87/httpbun/server/spec"
 
 	"github.com/sharat87/httpbun/ex"
 )

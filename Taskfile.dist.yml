@@ -51,3 +51,11 @@ tasks:
     cmds:
       - sed 's://\(delete(req.Header, "Host")\)$:\1:' "$(go env GOROOT)/src/net/http/server.go" > x
       - mv x "$(go env GOROOT)/src/net/http/server.go"
+
+  llm-sdk-tests:
+    dir: llm-sdk-tests
+    env:
+      BASE_URL: http://localhost:3090/llm
+    cmds:
+      - curl -fsS "$(dirname "$BASE_URL")" >/dev/null
+      - uv run pytest tests
