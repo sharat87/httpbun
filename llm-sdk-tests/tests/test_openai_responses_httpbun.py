@@ -7,7 +7,6 @@ Any deviation in the response structure or values will cause test failures.
 import json
 from typing import cast
 
-import pytest
 from openai import AsyncOpenAI, OpenAI
 from openai.types.responses import Response
 from openai.types.responses.response_input_param import ResponseInputParam
@@ -73,7 +72,9 @@ def test_openai_responses_sync_exact_field_count(base_url: str):
 
     response = client.responses.create(model=MODEL_NAME, input="Hello")
 
-    response_dict = response.model_dump(exclude={"output_text"}) # output_text is an SDK-only shortcut thingy
+    response_dict = response.model_dump(
+        exclude={"output_text"}
+    )  # output_text is an SDK-only shortcut thingy
     expected_keys = set(Response.__annotations__.keys())
     assert set(response_dict.keys()) == expected_keys
 
@@ -180,23 +181,17 @@ def test_openai_responses_conversation_style_input(base_url: str):
         {
             "type": "message",
             "role": "system",
-            "content": [
-                {"type": "input_text", "text": "You are a helpful assistant."}
-            ],
+            "content": [{"type": "input_text", "text": "You are a helpful assistant."}],
         },
         {
             "type": "message",
             "role": "user",
-            "content": [
-                {"type": "input_text", "text": "Hello"}
-            ],
+            "content": [{"type": "input_text", "text": "Hello"}],
         },
         {
             "type": "message",
             "role": "user",
-            "content": [
-                {"type": "input_text", "text": "How are you?"}
-            ],
+            "content": [{"type": "input_text", "text": "How are you?"}],
         },
     ]
 

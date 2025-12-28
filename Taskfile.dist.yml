@@ -53,9 +53,13 @@ tasks:
       - mv x "$(go env GOROOT)/src/net/http/server.go"
 
   llm-sdk-tests:
+    aliases: [st]
     dir: llm-sdk-tests
     env:
       BASE_URL: http://localhost:3090/llm
+      HTTP_PROXY: http://localhost:9020
     cmds:
       - curl -fsS "$(dirname "$BASE_URL")" >/dev/null
+      - uv run ruff check --fix .
+      - uv run ruff format .
       - uv run pytest tests

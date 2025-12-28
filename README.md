@@ -33,10 +33,12 @@ The patching and unpatching is in `task patch` and `task unpatch` targets.
 
 ## Contributing
 
-Contributions to httpbun are welcome, for the most part. However, I strongly urge you to open an issue to discuss
-whatever you're working to contribute *before* you start working on it. This will ensure we are on the same page and
+Bug fixes, yes. New features, less so please. Either way, consider opening an issue to discuss
+it *before* you start working. This will ensure we are on the same page and
 your work would be in the right place to be merged in. It'll also ensure we don't end up working on the same thing,
 duplicating efforts. Thanks!
+
+New features are added mostly as _I_ need them, and in the form that I want to use them.
 
 ## License
 
