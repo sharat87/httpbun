@@ -13,11 +13,12 @@ import (
 	"github.com/sharat87/httpbun/util"
 )
 
-var RouteList = []ex.Route{
-	// OpenAI, default base_url in SDKs is "https://api.openai.com/v1"
-	ex.NewRoute("/llm/completions", handleCompletions),
-	ex.NewRoute("/llm/chat/completions", handleChatCompletions),
-	ex.NewRoute("/llm/responses", handleResponses),
+func init() {
+	RouteList = append(RouteList,
+		ex.NewRoute("/llm/completions", handleCompletions),
+		ex.NewRoute("/llm/chat/completions", handleChatCompletions),
+		ex.NewRoute("/llm/responses", handleResponses),
+	)
 }
 
 // CompletionRequest represents the request body for the completions endpoint

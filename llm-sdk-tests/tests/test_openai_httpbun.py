@@ -4,8 +4,10 @@ Strict pytest tests for OpenAI SDK with httpbun.com/llm endpoint.
 Any deviation in the response structure or values will cause test failures.
 """
 
+import json
 import re
-from openai import OpenAI, AsyncOpenAI
+
+from openai import AsyncOpenAI, OpenAI
 from openai.types.chat import ChatCompletion
 
 
@@ -262,8 +264,6 @@ def test_openai_response_serialization(base_url: str):
     )
 
     # Test model_dump_json()
-    import json
-
     response_json = response.model_dump_json()
     parsed = json.loads(response_json)
     assert parsed["model"] == "gpt-5-nano"
