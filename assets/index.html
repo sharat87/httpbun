@@ -62,6 +62,9 @@ Hosted versions:
             <li><code>end</code>: Takes no value, marks the end of directive processing. Path segment after this is ignored
                 by Httpbun.
         </ol>
+        <p>When using <code>r</code> or a <code>Location</code> header, relative redirect targets continue to work, but
+            absolute targets are restricted to <code>http</code>/<code>https</code> URLs on
+            <code>httpbun.com</code> and <code>example.com</code>.</p>
         <br>Learn more in the <a href=help/mixer>guide</a>, and use the <a href=mixer>mixer</a> for a UI to build these URLs.
     </dd>
 
@@ -167,6 +170,8 @@ Hosted versions:
         </ul>
         On approval, redirects to <code>redirect_uri</code> with <code>code</code> and <code>state</code> parameters.
         On denial, redirects with <code>error=access_denied</code>.
+        Absolute <code>redirect_uri</code> values are currently restricted to <code>http</code>/<code>https</code> URLs on
+        <code>httpbun.com</code> and <code>example.com</code>.
         <details>
             <summary><span>Example</span></summary>
             <pre>{{.host}}/oauth2/authorize?response_type=code&amp;client_id=my-app&amp;redirect_uri=https://example.com/callback&amp;state=abc123</pre>
@@ -269,6 +274,8 @@ Hosted versions:
         <code>two</code>.
         The response body contains all the headers again, in the form of a JSON object. (This JSON object in the
         response should be considered deprecated, and may be removed in the future.)
+        If you set a <code>Location</code> header here, relative values are allowed, but absolute values are restricted to
+        <code>http</code>/<code>https</code> URLs on <code>httpbun.com</code> and <code>example.com</code>.
     </dd>
 
     <dt id=deny>/deny</dt>
@@ -365,6 +372,8 @@ Hosted versions:
     <dt id=redirect-to>/redirect-to</dt>
     <dd>Responds with a redirect to the URL given by the <code>url</code> query param. If a <code>status</code>
         query param is also given, it is used as the HTTP Status code in the response. Otherwise, 302 is used.
+        Relative redirect targets continue to work, but absolute targets are restricted to <code>http</code>/<code>https</code>
+        URLs on <code>httpbun.com</code> and <code>example.com</code>.
     </dd>
 
     <dt id=redirect-count>/redirect/<span class=var>{count}</span></dt>

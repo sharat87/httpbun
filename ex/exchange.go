@@ -7,6 +7,7 @@ import (
 	"maps"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -32,6 +33,11 @@ type HandlerFn func(ex *Exchange) response.Response
 type Route struct {
 	Pat regexp.Regexp
 	Fn  HandlerFn
+}
+
+var allowedRedirectDomains = map[string]struct{}{
+	"example.com": {},
+	"httpbun.com": {},
 }
 
 func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchange {
@@ -237,6 +243,18 @@ func (ex Exchange) Finish(resp response.Response) {
 		status = http.StatusOK
 	}
 
+	if locationHeaders := resp.Header.Values("Location"); len(locationHeaders) > 0 {
+		for _, location := range locationHeaders {
+			if !isAllowedLocationHeader(location) {
+				ex.Finish(response.Response{
+					Status: http.StatusForbidden,
+					Body:   "Forbidden redirect URL. Please be careful with this link.",
+				})
+				return
+			}
+		}
+	}
+
 	maps.Copy(ex.responseWriter.Header(), resp.Header)
 
 	for _, cookie := range resp.Cookies {
@@ -270,6 +288,36 @@ func (ex Exchange) Finish(resp response.Response) {
 	if err != nil {
 		log.Printf("Error writing bytes to exchange response: %v\n", err)
 	}
+}
+
+func isAllowedLocationHeader(location string) bool {
+	parsedURL, err := url.Parse(location)
+	if err != nil {
+		return false
+	}
+
+	if parsedURL.Host != "" {
+		if !isAllowedRedirectScheme(parsedURL.Scheme) {
+			return false
+		}
+		_, ok := allowedRedirectDomains[strings.ToLower(parsedURL.Hostname())]
+		return ok
+	}
+
+	if parsedURL.Scheme != "" {
+		return false
+	}
+
+	decodedLocation, err := url.PathUnescape(location)
+	if err != nil {
+		return false
+	}
+
+	return !strings.HasPrefix(decodedLocation, "//") && !strings.HasPrefix(decodedLocation, `/\`)
+}
+
+func isAllowedRedirectScheme(scheme string) bool {
+	return strings.EqualFold(scheme, "http") || strings.EqualFold(scheme, "https")
 }
 
 func NewRoute(pat string, fn HandlerFn) Route {

@@ -44,3 +44,13 @@ func TestResponseHeadersRepeated(t *testing.T) {
 		}
 	}`, body)
 }
+
+func TestResponseHeadersRejectsExternalLocation(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecRequest(R{
+		Path: "response-headers?Location=https://target-url",
+	})
+	s.Equal(http.StatusForbidden, resp.StatusCode)
+	s.Empty(resp.Header.Get(c.Location))
+	s.Equal("Forbidden redirect URL. Please be careful with this link.", body)
+}

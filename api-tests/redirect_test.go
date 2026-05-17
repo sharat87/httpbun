@@ -12,28 +12,48 @@ import (
 func TestRedirectTo(t *testing.T) {
 	s := assert.New(t)
 	resp, _ := ExecRequest(R{
-		Path: "redirect?url=http://target-url",
+		Path: "redirect?url=https://example.com",
 	})
 	s.Equal(http.StatusFound, resp.StatusCode)
-	s.Equal("http://target-url", resp.Header.Get(c.Location))
+	s.Equal("https://example.com", resp.Header.Get(c.Location))
 }
 
 func TestRedirectToWithEncodedURL(t *testing.T) {
 	s := assert.New(t)
 	resp, _ := ExecRequest(R{
-		Path: "redirect?url=http%3A%2F%2F" + "target-url",
+		Path: "redirect?url=https%3A%2F%2Fexample.com",
 	})
 	s.Equal(http.StatusFound, resp.StatusCode)
-	s.Equal("http://target-url", resp.Header.Get(c.Location))
+	s.Equal("https://example.com", resp.Header.Get(c.Location))
 }
 
 func TestRedirectToWithStatus(t *testing.T) {
 	s := assert.New(t)
 	resp, _ := ExecRequest(R{
-		Path: "redirect?url=http://target-url&status=301",
+		Path: "redirect?url=https://example.com&status=301",
 	})
 	s.Equal(http.StatusMovedPermanently, resp.StatusCode)
-	s.Equal("http://target-url", resp.Header.Get(c.Location))
+	s.Equal("https://example.com", resp.Header.Get(c.Location))
+}
+
+func TestRedirectToRejectsUnknownDomain(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecRequest(R{
+		Path: "redirect?url=https://target-url",
+	})
+	s.Equal(http.StatusForbidden, resp.StatusCode)
+	s.Empty(resp.Header.Get(c.Location))
+	s.Equal("Forbidden redirect URL. Please be careful with this link.", body)
+}
+
+func TestRedirectToRejectsSchemeRelativeURL(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecRequest(R{
+		Path: "redirect?url=%2F%2Fevil.example",
+	})
+	s.Equal(http.StatusForbidden, resp.StatusCode)
+	s.Empty(resp.Header.Get(c.Location))
+	s.Equal("Forbidden redirect URL. Please be careful with this link.", body)
 }
 
 func TestRedirectToWithoutURL(t *testing.T) {
