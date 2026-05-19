@@ -65,6 +65,11 @@ Hosted versions:
         <p>When using <code>r</code> or a <code>Location</code> header, relative redirect targets continue to work, but
             absolute targets are restricted to <code>http</code>/<code>https</code> URLs on
             <code>httpbun.com</code> and <code>example.com</code>.</p>
+        <p><strong>Note:</strong> Status code <code>101</code> and the <code>Connection</code> / <code>Upgrade</code>
+            headers are hop-by-hop semantics that reverse proxies (like the Caddy instance fronting
+            <code>httpbun.com</code>) handle per HTTP spec &mdash; they will be stripped or rewritten by the proxy.
+            To test upgrade-like responses, run a local instance (<code>docker run -p 80:80 sharat87/httpbun</code>)
+            and hit it directly without a proxy in front.</p>
         <br>Learn more in the <a href=help/mixer>guide</a>, and use the <a href=mixer>mixer</a> for a UI to build these URLs.
     </dd>
 
