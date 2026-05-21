@@ -9,6 +9,7 @@ vars:
       date -u +%FT%TZ
   LD_FLAGS: >-
     -ldflags '-X github.com/sharat87/httpbun/server/spec.Commit={{.COMMIT}} -X github.com/sharat87/httpbun/server/spec.Date={{.NOW}}'
+  GOIMPORTS_VERSION: v0.31.0
 
 tasks:
   run:
@@ -30,11 +31,20 @@ tasks:
       - GOARCH=arm64 go build {{.LD_FLAGS}} -a -installsuffix cgo -o bin/httpbun-docker-arm64 .
 
   fmt:
+    deps:
+      - goimports
     cmds:
       - go fmt ./...
-      - goimports -w -local github.com/sharat87/httpbun .
+      - ./bin/goimports -w -local github.com/sharat87/httpbun .
     sources:
       - "**/*.go"
+
+  goimports:
+    internal: true
+    cmds:
+      - mkdir -p bin && GOBIN="$PWD/bin" go install golang.org/x/tools/cmd/goimports@{{.GOIMPORTS_VERSION}}
+    status:
+      - test -x ./bin/goimports
 
   test:
     cmds:

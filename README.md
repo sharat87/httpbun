@@ -12,6 +12,10 @@ Hosted at [httpbun.com](https://httpbun.com). Run your own with:
 docker run -p 80:80 sharat87/httpbun
 ```
 
+To override the external redirect allowlist used by endpoints like `/redirect-to`, set
+`HTTPBUN_ALLOWED_REDIRECT_DOMAINS` to a comma- or whitespace-separated list such as
+`example.com, httpbun.com, *.github.io`.
+
 A project by [Shri](https://sharats.me).
 
 :warning: If you are using this from your CI, please don't. Run a local version using the above Docker command, within your CI system, and use that "locally".
@@ -22,7 +26,7 @@ There's a `Taskfile.dist.yml` included in the project, which is a [Taskfile](htt
 
 1. `task build` to build the binary
 2. `task test` to run tests
-3. `task fmt` to format code
+3. `task fmt` to format code using a pinned, repo-local `goimports`
 4. `task docker` to build binaries for building Docker image
 
 We patch Go's standard lib a little. There's a line in `net/http/server.go` that delets the `Host` header in all incoming requests. We comment that line out during build, and uncomment it again to restore it.

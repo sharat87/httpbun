@@ -27,3 +27,47 @@ func TestIsAllowedLocationHeader(t *testing.T) {
 		})
 	}
 }
+
+func TestIsAllowedLocationHeader_EnvOverride(t *testing.T) {
+	t.Setenv(allowedRedirectDomainsEnvVar, "custom.example")
+
+	if isAllowedLocationHeader("https://example.com/path") {
+		t.Fatal("expected default domain to be disallowed when env override is set")
+	}
+
+	if !isAllowedLocationHeader("https://custom.example/path") {
+		t.Fatal("expected configured domain to be allowed")
+	}
+}
+
+func TestIsAllowedLocationHeader_EnvSplitPatterns(t *testing.T) {
+	t.Setenv(allowedRedirectDomainsEnvVar, "alpha.example,\nbeta.example  gamma.example")
+
+	tests := []string{
+		"https://alpha.example/path",
+		"https://beta.example/path",
+		"https://gamma.example/path",
+	}
+
+	for _, location := range tests {
+		if !isAllowedLocationHeader(location) {
+			t.Fatalf("expected %q to be allowed", location)
+		}
+	}
+}
+
+func TestIsAllowedLocationHeader_WildcardSubdomains(t *testing.T) {
+	t.Setenv(allowedRedirectDomainsEnvVar, "*.github.io")
+
+	if !isAllowedLocationHeader("https://docs.github.io/path") {
+		t.Fatal("expected wildcard subdomain to be allowed")
+	}
+
+	if !isAllowedLocationHeader("https://a.b.github.io/path") {
+		t.Fatal("expected nested wildcard subdomain to be allowed")
+	}
+
+	if isAllowedLocationHeader("https://github.io/path") {
+		t.Fatal("expected bare domain to be disallowed for wildcard-only entry")
+	}
+}

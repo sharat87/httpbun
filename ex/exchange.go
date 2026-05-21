@@ -18,6 +18,8 @@ import (
 	"github.com/sharat87/httpbun/util"
 )
 
+const allowedRedirectDomainsEnvVar = "HTTPBUN_ALLOWED_REDIRECT_DOMAINS"
+
 type Exchange struct {
 	Request        *http.Request
 	responseWriter http.ResponseWriter
@@ -35,9 +37,17 @@ type Route struct {
 	Fn  HandlerFn
 }
 
-var allowedRedirectDomains = map[string]struct{}{
-	"example.com": {},
-	"httpbun.com": {},
+var (
+	defaultAllowedRedirectDomains = []string{
+		"example.com",
+		"httpbun.com",
+	}
+	allowedRedirectDomainsSplitter = regexp.MustCompile(`\s*,\s*|\s+`)
+)
+
+type allowedRedirectDomains struct {
+	exactHosts       map[string]struct{}
+	wildcardSuffixes []string
 }
 
 func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchange {
@@ -300,8 +310,7 @@ func isAllowedLocationHeader(location string) bool {
 		if !isAllowedRedirectScheme(parsedURL.Scheme) {
 			return false
 		}
-		_, ok := allowedRedirectDomains[strings.ToLower(parsedURL.Hostname())]
-		return ok
+		return getAllowedRedirectDomains().allowsHost(parsedURL.Hostname())
 	}
 
 	if parsedURL.Scheme != "" {
@@ -318,6 +327,70 @@ func isAllowedLocationHeader(location string) bool {
 
 func isAllowedRedirectScheme(scheme string) bool {
 	return strings.EqualFold(scheme, "http") || strings.EqualFold(scheme, "https")
+}
+
+func getAllowedRedirectDomains() allowedRedirectDomains {
+	rawDomains, hasEnvValue := os.LookupEnv(allowedRedirectDomainsEnvVar)
+	if !hasEnvValue {
+		return newAllowedRedirectDomains(defaultAllowedRedirectDomains)
+	}
+	return newAllowedRedirectDomains(splitAllowedRedirectDomains(rawDomains))
+}
+
+func splitAllowedRedirectDomains(rawDomains string) []string {
+	return allowedRedirectDomainsSplitter.Split(strings.TrimSpace(rawDomains), -1)
+}
+
+func newAllowedRedirectDomains(domains []string) allowedRedirectDomains {
+	allowed := allowedRedirectDomains{
+		exactHosts: map[string]struct{}{},
+	}
+
+	for _, domain := range domains {
+		domain = normalizeAllowedRedirectHost(domain)
+		if domain == "" {
+			continue
+		}
+
+		if wildcardSuffix, isWildcard := wildcardRedirectSuffix(domain); isWildcard {
+			allowed.wildcardSuffixes = append(allowed.wildcardSuffixes, wildcardSuffix)
+			continue
+		}
+
+		allowed.exactHosts[domain] = struct{}{}
+	}
+
+	return allowed
+}
+
+func (allowed allowedRedirectDomains) allowsHost(host string) bool {
+	host = normalizeAllowedRedirectHost(host)
+	if host == "" {
+		return false
+	}
+
+	if _, ok := allowed.exactHosts[host]; ok {
+		return true
+	}
+
+	for _, wildcardSuffix := range allowed.wildcardSuffixes {
+		if strings.HasSuffix(host, wildcardSuffix) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func normalizeAllowedRedirectHost(host string) string {
+	return strings.TrimSuffix(strings.ToLower(strings.TrimSpace(host)), ".")
+}
+
+func wildcardRedirectSuffix(domain string) (string, bool) {
+	if !strings.HasPrefix(domain, "*.") || len(domain) <= 2 {
+		return "", false
+	}
+	return domain[1:], true
 }
 
 func NewRoute(pat string, fn HandlerFn) Route {
