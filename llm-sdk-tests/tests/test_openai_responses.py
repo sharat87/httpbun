@@ -21,9 +21,9 @@ EXPECTED_OUTPUT_TEXT = (
 )
 
 
-def test_openai_responses_sync_response_structure(base_url: str):
+def test_openai_responses_sync_response_structure(openai_base_url: str):
     """Test the synchronous OpenAI client with responses endpoint - strict response structure validation."""
-    client = OpenAI(base_url=base_url, api_key=API_KEY)
+    client = OpenAI(base_url=openai_base_url, api_key=API_KEY)
 
     response = client.responses.create(model=MODEL_NAME, input="Hello")
 
@@ -66,9 +66,9 @@ def test_openai_responses_sync_response_structure(base_url: str):
     assert usage.output_tokens_details.reasoning_tokens == 0
 
 
-def test_openai_responses_sync_exact_field_count(base_url: str):
+def test_openai_responses_sync_exact_field_count(openai_base_url: str):
     """Test that the response has exactly the expected fields, no more, no less."""
-    client = OpenAI(base_url=base_url, api_key=API_KEY)
+    client = OpenAI(base_url=openai_base_url, api_key=API_KEY)
 
     response = client.responses.create(model=MODEL_NAME, input="Hello")
 
@@ -103,9 +103,9 @@ def test_openai_responses_sync_exact_field_count(base_url: str):
     assert set(output_details.keys()) == {"reasoning_tokens"}
 
 
-async def test_openai_responses_async_response(base_url: str):
+async def test_openai_responses_async_response(openai_base_url: str):
     """Test the async OpenAI client with responses endpoint."""
-    client = AsyncOpenAI(base_url=base_url, api_key=API_KEY)
+    client = AsyncOpenAI(base_url=openai_base_url, api_key=API_KEY)
 
     try:
         response = await client.responses.create(model=MODEL_NAME, input="Hello")
@@ -129,9 +129,9 @@ async def test_openai_responses_async_response(base_url: str):
         await client.close()
 
 
-def test_openai_responses_multiple_requests_consistent(base_url: str):
+def test_openai_responses_multiple_requests_consistent(openai_base_url: str):
     """Test that multiple requests return consistent structure."""
-    client = OpenAI(base_url=base_url, api_key=API_KEY)
+    client = OpenAI(base_url=openai_base_url, api_key=API_KEY)
 
     responses = []
     for _ in range(3):
@@ -151,9 +151,9 @@ def test_openai_responses_multiple_requests_consistent(base_url: str):
     assert len(set(ids)) == len(ids)
 
 
-def test_openai_responses_error_handling(base_url: str):
+def test_openai_responses_error_handling(openai_base_url: str):
     """Test error handling with an invalid model name."""
-    client = OpenAI(base_url=base_url, api_key=API_KEY)
+    client = OpenAI(base_url=openai_base_url, api_key=API_KEY)
 
     response = client.responses.create(model="invalid-model-name", input="Hello")
 
@@ -161,9 +161,9 @@ def test_openai_responses_error_handling(base_url: str):
     assert response.output_text == EXPECTED_OUTPUT_TEXT
 
 
-def test_openai_responses_different_input(base_url: str):
+def test_openai_responses_different_input(openai_base_url: str):
     """Test with a different input to ensure httpbun returns the same mock response."""
-    client = OpenAI(base_url=base_url, api_key=API_KEY)
+    client = OpenAI(base_url=openai_base_url, api_key=API_KEY)
 
     message = "This is a different input"
     response = client.responses.create(model=MODEL_NAME, input=message)
@@ -173,9 +173,9 @@ def test_openai_responses_different_input(base_url: str):
     assert response.usage.input_tokens > 3
 
 
-def test_openai_responses_conversation_style_input(base_url: str):
+def test_openai_responses_conversation_style_input(openai_base_url: str):
     """Test with conversation style input to ensure consistent mock response."""
-    client = OpenAI(base_url=base_url, api_key=API_KEY)
+    client = OpenAI(base_url=openai_base_url, api_key=API_KEY)
 
     conversation_input: ResponseInputParam = [
         {
@@ -202,9 +202,9 @@ def test_openai_responses_conversation_style_input(base_url: str):
     assert response.usage.input_tokens > 3
 
 
-def test_openai_responses_response_serialization(base_url: str):
+def test_openai_responses_response_serialization(openai_base_url: str):
     """Test that the response can be properly serialized and deserialized."""
-    client = OpenAI(base_url=base_url, api_key=API_KEY)
+    client = OpenAI(base_url=openai_base_url, api_key=API_KEY)
 
     response = client.responses.create(model=MODEL_NAME, input="Hello")
 

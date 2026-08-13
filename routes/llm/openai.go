@@ -15,9 +15,9 @@ import (
 
 func init() {
 	RouteList = append(RouteList,
-		ex.NewRoute("/llm/completions", handleCompletions),
-		ex.NewRoute("/llm/chat/completions", handleChatCompletions),
-		ex.NewRoute("/llm/responses", handleResponses),
+		ex.NewRoute("/llm/v1/completions", handleCompletions),
+		ex.NewRoute("/llm/v1/chat/completions", handleChatCompletions),
+		ex.NewRoute("/llm/v1/responses", handleResponses),
 	)
 }
 
