@@ -2,7 +2,7 @@ html {
 	background: #fff;
 	color: #333;
 	scroll-behavior: smooth;
-	scrollbar-color: currentColor transparent;
+	scrollbar-color: #888 transparent;
 	scrollbar-width: thin;
 	overflow-y: scroll;
 }

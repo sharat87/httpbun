@@ -15,7 +15,7 @@
     </ul>
     <li>The <code>/run</code> endpoint, and the <a href="{{.pathPrefix}}/runner">Runner</a>. (Beta).
 	<li>A mock <a href=#oauth2-authorize>OAuth2</a> provider. (Beta).
-	<li>A <a href=#llm>mock LLM API endpoint</a>, compatible with OpenAI SDK for chat completions. (Beta).
+	<li>A <a href=#llm>mock LLM API endpoint</a>, compatible with OpenAI (chat completions, completions and responses) and Anthropic messages APIs.
     <li>Ability to run on a <a href="#configuration-path-prefix">custom path prefix</a>.
     <li>The <a href=#payload>/payload endpoint</a>.
     <li>Allowing request body in <a href=#get>/get endpoint</a>.
@@ -406,21 +406,29 @@ Hosted versions:
 
 <dl>
 
-    <dt id=llm-chat-completions>/llm/<span class=var>{...}</span></dt>
-    <dd>A mock LLM API endpoint, compatible with OpenAI SDK for chat completions. Ready to be used as the
-		<code>base_url</code> in calls from the SDK. Useful for testing applications that use
-        the OpenAI SDK without making real API calls.
+    <dt id=llm-overview>Overview</dt>
+    <dd>Mock endpoints that mimic real LLM APIs, so you can point an SDK at httpbun instead of a paid provider. Set
+        <code>base_url</code> to <code>{{.host}}/llm</code>, pass any dummy API key, and you're all set. No auth,
+        no keys. Responses are deterministic with a plausible <code>usage</code> block, and the <code>stream</code>
+        flag is honored using the right SSE protocol for each provider.
         <br>
-        <strong>Custom responses:</strong> Use the <code>httpbun</code> field in the request body to customize the
-        mock response content:
+        <strong>Custom responses:</strong> add an <code>httpbun</code> field to the request body to override the mock
+        output:
         <pre>{
   "model": "gpt-4",
   "messages": [{"role": "user", "content": "Hello!"}],
   "httpbun": {"content": "Your custom response here"}
 }</pre>
-        This can also be set in the `extra_body` field of the Python and other supporting OpenAI SDKs. If
-		<code>httpbun.content</code> is not provided, a default placeholder response is returned.
-        <br>
+        If the SDK rejects unknown fields, pass it via <code>extra_body</code> instead, like
+        <code>extra_body={"httpbun": {"content": "..."}}</code> in the Python SDK. Without it, you get a default
+        placeholder response.
+    </dd>
+
+    <dt id=llm-chat-completions>/llm/chat/completions</dt>
+    <dd>Implements the OpenAI <a href="https://platform.openai.com/docs/api-reference/chat">Chat Completions API</a>.
+        Accepts <code>model</code>, <code>messages</code>, <code>max_tokens</code>, <code>temperature</code>,
+        <code>n</code>, <code>stream</code>, <code>stop</code>, <code>user</code>, and returns a
+        <code>chat.completion</code> response.
         <details>
             <summary><span>Examples</span></summary>
             <pre># Basic request
@@ -449,6 +457,62 @@ response = client.chat.completions.create(
     extra_body={"httpbun": {"content": "Hi! How can I help?"}},
 )
 print(response.choices[0].message.content)
+# Output: Hi! How can I help?</pre>
+        </details>
+    </dd>
+
+    <dt id=llm-completions>/llm/completions</dt>
+    <dd>Implements the OpenAI legacy <a href="https://platform.openai.com/docs/api-reference/completions">Completions
+        API</a>. Accepts <code>model</code>, <code>prompt</code> (string or list), <code>max_tokens</code>,
+        <code>temperature</code>, <code>n</code>, <code>stream</code>, <code>stop</code>, <code>user</code>,
+        <code>suffix</code>, and returns a <code>text_completion</code> response.
+        <details>
+            <summary><span>Example</span></summary>
+            <pre>curl -X POST {{.host}}/llm/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-3.5-turbo-instruct", "prompt": "Hello!"}' \
+  | jq '.choices[0].text'</pre>
+        </details>
+    </dd>
+
+    <dt id=llm-responses>/llm/responses</dt>
+    <dd>Implements the OpenAI <a href="https://platform.openai.com/docs/api-reference/responses">Responses API</a>.
+        Accepts <code>model</code>, <code>input</code> (string or a list of messages), <code>stream</code>,
+        <code>user</code>, and returns a <code>response</code> object. Customize output with
+        <code>httpbun.output_text</code>.
+        <details>
+            <summary><span>Example</span></summary>
+            <pre>curl -X POST {{.host}}/llm/responses \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-4.1-mini", "input": "Hello!", "httpbun": {"output_text": "Custom reply!"}}' \
+  | jq '.output_text'</pre>
+        </details>
+    </dd>
+
+    <dt id=llm-messages>/llm/v1/messages</dt>
+    <dd>Implements the Anthropic <a href="https://docs.anthropic.com/en/api/messages">Messages API</a>. Accepts
+        <code>model</code>, <code>messages</code>, <code>max_tokens</code>, <code>stream</code>,
+        <code>temperature</code>, <code>top_p</code>, <code>top_k</code>, <code>stop_sequences</code>, and returns an
+        Anthropic <code>message</code>. Customize output with <code>httpbun.content</code>. Streaming uses Anthropic's
+        event types (<code>message_start</code>, <code>content_block_delta</code>, <code>message_stop</code>,
+        <em>etc.</em>).
+        <details>
+            <summary><span>Example</span></summary>
+            <pre># Python with the Anthropic SDK
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="{{.host}}/llm",
+    api_key="not-needed",
+)
+
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}],
+    extra_body={"httpbun": {"content": "Hi! How can I help?"}},
+)
+print(response.content[0].text)
 # Output: Hi! How can I help?</pre>
         </details>
     </dd>
