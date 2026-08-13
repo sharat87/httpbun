@@ -254,3 +254,33 @@ def test_anthropic_response_serialization(anthropic_base_url: str):
         parsed["content"][0]["text"]
         == "This is a mock Anthropic messages API response from httpbun. I received your messages and I'm responding with this placeholder text."
     )
+
+
+def test_anthropic_v1_path(base_url: str):
+    """Test that the /v1/ path works correctly for Anthropic messages API (new standard path)."""
+    # Anthropic SDK automatically adds /v1/, so we need to point to /llm/ and it will call /llm/v1/messages
+    client = Anthropic(base_url=base_url, api_key="dummy-key")
+
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "Test v1 path"}],
+    )
+
+    assert isinstance(response, Message)
+    assert response.model == "claude-3-5-sonnet-20241022"
+
+
+def test_anthropic_backward_compatible_path(base_url: str):
+    """Test that Anthropic SDK works with base URL (SDK automatically handles /v1/)."""
+    # Anthropic SDK automatically adds /v1/, so both /llm/v1/messages and /llm/messages work
+    client = Anthropic(base_url=base_url, api_key="dummy-key")
+
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "Test backward compat"}],
+    )
+
+    assert isinstance(response, Message)
+    assert response.model == "claude-3-5-sonnet-20241022"

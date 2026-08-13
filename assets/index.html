@@ -424,7 +424,7 @@ Hosted versions:
         placeholder response.
     </dd>
 
-    <dt id=llm-chat-completions>/llm/chat/completions</dt>
+    <dt id=llm-chat-completions>/llm/v1/chat/completions</dt>
     <dd>Implements the OpenAI <a href="https://platform.openai.com/docs/api-reference/chat">Chat Completions API</a>.
         Accepts <code>model</code>, <code>messages</code>, <code>max_tokens</code>, <code>temperature</code>,
         <code>n</code>, <code>stream</code>, <code>stop</code>, <code>user</code>, and returns a
@@ -432,22 +432,22 @@ Hosted versions:
         <details>
             <summary><span>Examples</span></summary>
             <pre># Basic request
-curl -X POST {{.host}}/llm/chat/completions \
+curl -X POST {{.host}}/llm/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model": "gpt-4", "messages": [{"role": "user", "content": "Hello!"}]}'</pre>
             <pre># With custom response
-curl -X POST {{.host}}/llm/chat/completions \
+curl -X POST {{.host}}/llm/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model": "gpt-4", "messages": [...], "httpbun": {"content": "Custom reply!"}}'</pre>
             <pre># Streaming
-curl -N {{.host}}/llm/chat/completions \
+curl -N {{.host}}/llm/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"model": "gpt-4", "messages": [...], "stream": true}'</pre>
             <pre># Python with OpenAI SDK
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="{{.host}}/llm",
+    base_url="{{.host}}/llm/v1",
     api_key="not-needed",
 )
 
@@ -461,28 +461,28 @@ print(response.choices[0].message.content)
         </details>
     </dd>
 
-    <dt id=llm-completions>/llm/completions</dt>
+    <dt id=llm-completions>/llm/v1/completions</dt>
     <dd>Implements the OpenAI legacy <a href="https://platform.openai.com/docs/api-reference/completions">Completions
         API</a>. Accepts <code>model</code>, <code>prompt</code> (string or list), <code>max_tokens</code>,
         <code>temperature</code>, <code>n</code>, <code>stream</code>, <code>stop</code>, <code>user</code>,
         <code>suffix</code>, and returns a <code>text_completion</code> response.
         <details>
             <summary><span>Example</span></summary>
-            <pre>curl -X POST {{.host}}/llm/completions \
+            <pre>curl -X POST {{.host}}/llm/v1/completions \
   -H "Content-Type: application/json" \
   -d '{"model": "gpt-3.5-turbo-instruct", "prompt": "Hello!"}' \
   | jq '.choices[0].text'</pre>
         </details>
     </dd>
 
-    <dt id=llm-responses>/llm/responses</dt>
+    <dt id=llm-responses>/llm/v1/responses</dt>
     <dd>Implements the OpenAI <a href="https://platform.openai.com/docs/api-reference/responses">Responses API</a>.
         Accepts <code>model</code>, <code>input</code> (string or a list of messages), <code>stream</code>,
         <code>user</code>, and returns a <code>response</code> object. Customize output with
         <code>httpbun.output_text</code>.
         <details>
             <summary><span>Example</span></summary>
-            <pre>curl -X POST {{.host}}/llm/responses \
+            <pre>curl -X POST {{.host}}/llm/v1/responses \
   -H "Content-Type: application/json" \
   -d '{"model": "gpt-4.1-mini", "input": "Hello!", "httpbun": {"output_text": "Custom reply!"}}' \
   | jq '.output_text'</pre>

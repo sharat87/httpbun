@@ -217,3 +217,27 @@ def test_openai_responses_response_serialization(openai_base_url: str):
     parsed = json.loads(response_json)
     assert parsed["model"] == MODEL_NAME
     assert parsed["output"][0]["content"][0]["text"] == EXPECTED_OUTPUT_TEXT
+
+
+def test_openai_responses_v1_path(openai_base_url: str):
+    """Test that the /v1/ path works correctly for responses API (new standard path)."""
+    # The openai_base_url fixture already provides the /llm/v1 path
+    client = OpenAI(base_url=openai_base_url, api_key=API_KEY)
+
+    response = client.responses.create(model=MODEL_NAME, input="Test v1 path")
+
+    assert isinstance(response, Response)
+    assert response.model == MODEL_NAME
+    assert response.object == "response"
+
+
+def test_openai_responses_backward_compatible_path(base_url: str):
+    """Test that the path without /v1/ still works for responses API (backward compatibility)."""
+    # Use base_url which points to /llm/ without /v1 suffix
+    client = OpenAI(base_url=base_url, api_key=API_KEY)
+
+    response = client.responses.create(model=MODEL_NAME, input="Test backward compat")
+
+    assert isinstance(response, Response)
+    assert response.model == MODEL_NAME
+    assert response.object == "response"

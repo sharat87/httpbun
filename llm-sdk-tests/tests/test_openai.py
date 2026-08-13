@@ -271,3 +271,33 @@ def test_openai_response_serialization(openai_base_url: str):
         parsed["choices"][0]["message"]["content"]
         == "This is a mock chat response from httpbun. I received your messages and I'm responding with this placeholder text."
     )
+
+
+def test_openai_v1_path(openai_base_url: str):
+    """Test that the /v1/ path works correctly (new standard path)."""
+    # The openai_base_url fixture already provides the /llm/v1 path
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
+
+    response = client.chat.completions.create(
+        model="gpt-5-nano", messages=[{"role": "user", "content": "Test v1 path"}]
+    )
+
+    assert isinstance(response, ChatCompletion)
+    assert response.model == "gpt-5-nano"
+    assert response.object == "chat.completion"
+    assert response.choices[0].message.role == "assistant"
+
+
+def test_openai_backward_compatible_path(base_url: str):
+    """Test that the path without /v1/ still works (backward compatibility)."""
+    # Use base_url which points to /llm/ without /v1 suffix
+    client = OpenAI(base_url=base_url, api_key="dummy-key")
+
+    response = client.chat.completions.create(
+        model="gpt-5-nano", messages=[{"role": "user", "content": "Test backward compat"}]
+    )
+
+    assert isinstance(response, ChatCompletion)
+    assert response.model == "gpt-5-nano"
+    assert response.object == "chat.completion"
+    assert response.choices[0].message.role == "assistant"
