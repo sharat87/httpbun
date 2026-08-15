@@ -10,6 +10,10 @@ vars:
   LD_FLAGS: >-
     -ldflags '-X github.com/sharat87/httpbun/server/spec.Commit={{.COMMIT}} -X github.com/sharat87/httpbun/server/spec.Date={{.NOW}}'
   GOIMPORTS_VERSION: v0.31.0
+  proxy:
+    sh: |
+      # Disable setting proxy automatically for now. We'll come back.
+      nc -z 127.0.0.1 9020 2>/dev/null && echo -n "http://127.0.0.1:9020" || echo -n ""
 
 tasks:
   run:
@@ -67,7 +71,10 @@ tasks:
     dir: llm-sdk-tests
     env:
       BASE_URL: http://localhost:3090/llm
-      HTTP_PROXY: http://localhost:9020
+      HTTP_PROXY: "{{.proxy}}"
+      HTTPS_PROXY: "{{.proxy}}"
+      NO_PROXY: localhost,127.0.0.1
+      no_proxy: localhost,127.0.0.1
     cmds:
       - curl -fsS "$(dirname "$BASE_URL")" >/dev/null
       - uv run ruff check --fix .
