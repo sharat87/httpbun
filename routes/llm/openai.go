@@ -15,6 +15,11 @@ import (
 
 func init() {
 	RouteList = append(RouteList,
+		// New standard paths with /v1/ prefix (documented)
+		ex.NewRoute("/llm/v1/completions", handleCompletions),
+		ex.NewRoute("/llm/v1/chat/completions", handleChatCompletions),
+		ex.NewRoute("/llm/v1/responses", handleResponses),
+		// Legacy paths without /v1/ prefix (undocumented but still supported for backwards compatibility)
 		ex.NewRoute("/llm/completions", handleCompletions),
 		ex.NewRoute("/llm/chat/completions", handleChatCompletions),
 		ex.NewRoute("/llm/responses", handleResponses),

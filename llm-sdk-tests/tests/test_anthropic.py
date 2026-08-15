@@ -11,9 +11,9 @@ from anthropic import Anthropic, AsyncAnthropic
 from anthropic.types import Message
 
 
-def test_anthropic_sync_response_structure(base_url: str):
+def test_anthropic_sync_response_structure(anthropic_base_url: str):
     """Test the synchronous Anthropic client with httpbun endpoint - strict response structure validation."""
-    client = Anthropic(base_url=base_url, api_key="dummy-key")
+    client = Anthropic(base_url=anthropic_base_url, api_key="dummy-key")
 
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
@@ -57,9 +57,9 @@ def test_anthropic_sync_response_structure(base_url: str):
     assert usage.output_tokens == 33
 
 
-def test_anthropic_sync_exact_field_count(base_url: str):
+def test_anthropic_sync_exact_field_count(anthropic_base_url: str):
     """Test that the response has exactly the expected fields, no more, no less."""
-    client = Anthropic(base_url=base_url, api_key="dummy-key")
+    client = Anthropic(base_url=anthropic_base_url, api_key="dummy-key")
 
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
@@ -100,9 +100,9 @@ def test_anthropic_sync_exact_field_count(base_url: str):
     assert set(usage_dict.keys()) == expected_usage_keys
 
 
-async def test_anthropic_async_response(base_url: str):
+async def test_anthropic_async_response(anthropic_base_url: str):
     """Test the async Anthropic client with httpbun endpoint."""
-    client = AsyncAnthropic(base_url=base_url, api_key="dummy-key")
+    client = AsyncAnthropic(base_url=anthropic_base_url, api_key="dummy-key")
 
     try:
         response = await client.messages.create(
@@ -134,9 +134,9 @@ async def test_anthropic_async_response(base_url: str):
         await client.close()
 
 
-def test_anthropic_multiple_requests_consistent(base_url: str):
+def test_anthropic_multiple_requests_consistent(anthropic_base_url: str):
     """Test that multiple requests return consistent structure."""
-    client = Anthropic(base_url=base_url, api_key="dummy-key")
+    client = Anthropic(base_url=anthropic_base_url, api_key="dummy-key")
 
     responses = []
     for _ in range(3):
@@ -164,9 +164,9 @@ def test_anthropic_multiple_requests_consistent(base_url: str):
     assert len(set(ids)) == 3  # All IDs should be unique
 
 
-def test_anthropic_error_handling(base_url: str):
+def test_anthropic_error_handling(anthropic_base_url: str):
     """Test error handling with an invalid model name."""
-    client = Anthropic(base_url=base_url, api_key="dummy-key")
+    client = Anthropic(base_url=anthropic_base_url, api_key="dummy-key")
 
     # httpbun might accept any model name, but let's test the response
     response = client.messages.create(
@@ -183,9 +183,9 @@ def test_anthropic_error_handling(base_url: str):
     )
 
 
-def test_anthropic_different_message(base_url: str):
+def test_anthropic_different_message(anthropic_base_url: str):
     """Test with a different message to ensure httpbun returns the same mock response."""
-    client = Anthropic(base_url=base_url, api_key="dummy-key")
+    client = Anthropic(base_url=anthropic_base_url, api_key="dummy-key")
 
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
@@ -203,9 +203,9 @@ def test_anthropic_different_message(base_url: str):
     assert response.usage.input_tokens > 3  # Should be more than "Hello"
 
 
-def test_anthropic_conversation_history(base_url: str):
+def test_anthropic_conversation_history(anthropic_base_url: str):
     """Test with conversation history."""
-    client = Anthropic(base_url=base_url, api_key="dummy-key")
+    client = Anthropic(base_url=anthropic_base_url, api_key="dummy-key")
 
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
@@ -227,9 +227,9 @@ def test_anthropic_conversation_history(base_url: str):
     assert response.usage.input_tokens > 3
 
 
-def test_anthropic_response_serialization(base_url: str):
+def test_anthropic_response_serialization(anthropic_base_url: str):
     """Test that the response can be properly serialized and deserialized."""
-    client = Anthropic(base_url=base_url, api_key="dummy-key")
+    client = Anthropic(base_url=anthropic_base_url, api_key="dummy-key")
 
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
@@ -254,3 +254,33 @@ def test_anthropic_response_serialization(base_url: str):
         parsed["content"][0]["text"]
         == "This is a mock Anthropic messages API response from httpbun. I received your messages and I'm responding with this placeholder text."
     )
+
+
+def test_anthropic_v1_path(base_url: str):
+    """Test that the /v1/ path works correctly for Anthropic messages API (new standard path)."""
+    # Anthropic SDK automatically adds /v1/, so we need to point to /llm/ and it will call /llm/v1/messages
+    client = Anthropic(base_url=base_url, api_key="dummy-key")
+
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "Test v1 path"}],
+    )
+
+    assert isinstance(response, Message)
+    assert response.model == "claude-3-5-sonnet-20241022"
+
+
+def test_anthropic_backward_compatible_path(base_url: str):
+    """Test that Anthropic SDK works with base URL (SDK automatically handles /v1/)."""
+    # Anthropic SDK automatically adds /v1/, so both /llm/v1/messages and /llm/messages work
+    client = Anthropic(base_url=base_url, api_key="dummy-key")
+
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "Test backward compat"}],
+    )
+
+    assert isinstance(response, Message)
+    assert response.model == "claude-3-5-sonnet-20241022"

@@ -11,9 +11,9 @@ from openai import AsyncOpenAI, OpenAI
 from openai.types.chat import ChatCompletion
 
 
-def test_openai_sync_response_structure(base_url: str):
+def test_openai_sync_response_structure(openai_base_url: str):
     """Test the synchronous OpenAI client with httpbun endpoint - strict response structure validation."""
-    client = OpenAI(base_url=base_url, api_key="dummy-key")
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
 
     response = client.chat.completions.create(
         model="gpt-5-nano", messages=[{"role": "user", "content": "Hello"}]
@@ -71,9 +71,9 @@ def test_openai_sync_response_structure(base_url: str):
     assert usage.prompt_tokens_details is None
 
 
-def test_openai_sync_exact_field_count(base_url: str):
+def test_openai_sync_exact_field_count(openai_base_url: str):
     """Test that the response has exactly the expected fields, no more, no less."""
-    client = OpenAI(base_url=base_url, api_key="dummy-key")
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
 
     response = client.chat.completions.create(
         model="gpt-5-nano", messages=[{"role": "user", "content": "Hello"}]
@@ -123,9 +123,9 @@ def test_openai_sync_exact_field_count(base_url: str):
     assert set(usage_dict.keys()) == expected_usage_keys
 
 
-async def test_openai_async_response(base_url: str):
+async def test_openai_async_response(openai_base_url: str):
     """Test the async OpenAI client with httpbun endpoint."""
-    client = AsyncOpenAI(base_url=base_url, api_key="dummy-key")
+    client = AsyncOpenAI(base_url=openai_base_url, api_key="dummy-key")
 
     try:
         response = await client.chat.completions.create(
@@ -157,9 +157,9 @@ async def test_openai_async_response(base_url: str):
         await client.close()
 
 
-def test_openai_multiple_requests_consistent(base_url: str):
+def test_openai_multiple_requests_consistent(openai_base_url: str):
     """Test that multiple requests return consistent structure."""
-    client = OpenAI(base_url=base_url, api_key="dummy-key")
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
 
     responses = []
     for _ in range(3):
@@ -186,9 +186,9 @@ def test_openai_multiple_requests_consistent(base_url: str):
     assert len(set(ids)) == 3  # All IDs should be unique
 
 
-def test_openai_error_handling(base_url: str):
+def test_openai_error_handling(openai_base_url: str):
     """Test error handling with an invalid model name."""
-    client = OpenAI(base_url=base_url, api_key="dummy-key")
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
 
     # httpbun might accept any model name, but let's test the response
     response = client.chat.completions.create(
@@ -203,9 +203,9 @@ def test_openai_error_handling(base_url: str):
     )
 
 
-def test_openai_different_message(base_url: str):
+def test_openai_different_message(openai_base_url: str):
     """Test with a different message to ensure httpbun returns the same mock response."""
-    client = OpenAI(base_url=base_url, api_key="dummy-key")
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
 
     response = client.chat.completions.create(
         model="gpt-5-nano",
@@ -222,9 +222,9 @@ def test_openai_different_message(base_url: str):
     assert response.usage.prompt_tokens > 3  # Should be more than "Hello"
 
 
-def test_openai_conversation_history(base_url: str):
+def test_openai_conversation_history(openai_base_url: str):
     """Test with conversation history."""
-    client = OpenAI(base_url=base_url, api_key="dummy-key")
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
 
     response = client.chat.completions.create(
         model="gpt-5-nano",
@@ -246,9 +246,9 @@ def test_openai_conversation_history(base_url: str):
     assert response.usage.prompt_tokens > 3
 
 
-def test_openai_response_serialization(base_url: str):
+def test_openai_response_serialization(openai_base_url: str):
     """Test that the response can be properly serialized and deserialized."""
-    client = OpenAI(base_url=base_url, api_key="dummy-key")
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
 
     response = client.chat.completions.create(
         model="gpt-5-nano", messages=[{"role": "user", "content": "Hello"}]
@@ -271,3 +271,33 @@ def test_openai_response_serialization(base_url: str):
         parsed["choices"][0]["message"]["content"]
         == "This is a mock chat response from httpbun. I received your messages and I'm responding with this placeholder text."
     )
+
+
+def test_openai_v1_path(openai_base_url: str):
+    """Test that the /v1/ path works correctly (new standard path)."""
+    # The openai_base_url fixture already provides the /llm/v1 path
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
+
+    response = client.chat.completions.create(
+        model="gpt-5-nano", messages=[{"role": "user", "content": "Test v1 path"}]
+    )
+
+    assert isinstance(response, ChatCompletion)
+    assert response.model == "gpt-5-nano"
+    assert response.object == "chat.completion"
+    assert response.choices[0].message.role == "assistant"
+
+
+def test_openai_backward_compatible_path(base_url: str):
+    """Test that the path without /v1/ still works (backward compatibility)."""
+    # Use base_url which points to /llm/ without /v1 suffix
+    client = OpenAI(base_url=base_url, api_key="dummy-key")
+
+    response = client.chat.completions.create(
+        model="gpt-5-nano", messages=[{"role": "user", "content": "Test backward compat"}]
+    )
+
+    assert isinstance(response, ChatCompletion)
+    assert response.model == "gpt-5-nano"
+    assert response.object == "chat.completion"
+    assert response.choices[0].message.role == "assistant"
