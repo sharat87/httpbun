@@ -12,9 +12,3 @@
 <link rel=manifest href="{{.pathPrefix}}/site.webmanifest">
 
 <style>{{template "styles.css"}}</style>
-
-{{- if .bannerText}}
-<div class=banner style="background-color: {{.spec.BannerBg}}">
-<span style="color: {{.spec.BannerFg}}">{{.bannerText}}</span>
-</div>
-{{- end}}

@@ -38,9 +38,6 @@ func Render(name string, ex ex.Exchange, data map[string]any) response.Response 
 
 	data["pathPrefix"] = ex.ServerSpec.PathPrefix
 
-	data["bannerText"] = ex.ServerSpec.Banner
-	data["bannerColor"] = ex.ServerSpec.BannerBg
-
 	data["commit"] = ex.ServerSpec.Commit
 	data["commitShort"] = ex.ServerSpec.CommitShort
 	data["date"] = ex.ServerSpec.Date
