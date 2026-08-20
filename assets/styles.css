@@ -137,6 +137,25 @@ footer {
 	text-align: center;
 }
 
+.banner {
+	margin: 12px auto 1.5em;
+	max-width: 960px;
+	padding: .6em 1em;
+	border: 1px solid #e0b400;
+	border-left-width: 6px;
+	border-radius: 3px;
+	background: #fff8e0;
+	font-size: .85em;
+}
+
+.banner p {
+	margin: .5em 0;
+}
+
+.banner code {
+	background: #00000014;
+}
+
 .flex {
 	display: flex;
 	flex-wrap: wrap;
@@ -245,9 +264,23 @@ url-pane a {
 	footer {
 		border-color: #555;
 	}
+
+	.banner {
+		border-color: #8a7000;
+		background: #332b00;
+	}
+
+	.banner code {
+		background: #ffffff1a;
+	}
 }
 
 @media (max-width: 400px) {
+	.banner {
+		margin-bottom: 1em;
+		padding: .4em .6em;
+	}
+
 	h1 {
 		text-align: center;
 	}

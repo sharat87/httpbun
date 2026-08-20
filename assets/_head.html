@@ -12,3 +12,13 @@
 <link rel=manifest href="{{.pathPrefix}}/site.webmanifest">
 
 <style>{{template "styles.css"}}</style>
+
+<div class=banner role=note>
+	<p><strong>API access on plain <code>http://</code> on httpbun.com will
+		start redirecting to `https://` soon</strong>. Requests over
+		<code>https://</code> will keep working exactly as they do today, so
+		most people only need to add the <code>s</code>.</p>
+	<p>If you depend on httpbun for anything critical, like CI, please
+		<a href="#self-hosting">run a local instance</a> instead of relying on
+		the hosted one.</p>
+</div>
