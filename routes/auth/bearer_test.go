@@ -24,7 +24,7 @@ func TestBearerEmpty(t *testing.T) {
 
 	s.Equal(404, resp.Status)
 	s.Equal(0, len(resp.Header))
-	s.Greater(len(resp.Body.(string)), 0)
+	s.Contains(resp.Body, "curl -H 'Authorization: Bearer my-token' http://localhost/bearer/my-token")
 }
 
 func TestBearerFieldParsing(t *testing.T) {

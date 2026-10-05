@@ -49,9 +49,13 @@ func handleAuthBearer(ex *ex.Exchange) response.Response {
 	expectedToken := ex.Field("tok")
 
 	if expectedToken == "" {
+		base := ex.FindScheme() + "://" + ex.Request.URL.Host + ex.ServerSpec.PathPrefix
 		return response.Response{
 			Status: http.StatusNotFound,
-			Body:   "missing/non-empty token, use /bearer/<expected_token> instead",
+			Body: "Missing expected token. Put the token you expect in the URL, like /bearer/my-token, and send it in" +
+				" the Authorization header. For example:\n\n" +
+				"    curl -H 'Authorization: Bearer my-token' " + base + "/bearer/my-token\n\n" +
+				"A matching token gets a 200, and a missing or wrong one gets a 401.\n",
 		}
 	}
 
