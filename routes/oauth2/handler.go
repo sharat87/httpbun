@@ -191,6 +191,19 @@ func handleToken(ex *ex.Exchange) response.Response {
 	}
 
 	clientID := ex.Request.FormValue("client_id")
+	clientSecret := ex.Request.FormValue("client_secret")
+
+	// Clients can also authenticate with HTTP Basic auth, which servers must support per RFC 6749 section 2.3.1.
+	// The credentials are form-encoded before being put in the header.
+	if basicID, basicSecret, ok := ex.Request.BasicAuth(); ok {
+		if id, err := url.QueryUnescape(basicID); err == nil {
+			clientID = id
+		}
+		if secret, err := url.QueryUnescape(basicSecret); err == nil {
+			clientSecret = secret
+		}
+	}
+
 	if clientID == "" {
 		return response.Response{
 			Status: http.StatusBadRequest,
@@ -201,7 +214,6 @@ func handleToken(ex *ex.Exchange) response.Response {
 		}
 	}
 
-	clientSecret := ex.Request.FormValue("client_secret")
 	if clientSecret == "" {
 		return response.Response{
 			Status: http.StatusBadRequest,
@@ -341,7 +353,9 @@ func handleUserinfo(ex *ex.Exchange) response.Response {
 		}
 	}
 
-	if !strings.HasPrefix(authHeader, "Bearer ") {
+	// The auth scheme name is case-insensitive, per RFC 9110.
+	scheme, token, _ := strings.Cut(authHeader, " ")
+	if !strings.EqualFold(scheme, "Bearer") {
 		return response.Response{
 			Status: http.StatusUnauthorized,
 			Header: http.Header{
@@ -353,8 +367,6 @@ func handleUserinfo(ex *ex.Exchange) response.Response {
 			},
 		}
 	}
-
-	token := strings.TrimPrefix(authHeader, "Bearer ")
 
 	// Decode the access token
 	jsonBytes, err := base64.URLEncoding.DecodeString(token)
