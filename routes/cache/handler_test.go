@@ -2,12 +2,13 @@ package cache
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/routes/responses"
+	"github.com/sharat87/httpbun/server/spec"
 )
 
 func TestEtagConditionalRequests(t *testing.T) {
@@ -85,22 +86,49 @@ func TestEtagConditionalRequests(t *testing.T) {
 }
 
 func TestEtagOpaqueValues(t *testing.T) {
-	for _, opaque := range []string{"foo,bar", `foo\bar`, "foo+bar", "*", "caf\u00e9", string([]byte{0x80})} {
-		t.Run(opaque, func(t *testing.T) {
-			tag := `"` + opaque + `"`
-			resp := ex.InvokeHandlerForTest("etag/"+strings.ReplaceAll(url.PathEscape(opaque), "+", "%2B"), http.Request{
-				Method:     http.MethodGet,
-				Header:     http.Header{"If-None-Match": {`"other", W/` + tag}},
-				RemoteAddr: "127.0.0.1:1234",
-			}, `/etag/(?P<etag>[^/]+)`, handleEtag)
-			if resp.Status != http.StatusNotModified {
-				t.Fatalf("status = %d, want 304", resp.Status)
-			}
-			if got := resp.Header.Get("ETag"); got != tag {
-				t.Fatalf("ETag = %q, want %q", got, tag)
-			}
-			if resp.Body != nil || resp.Writer != nil {
-				t.Fatal("conditional response contains a body")
+	for _, tt := range []struct {
+		path   string
+		opaque string
+	}{
+		{"foo,bar", "foo,bar"},
+		{`foo%5Cbar`, `foo\bar`},
+		{"foo+bar", "foo+bar"},
+		{"foo%2Bbar", "foo+bar"},
+		{"foo%2bbar", "foo+bar"},
+		{"foo%252Bbar", "foo%2Bbar"},
+		{"foo%25bar", "foo%bar"},
+		{"foo%2Fbar", "foo/bar"},
+		{"*", "*"},
+		{"caf%C3%A9", "café"},
+		{"%80", string([]byte{0x80})},
+	} {
+		t.Run(tt.path, func(t *testing.T) {
+			tag := `"` + tt.opaque + `"`
+			for _, conditional := range []bool{false, true} {
+				headers := http.Header{}
+				wantStatus := http.StatusOK
+				if conditional {
+					headers.Set("If-None-Match", `"other", W/`+tag)
+					wantStatus = http.StatusNotModified
+				}
+				resp := ex.InvokeHandlerForTest("etag/"+tt.path, http.Request{
+					Method:     http.MethodGet,
+					Header:     headers,
+					RemoteAddr: "127.0.0.1:1234",
+				}, `/etag/(?P<etag>[^/]+)`, handleEtag)
+				status := resp.Status
+				if status == 0 {
+					status = http.StatusOK
+				}
+				if status != wantStatus {
+					t.Fatalf("conditional = %t: status = %d, want %d", conditional, status, wantStatus)
+				}
+				if got := resp.Header.Get("ETag"); got != tag {
+					t.Fatalf("ETag = %q, want %q", got, tag)
+				}
+				if conditional && (resp.Body != nil || resp.Writer != nil) {
+					t.Fatal("conditional response contains a body")
+				}
 			}
 		})
 	}
@@ -118,6 +146,26 @@ func TestEtagRejectsInvalidOpaqueValues(t *testing.T) {
 			}
 			if got := resp.Header.Get("ETag"); got != "" {
 				t.Fatalf("invalid opaque value emitted ETag %q", got)
+			}
+		})
+	}
+}
+
+func TestEtagPathPrefix(t *testing.T) {
+	for _, path := range []string{"foo+bar", "foo%2Bbar"} {
+		t.Run(path, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "http://localhost/mount/etag/"+path, nil)
+			req.Header.Set("If-None-Match", `"foo+bar"`)
+			exchange := ex.New(nil, req, spec.Spec{PathPrefix: "/mount"})
+			if !exchange.MatchAndLoadFields(RouteList[2].Pat) {
+				t.Fatal("ETag route did not match")
+			}
+			resp := handleEtag(exchange)
+			if resp.Status != http.StatusNotModified {
+				t.Fatalf("status = %d, want 304", resp.Status)
+			}
+			if got := resp.Header.Get("ETag"); got != `"foo+bar"` {
+				t.Fatalf("ETag = %q, want %q", got, `"foo+bar"`)
 			}
 		})
 	}

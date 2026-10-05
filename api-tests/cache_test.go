@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/sharat87/httpbun/c"
@@ -84,20 +83,43 @@ func TestEtagWithoutMatchingValidator(t *testing.T) {
 }
 
 func TestEtagOpaqueValues(t *testing.T) {
-	for _, opaque := range []string{"foo,bar", `foo\bar`, "foo+bar", "*", "caf\u00e9"} {
-		t.Run(opaque, func(t *testing.T) {
-			tag := `"` + opaque + `"`
-			resp, body := ExecRequest(R{
-				Path: "etag/" + strings.ReplaceAll(url.PathEscape(opaque), "+", "%2B"),
-				Headers: map[string][]string{
-					"If-None-Match": {`"other", W/` + tag},
-				},
-			})
-			if resp.StatusCode != http.StatusNotModified || body != "" {
-				t.Fatalf("status = %d, body = %q, want 304 with an empty body", resp.StatusCode, body)
-			}
-			if got := resp.Header.Get("ETag"); got != tag {
-				t.Fatalf("ETag = %q, want %q", got, tag)
+	for _, tt := range []struct {
+		path   string
+		opaque string
+	}{
+		{"foo,bar", "foo,bar"},
+		{`foo%5Cbar`, `foo\bar`},
+		{"foo+bar", "foo+bar"},
+		{"foo%2Bbar", "foo+bar"},
+		{"foo%2bbar", "foo+bar"},
+		{"foo%252Bbar", "foo%2Bbar"},
+		{"foo%25bar", "foo%bar"},
+		{"foo%2Fbar", "foo/bar"},
+		{"*", "*"},
+		{"caf%C3%A9", "café"},
+	} {
+		t.Run(tt.path, func(t *testing.T) {
+			tag := `"` + tt.opaque + `"`
+			for _, conditional := range []bool{false, true} {
+				headers := http.Header{}
+				wantStatus := http.StatusOK
+				if conditional {
+					headers.Set("If-None-Match", `"other", W/`+tag)
+					wantStatus = http.StatusNotModified
+				}
+				resp, body := ExecRequest(R{
+					Path:    "etag/" + tt.path,
+					Headers: headers,
+				})
+				if resp.StatusCode != wantStatus {
+					t.Fatalf("conditional = %t: status = %d, want %d", conditional, resp.StatusCode, wantStatus)
+				}
+				if got := resp.Header.Get("ETag"); got != tag {
+					t.Fatalf("ETag = %q, want %q", got, tag)
+				}
+				if conditional && body != "" {
+					t.Fatalf("body = %q, want empty", body)
+				}
 			}
 		})
 	}
