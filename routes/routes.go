@@ -282,7 +282,12 @@ func handleDrip(ex *ex.Exchange) response.Response {
 					log.Printf("Error writing drip part: %v\n", err)
 					return
 				}
-				time.Sleep(interval)
+				select {
+				case <-ex.Request.Context().Done():
+					// The client has disconnected.
+					return
+				case <-time.After(interval):
+				}
 				numbytes--
 			}
 		},

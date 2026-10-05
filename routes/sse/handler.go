@@ -24,7 +24,7 @@ func handleServerSentEvents(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Delay must be greater than 0")
 	}
 	if delay > 10 {
-		return response.BadRequest("Delay must be less than 10")
+		return response.BadRequest("Delay must be at most 10")
 	}
 
 	count, err := ex.QueryParamInt("count", 10)
@@ -35,7 +35,7 @@ func handleServerSentEvents(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Count must be greater than 0")
 	}
 	if count > 100 {
-		return response.BadRequest("Count must be less than 100")
+		return response.BadRequest("Count must be at most 100")
 	}
 
 	return response.Response{
@@ -45,11 +45,20 @@ func handleServerSentEvents(ex *ex.Exchange) response.Response {
 		},
 		Writer: func(w response.BodyWriter) {
 			for id := range count {
+				if id > 0 {
+					select {
+					case <-ex.Request.Context().Done():
+						// The client has disconnected.
+						return
+					case <-time.After(time.Duration(delay) * time.Second):
+					}
+				}
 				err := w.Write(strings.Join(pingMessage(id+1), "\n") + "\n\n")
 				if err != nil {
+					// The client has most likely disconnected.
 					log.Printf("Error writing to response: %v\n", err)
+					return
 				}
-				time.Sleep(time.Duration(delay) * time.Second)
 			}
 		},
 	}
