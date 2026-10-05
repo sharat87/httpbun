@@ -128,13 +128,9 @@ func handleMix(ex *ex.Exchange) response.Response {
 				code = codes[0]
 			}
 
-			res.Status, err = strconv.Atoi(code)
+			res.Status, err = util.ParseStatusCode(code)
 			if err != nil {
 				return response.BadRequest("%s", err.Error())
-			}
-			if res.Status < 200 || res.Status > 599 {
-				// 1xx codes are informational, and can't be sent as the final status of a response.
-				return response.BadRequest("Invalid status code: %s", code)
 			}
 
 		case "h":

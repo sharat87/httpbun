@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 )
 
 func ToJsonMust(data any) []byte {
@@ -68,4 +69,22 @@ func ComputeFgForBg(c string) string {
 	} else {
 		return "#eeee"
 	}
+}
+
+// CheckStatusCode checks that a status code can be used for a response. 1xx codes are informational, and can't be the
+// final status of a response, so they aren't allowed.
+func CheckStatusCode(code int) error {
+	if code < 200 || code > 599 {
+		return fmt.Errorf("invalid status code %d, must be between 200 and 599", code)
+	}
+	return nil
+}
+
+// ParseStatusCode parses a status code that can be used for a response, as checked by CheckStatusCode.
+func ParseStatusCode(raw string) (int, error) {
+	code, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil {
+		return 0, fmt.Errorf("invalid status code %q", raw)
+	}
+	return code, CheckStatusCode(code)
 }

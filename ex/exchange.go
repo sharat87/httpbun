@@ -125,17 +125,26 @@ func (ex Exchange) RedirectResponse(target string) *response.Response {
 	}
 }
 
-func (ex Exchange) QueryParamInt(name string, value int) (int, error) {
-	args := ex.Request.URL.Query()
-
-	if len(args[name]) > 0 {
-		var err error
-		value, err = strconv.Atoi(args[name][0])
-		if err != nil {
-			return 0, fmt.Errorf("%s must be an integer", name)
-		}
+// QueryInt reads an integer query param, or returns the default value if it's missing. The error, for a value that
+// isn't an integer between min and max, is meant to be sent to the client as is.
+func (ex Exchange) QueryInt(name string, value, min, max int) (int, error) {
+	if values := ex.Request.URL.Query()[name]; len(values) > 0 {
+		return parseIntInRange(name, values[0], min, max)
 	}
+	return value, nil
+}
 
+// FieldInt reads an integer route field. The error, for a value that isn't an integer between min and max, is meant
+// to be sent to the client as is.
+func (ex Exchange) FieldInt(name string, min, max int) (int, error) {
+	return parseIntInRange(name, ex.Field(name), min, max)
+}
+
+func parseIntInRange(name, raw string, min, max int) (int, error) {
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < min || value > max {
+		return 0, fmt.Errorf("%s must be an integer between %d and %d, got %q", name, min, max, raw)
+	}
 	return value, nil
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/sharat87/httpbun/assets"
 	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
+	"github.com/sharat87/httpbun/util"
 )
 
 const restPathPattern = `/(?P<encoded>[-\w]+=*)(?P<extraPath>.*)`
@@ -115,9 +116,8 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 	if status == 0 {
 		status = 200
 	}
-	if status < 200 || status > 599 {
-		// 1xx codes are informational, and can't be sent as the final status of a response.
-		return response.BadRequest("Evaluation error: status must be between 200 and 599")
+	if err := util.CheckStatusCode(status); err != nil {
+		return response.BadRequest("Evaluation error: %s", err.Error())
 	}
 
 	var headers http.Header

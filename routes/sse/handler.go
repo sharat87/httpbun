@@ -16,26 +16,14 @@ var RouteList = []ex.Route{
 }
 
 func handleServerSentEvents(ex *ex.Exchange) response.Response {
-	delay, err := ex.QueryParamInt("delay", 1)
+	delay, err := ex.QueryInt("delay", 1, 1, 10)
 	if err != nil {
-		return response.BadRequest("Invalid delay value")
-	}
-	if delay < 1 {
-		return response.BadRequest("Delay must be greater than 0")
-	}
-	if delay > 10 {
-		return response.BadRequest("Delay must be at most 10")
+		return response.BadRequest("%s", err.Error())
 	}
 
-	count, err := ex.QueryParamInt("count", 10)
+	count, err := ex.QueryInt("count", 10, 1, 100)
 	if err != nil {
-		return response.BadRequest("Invalid count value")
-	}
-	if count < 1 {
-		return response.BadRequest("Count must be greater than 0")
-	}
-	if count > 100 {
-		return response.BadRequest("Count must be at most 100")
+		return response.BadRequest("%s", err.Error())
 	}
 
 	return response.Response{

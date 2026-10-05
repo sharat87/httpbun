@@ -49,13 +49,9 @@ func handleRedirectTo(ex *ex.Exchange) response.Response {
 
 func handleRedirectCount(ex *ex.Exchange) response.Response {
 	isAbsolute := ex.Field("mode") == "absolute-"
-	n, _ := strconv.Atoi(ex.Field("count"))
-
-	if n < 1 {
-		return response.BadRequest("count must be a positive integer")
-
-	} else if n > MaxRedirectCount {
-		return response.BadRequest("count cannot be greater than %v", MaxRedirectCount)
+	n, err := ex.FieldInt("count", 1, MaxRedirectCount)
+	if err != nil {
+		return response.BadRequest("%s", err.Error())
 
 	} else if n > 1 {
 		target := fmt.Sprint(n - 1)

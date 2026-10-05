@@ -109,13 +109,9 @@ func handleStatus(ex *ex.Exchange) response.Response {
 		if part == "" {
 			continue
 		}
-		code, err := strconv.Atoi(part)
+		code, err := util.ParseStatusCode(part)
 		if err != nil {
-			return response.BadRequest("Invalid status code: %s", part)
-		}
-		if code < 200 || code > 599 {
-			// 1xx codes are informational, and can't be sent as the final status of a response.
-			return response.BadRequest("Invalid status code: %s", part)
+			return response.BadRequest("%s", err.Error())
 		}
 		codes = append(codes, code)
 	}
@@ -189,17 +185,9 @@ func handleRandomBytes(ex *ex.Exchange) response.Response {
 		return response.BadRequest("specify size in bytes, example `/bytes/10`")
 	}
 
-	n, err := strconv.Atoi(sizeField)
+	n, err := ex.FieldInt("size", 0, ex.ServerSpec.EndpointBytesSizeLimit)
 	if err != nil {
-		return response.BadRequest("Invalid size: %s", sizeField)
-	}
-
-	if n < 0 {
-		return response.BadRequest("Size can't be negative")
-	}
-
-	if n > ex.ServerSpec.EndpointBytesSizeLimit {
-		return response.BadRequest("Size can't be greater than %v", ex.ServerSpec.EndpointBytesSizeLimit)
+		return response.BadRequest("%s", err.Error())
 	}
 
 	return response.Response{
@@ -249,17 +237,14 @@ func handleDrip(ex *ex.Exchange) response.Response {
 		return response.BadRequest("%s", err.Error())
 	}
 
-	numbytes, err := ex.QueryParamInt("numbytes", 10)
+	numbytes, err := ex.QueryInt("numbytes", 10, 0, 10*1024*1024)
 	if err != nil {
 		return response.BadRequest("%s", err.Error())
 	}
 
-	code, err := ex.QueryParamInt("code", 200)
+	code, err := ex.QueryInt("code", 200, 200, 599)
 	if err != nil {
 		return response.BadRequest("%s", err.Error())
-	}
-	if code < 200 || code > 599 {
-		return response.BadRequest("Invalid status code: %d", code)
 	}
 
 	delay, err := querySeconds(ex, "delay", 2*time.Second)
