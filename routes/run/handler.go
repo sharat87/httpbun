@@ -42,7 +42,7 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 
 	fn, ok := goja.AssertFunction(rawFn)
 	if !ok {
-		return response.BadRequest("Unable to load JS: %s", err.Error())
+		return response.BadRequest("Unable to load JS")
 	}
 
 	rParam := map[string]any{
@@ -56,7 +56,10 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Evaluation error: %s", err.Error())
 	}
 
-	result := rawResult.Export().(map[string]any)
+	result, ok := rawResult.Export().(map[string]any)
+	if !ok {
+		return response.BadRequest("Evaluation error: script must return an object, like `return {body: \"hello\"}`")
+	}
 
 	status := 0
 	if statusRaw, haveStatus := result["status"]; haveStatus {
@@ -66,11 +69,12 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 			return response.BadRequest("Evaluation error: status is not an integer")
 		}
 	}
-	if status < 0 {
-		return response.BadRequest("Evaluation error: status is negative")
-	}
 	if status == 0 {
 		status = 200
+	}
+	if status < 200 || status > 599 {
+		// 1xx codes are informational, and can't be sent as the final status of a response.
+		return response.BadRequest("Evaluation error: status must be between 200 and 599")
 	}
 
 	var headers http.Header
@@ -81,8 +85,12 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 			for k, v := range headersTyped {
 				if vString, isString := v.(string); isString {
 					headers.Add(k, vString)
-				} else if vList, isList := v.([]string); isList {
-					for _, vString := range vList {
+				} else if vList, isList := v.([]any); isList {
+					for _, item := range vList {
+						vString, isString := item.(string)
+						if !isString {
+							return response.BadRequest("Invalid header value type for key: %s", k)
+						}
 						headers.Add(k, vString)
 					}
 				} else {
