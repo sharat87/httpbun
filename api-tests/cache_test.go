@@ -6,79 +6,89 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sharat87/httpbun/c"
+	"github.com/sharat87/httpbun/server/spec"
 )
 
 func TestEtagConditionalRequests(t *testing.T) {
-	validators := []struct {
+	tests := []struct {
 		name   string
 		values []string
+		match  bool
 	}{
-		{"quoted", []string{`"foo"`}},
-		{"weak", []string{`W/"foo"`}},
-		{"list", []string{`"other", "foo"`}},
-		{"empty list entries", []string{`,, "", W/"foo",,`}},
-		{"repeated", []string{`"foo"`, `"other"`}},
-		{"wildcard", []string{"*"}},
-		{"legacy bare", []string{"foo"}},
+		{"no validator", nil, false},
+		{"quoted", []string{`"foo"`}, true},
+		{"weak", []string{`W/"foo"`}, true},
+		{"list", []string{`"other", "foo"`}, true},
+		{"list weak", []string{`"other", W/"foo"`}, true},
+		{"repeated first matches", []string{`"foo"`, `"other"`}, true},
+		{"repeated last matches", []string{`"other"`, `"foo"`}, true},
+		{"whitespace", []string{" \tW/\"foo\"\t, \"other\" "}, true},
+		{"empty list entries", []string{`,, "", W/"foo",,`}, true},
+		{"wildcard", []string{"*"}, true},
+		{"legacy bare", []string{"foo"}, true},
+		{"different", []string{`"other"`}, false},
+		{"different weak", []string{`W/"other"`}, false},
+		{"unterminated", []string{`"foo`}, false},
+		{"invalid weak prefix", []string{`w/"foo"`}, false},
+		{"invalid suffix", []string{`"foo"extra`}, false},
+		{"mixed wildcard", []string{`*, "foo"`}, false},
+		{"bare in list", []string{`"other", foo`}, false},
+		{"bare repeated with quoted", []string{"foo", `"other"`}, false},
+		{"matching prefix invalid suffix", []string{`"foo", "unterminated`}, false},
+		{"matching prefix wildcard", []string{`"foo", *`}, false},
+		{"tab inside quoted", []string{"\"fo\to\""}, false},
+		{"quoted wildcard", []string{`"*"`}, false},
+		{"empty", []string{""}, false},
 	}
 	for _, method := range []string{http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut} {
-		for _, validator := range validators {
-			t.Run(method+"/"+validator.name, func(t *testing.T) {
+		for _, tt := range tests {
+			t.Run(method+"/"+tt.name, func(t *testing.T) {
+				s := assert.New(t)
+				headers := http.Header{}
+				if tt.values != nil {
+					headers["If-None-Match"] = tt.values
+				}
 				resp, body := ExecRequest(t, R{
-					Method: method,
-					Path:   "etag/foo",
-					Body:   "request body",
-					Headers: map[string][]string{
-						"If-None-Match": validator.values,
-					},
+					Method:  method,
+					Path:    "etag/foo?one=two",
+					Body:    "request body",
+					Headers: headers,
 				})
-				wantStatus := http.StatusPreconditionFailed
-				if method == http.MethodGet || method == http.MethodHead {
-					wantStatus = http.StatusNotModified
+
+				s.Equal(`"foo"`, resp.Header.Get("ETag"))
+
+				if tt.match {
+					wantStatus := http.StatusPreconditionFailed
+					if method == http.MethodGet || method == http.MethodHead {
+						wantStatus = http.StatusNotModified
+					}
+					s.Equal(wantStatus, resp.StatusCode)
+					s.Empty(body)
+					return
 				}
-				if resp.StatusCode != wantStatus {
-					t.Fatalf("status = %d, want %d", resp.StatusCode, wantStatus)
+
+				s.Equal(http.StatusOK, resp.StatusCode)
+				s.Equal(c.ApplicationJSON, resp.Header.Get(c.ContentType))
+				if method == http.MethodHead {
+					s.Empty(body)
+					return
 				}
-				if got := resp.Header.Get("ETag"); got != `"foo"` {
-					t.Fatalf("ETag = %q, want %q", got, `"foo"`)
+				var info struct {
+					Method string
+					Args   map[string]string
+					URL    string
+					Data   string
 				}
-				if body != "" {
-					t.Fatalf("body = %q, want empty", body)
-				}
+				s.NoError(json.Unmarshal([]byte(body), &info))
+				s.Equal(method, info.Method)
+				s.Equal(map[string]string{"one": "two"}, info.Args)
+				s.Equal(BaseURL+"etag/foo?one=two", info.URL)
+				s.Equal("request body", info.Data)
 			})
 		}
-	}
-}
-
-func TestEtagWithoutMatchingValidator(t *testing.T) {
-	for _, values := range [][]string{nil, {`"other"`}, {`"foo`}, {`"foo"extra`}, {`"foo", "unterminated`}, {`"foo", *`}, {"foo", `"other"`}, {"\"fo\to\""}} {
-		t.Run(http.Header{"If-None-Match": values}.Get("If-None-Match"), func(t *testing.T) {
-			resp, body := ExecRequest(t, R{
-				Path:    "etag/foo?one=two",
-				Headers: map[string][]string{"If-None-Match": values},
-			})
-			if resp.StatusCode != http.StatusOK {
-				t.Fatalf("status = %d, want 200", resp.StatusCode)
-			}
-			if got := resp.Header.Get("ETag"); got != `"foo"` {
-				t.Fatalf("ETag = %q, want %q", got, `"foo"`)
-			}
-			if got := resp.Header.Get(c.ContentType); got != c.ApplicationJSON {
-				t.Fatalf("Content-Type = %q, want %q", got, c.ApplicationJSON)
-			}
-			var info struct {
-				Method string
-				Args   map[string]string
-				URL    string
-			}
-			if err := json.Unmarshal([]byte(body), &info); err != nil {
-				t.Fatal(err)
-			}
-			if info.Method != http.MethodGet || info.Args["one"] != "two" || info.URL != BaseURL+"etag/foo?one=two" {
-				t.Fatalf("body = %q, want request information", body)
-			}
-		})
 	}
 }
 
@@ -97,44 +107,58 @@ func TestEtagOpaqueValues(t *testing.T) {
 		{"foo%2Fbar", "foo/bar"},
 		{"*", "*"},
 		{"caf%C3%A9", "café"},
+		{"%80", string([]byte{0x80})},
 	} {
 		t.Run(tt.path, func(t *testing.T) {
 			tag := `"` + tt.opaque + `"`
-			for _, conditional := range []bool{false, true} {
-				headers := http.Header{}
-				wantStatus := http.StatusOK
-				if conditional {
-					headers.Set("If-None-Match", `"other", W/`+tag)
-					wantStatus = http.StatusNotModified
-				}
+
+			t.Run("unconditional", func(t *testing.T) {
+				s := assert.New(t)
+				resp, body := ExecRequest(t, R{Path: "etag/" + tt.path})
+				s.Equal(http.StatusOK, resp.StatusCode)
+				s.Equal(tag, resp.Header.Get("ETag"))
+				s.Equal(c.ApplicationJSON, resp.Header.Get(c.ContentType))
+				s.NotEmpty(body)
+			})
+
+			t.Run("conditional", func(t *testing.T) {
+				s := assert.New(t)
 				resp, body := ExecRequest(t, R{
 					Path:    "etag/" + tt.path,
-					Headers: headers,
+					Headers: map[string][]string{"If-None-Match": {`"other", W/` + tag}},
 				})
-				if resp.StatusCode != wantStatus {
-					t.Fatalf("conditional = %t: status = %d, want %d", conditional, resp.StatusCode, wantStatus)
-				}
-				if got := resp.Header.Get("ETag"); got != tag {
-					t.Fatalf("ETag = %q, want %q", got, tag)
-				}
-				if conditional && body != "" {
-					t.Fatalf("body = %q, want empty", body)
-				}
-			}
+				s.Equal(http.StatusNotModified, resp.StatusCode)
+				s.Equal(tag, resp.Header.Get("ETag"))
+				s.Empty(body)
+			})
 		})
 	}
 }
 
 func TestEtagRejectsInvalidOpaqueValues(t *testing.T) {
-	for _, opaque := range []string{"foo bar", `foo"bar`, "foo\tbar", "foo\x7fbar"} {
+	for _, opaque := range []string{"foo bar", `foo"bar`, "foo\tbar", "foo\nbar", "foo\x00bar", "foo\x7fbar"} {
 		t.Run(url.PathEscape(opaque), func(t *testing.T) {
-			resp, _ := ExecRequest(t, R{Path: "etag/" + url.PathEscape(opaque)})
-			if resp.StatusCode != http.StatusBadRequest {
-				t.Fatalf("status = %d, want 400", resp.StatusCode)
-			}
-			if got := resp.Header.Get("ETag"); got != "" {
-				t.Fatalf("invalid opaque value emitted ETag %q", got)
-			}
+			s := assert.New(t)
+			resp, body := ExecRequest(t, R{Path: "etag/" + url.PathEscape(opaque)})
+			s.Equal(http.StatusBadRequest, resp.StatusCode)
+			s.Empty(resp.Header.Values("ETag"))
+			s.Contains(body, "Invalid ETag value")
+		})
+	}
+}
+
+func TestEtagPathPrefix(t *testing.T) {
+	srv := NewServer(t, spec.Spec{PathPrefix: "/mount"})
+	for _, path := range []string{"foo+bar", "foo%2Bbar"} {
+		t.Run(path, func(t *testing.T) {
+			s := assert.New(t)
+			resp, body := srv.Exec(t, R{
+				Path:    "mount/etag/" + path,
+				Headers: map[string][]string{"If-None-Match": {`"foo+bar"`}},
+			})
+			s.Equal(http.StatusNotModified, resp.StatusCode)
+			s.Equal(`"foo+bar"`, resp.Header.Get("ETag"))
+			s.Empty(body)
 		})
 	}
 }
@@ -157,9 +181,7 @@ func TestCacheConditionalRequests(t *testing.T) {
 				headers.Set(tt.header, `"x"`)
 			}
 			resp, _ := ExecRequest(t, R{Method: tt.method, Path: "cache", Headers: headers})
-			if resp.StatusCode != tt.want {
-				t.Fatalf("status = %d, want %d", resp.StatusCode, tt.want)
-			}
+			assert.Equal(t, tt.want, resp.StatusCode)
 		})
 	}
 }
