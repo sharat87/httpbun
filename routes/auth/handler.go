@@ -55,18 +55,17 @@ func handleAuthBearer(ex *ex.Exchange) response.Response {
 		}
 	}
 
-	authHeader := ex.HeaderValueLast("Authorization")
-	if !strings.HasPrefix(authHeader, "Bearer ") {
+	// The auth scheme name is case-insensitive, per RFC 9110.
+	scheme, token, _ := strings.Cut(ex.HeaderValueLast("Authorization"), " ")
+	if !strings.EqualFold(scheme, "Bearer") || token == "" || token != expectedToken {
 		return response.New(http.StatusUnauthorized, http.Header{
 			c.WWWAuthenticate: []string{"Bearer realm=\"" + REALM + "\""},
 		}, nil)
 	}
 
-	token := strings.TrimPrefix(authHeader, "Bearer ")
-
 	return response.Response{
 		Body: map[string]any{
-			"authenticated": token != "" && (expectedToken == "" || expectedToken == token),
+			"authenticated": true,
 			"token":         token,
 		},
 	}

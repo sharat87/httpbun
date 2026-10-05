@@ -136,8 +136,8 @@ Hosted versions:
 	<dt id=bearer-token>/bearer/<span class=var>{expectedToken}</span></dt>
 	<dd>Requires bearer authentication. Which needs an <code>Authorization</code> header in the request, that takes the
 		form <code>Bearer some-auth-token-here</code>. If no <code>expectedToken</code> is given, any token will be
-		treated as valid. If no <code>Authorization</code> header is present in the request, this results in a 401
-		response.
+		treated as valid. If no <code>Authorization</code> header is present in the request, or the token doesn't
+		match, this results in a 401 response.
 		<details>
 			<summary><span>Examples</span></summary>
 			<pre>curl -H 'Authorization: Bearer auth_token_here' {{.host}}/bearer</pre>

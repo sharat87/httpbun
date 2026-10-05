@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"encoding/base64"
 	"net/http"
 	"testing"
 
@@ -62,7 +61,7 @@ func TestValidBearerAuth(t *testing.T) {
 		"bearer/dummy_token",
 		http.Request{
 			Header: http.Header{
-				"Authorization": {"Bearer " + base64.StdEncoding.EncodeToString([]byte("dummy_token"))},
+				"Authorization": {"Bearer dummy_token"},
 			},
 		},
 		BearerAuthRoute,
@@ -70,16 +69,17 @@ func TestValidBearerAuth(t *testing.T) {
 	)
 
 	s.Equal(0, resp.Status)
+	s.Equal(true, resp.Body.(map[string]any)["authenticated"])
 }
 
 func TestValidBearerAuthWithSpecialChars(t *testing.T) {
 	s := assert.New(t)
 
 	resp := ex.InvokeHandlerForTest(
-		"bearer/spe%20cial@token#123%24%25",
+		"bearer/spe%20cial@token%23123%24%25",
 		http.Request{
 			Header: http.Header{
-				"Authorization": {"Bearer " + base64.StdEncoding.EncodeToString([]byte("spe cial@token#123$%"))},
+				"Authorization": {"Bearer spe cial@token#123$%"},
 			},
 		},
 		BearerAuthRoute,
@@ -87,6 +87,7 @@ func TestValidBearerAuthWithSpecialChars(t *testing.T) {
 	)
 
 	s.Equal(0, resp.Status)
+	s.Equal(true, resp.Body.(map[string]any)["authenticated"])
 }
 
 func TestMissingBearerAuthHeader(t *testing.T) {
@@ -101,4 +102,41 @@ func TestMissingBearerAuthHeader(t *testing.T) {
 
 	s.Equal(401, resp.Status)
 	s.Equal("Bearer realm=\"httpbun realm\"", resp.Header.Get(c.WWWAuthenticate))
+}
+
+func TestBearerAuthSchemeIsCaseInsensitive(t *testing.T) {
+	s := assert.New(t)
+
+	resp := ex.InvokeHandlerForTest(
+		"bearer/dummy_token",
+		http.Request{
+			Header: http.Header{
+				"Authorization": {"bearer dummy_token"},
+			},
+		},
+		BearerAuthRoute,
+		handleAuthBearer,
+	)
+
+	s.Equal(0, resp.Status)
+}
+
+func TestWrongBearerToken(t *testing.T) {
+	for _, header := range []string{"Bearer nope", "Bearer ", "Bearer", "Basic dummy_token"} {
+		t.Run(header, func(t *testing.T) {
+			resp := ex.InvokeHandlerForTest(
+				"bearer/dummy_token",
+				http.Request{
+					Header: http.Header{
+						"Authorization": {header},
+					},
+				},
+				BearerAuthRoute,
+				handleAuthBearer,
+			)
+
+			assert.Equal(t, 401, resp.Status)
+			assert.Equal(t, "Bearer realm=\"httpbun realm\"", resp.Header.Get(c.WWWAuthenticate))
+		})
+	}
 }
