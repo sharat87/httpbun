@@ -250,6 +250,9 @@ func handleDrip(ex *ex.Exchange) response.Response {
 	if err != nil {
 		return response.BadRequest("%s", err.Error())
 	}
+	if code < 200 || code > 599 {
+		return response.BadRequest("Invalid status code: %d", code)
+	}
 
 	delay, err := ex.QueryParamInt("delay", 2)
 	if err != nil {

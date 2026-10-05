@@ -272,6 +272,7 @@ func (ex Exchange) Finish(resp response.Response) {
 	}
 
 	if resp.Writer != nil {
+		ex.responseWriter.WriteHeader(status)
 		resp.Writer(response.NewBodyWriter(ex.responseWriter))
 		return
 	}
