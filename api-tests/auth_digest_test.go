@@ -52,22 +52,39 @@ func TestDigestAuthWithoutCredsRequireCookie(t *testing.T) {
 	}`, body)
 }
 
-func TestDigestAuthWithoutCreds(t *testing.T) {
+func TestDigestAuthMissingUserPass(t *testing.T) {
 	s := assert.New(t)
 	resp, body := ExecRequest(t, R{
-		Path: "digest-auth/auth/dave/diamond",
+		Path: "digest-auth",
 	})
-	s.Equal(http.StatusUnauthorized, resp.StatusCode)
+	s.Equal(http.StatusNotFound, resp.StatusCode)
+	s.NotContains(resp.Header, c.WWWAuthenticate)
 	s.Empty(resp.Header.Get("Set-Cookie"))
-	m := regexp.MustCompile(
-		"Digest realm=\"httpbun realm\", qop=\"auth\", nonce=\"[a-z0-9]+\", opaque=\"[a-z0-9]+\", algorithm=MD5, stale=FALSE",
-	).FindString(resp.Header.Get(c.WWWAuthenticate))
-	s.NotEmpty(m, "Unexpected value for "+c.WWWAuthenticate+": "+resp.Header.Get(c.WWWAuthenticate))
-	s.JSONEq(`{
-		"authenticated": false,
-		"token": "",
-		"error": "missing authorization header"
-	}`, body)
+	s.Equal("missing/non-empty username/password, use /digest-auth/<username>/<password> instead", body)
+}
+
+func TestDigestAuthWithoutCreds(t *testing.T) {
+	// Without a qop in the URL, the challenge defaults to qop "auth".
+	for _, path := range []string{"digest-auth/auth/dave/diamond", "digest-auth/dave/diamond"} {
+		t.Run(path, func(t *testing.T) {
+			s := assert.New(t)
+			resp, body := ExecRequest(t, R{
+				Path: path,
+			})
+			s.Equal(http.StatusUnauthorized, resp.StatusCode)
+			s.Equal(c.ApplicationJSON, resp.Header.Get(c.ContentType))
+			s.Empty(resp.Header.Get("Set-Cookie"))
+			s.Regexp(
+				"^Digest realm=\"httpbun realm\", qop=\"auth\", nonce=\"[a-z0-9]+\", opaque=\"[a-z0-9]+\", algorithm=MD5, stale=FALSE$",
+				resp.Header.Get(c.WWWAuthenticate),
+			)
+			s.JSONEq(`{
+				"authenticated": false,
+				"token": "",
+				"error": "missing authorization header"
+			}`, body)
+		})
+	}
 }
 
 func TestDigestAuthWithIncorrectCreds(t *testing.T) {
@@ -109,40 +126,87 @@ func TestDigestAuthWithIncorrectCredsWithoutCookie(t *testing.T) {
 	s.Contains(body, "Response code mismatch")
 }
 
-// digestHandshake does a full digest auth exchange like a real client: it requests the path, reads the challenge, then
-// retries with credentials, signing the request target exactly as sent.
-func digestHandshake(t *testing.T, path, username, password string) (http.Response, string) {
-	challenge, _ := ExecRequest(t, R{Path: path})
+// digestHandshake does a full digest auth exchange like a real client: it sends the request, reads the challenge, then
+// retries with credentials for the given qop, signing the request target exactly as sent.
+func digestHandshake(t *testing.T, r R, qop, username, password string) (http.Response, string) {
+	if r.Method == "" {
+		r.Method = http.MethodGet
+	}
+
+	challenge, _ := ExecRequest(t, r)
 	if !assert.Equal(t, http.StatusUnauthorized, challenge.StatusCode) {
 		return challenge, ""
 	}
-	nonce := regexp.MustCompile(`nonce="([^"]+)"`).FindStringSubmatch(challenge.Header.Get(c.WWWAuthenticate))[1]
+	match := regexp.MustCompile(`nonce="([^"]+)"`).FindStringSubmatch(challenge.Header.Get(c.WWWAuthenticate))
+	if !assert.Len(t, match, 2, "no nonce in challenge: "+challenge.Header.Get(c.WWWAuthenticate)) {
+		return challenge, ""
+	}
+	nonce := match[1]
 
-	uri := "/" + path
+	uri := "/" + r.Path
 	ha1 := util.Md5sum(username + ":httpbun realm:" + password)
-	ha2 := util.Md5sum("GET:" + uri)
-	response := util.Md5sum(ha1 + ":" + nonce + ":00000001:abc:auth:" + ha2)
+	ha2 := util.Md5sum(r.Method + ":" + uri)
+	if qop == "auth-int" {
+		ha2 = util.Md5sum(r.Method + ":" + uri + ":" + util.Md5sum(r.Body))
+	}
+	response := util.Md5sum(ha1 + ":" + nonce + ":00000001:abc:" + qop + ":" + ha2)
 
 	headers := map[string][]string{
 		"Authorization": {`Digest username="` + username + `", realm="httpbun realm", nonce="` + nonce + `", uri="` + uri +
-			`", algorithm=MD5, response="` + response + `", qop=auth, nc=00000001, cnonce="abc"`},
+			`", algorithm=MD5, response="` + response + `", qop=` + qop + `, nc=00000001, cnonce="abc"`},
 	}
 	if cookie := challenge.Header.Get("Set-Cookie"); cookie != "" {
 		headers["Cookie"] = []string{strings.Split(cookie, ";")[0]}
 	}
-	return ExecRequest(t, R{Path: path, Headers: headers})
+	r.Headers = headers
+	return ExecRequest(t, r)
 }
 
 func TestDigestAuthHandshake(t *testing.T) {
-	for _, tt := range []struct{ path, username string }{
-		{"digest-auth/auth/dave/diamond", "dave"},
-		{"digest-auth/auth/dave/diamond?x=1", "dave"},
-		{"digest-auth/auth/dave/diamond?require-cookie=1", "dave"},
-		{"digest-auth/auth/da%20ve/diamond", "da ve"},
+	for _, tt := range []struct {
+		name     string
+		r        R
+		qop      string
+		username string
+	}{
+		{"auth", R{Path: "digest-auth/auth/dave/diamond"}, "auth", "dave"},
+		{"no qop in url", R{Path: "digest-auth/dave/diamond"}, "auth", "dave"},
+		{"query param", R{Path: "digest-auth/auth/dave/diamond?x=1"}, "auth", "dave"},
+		{"require cookie", R{Path: "digest-auth/auth/dave/diamond?require-cookie=1"}, "auth", "dave"},
+		{"encoded username", R{Path: "digest-auth/auth/da%20ve/diamond"}, "auth", "da ve"},
+		{"multiple qops, client picks auth", R{Path: "digest-auth/auth,auth-int/dave/diamond"}, "auth", "dave"},
+		{"multiple qops, client picks auth-int", R{Path: "digest-auth/auth,auth-int/dave/diamond"}, "auth-int", "dave"},
+		{
+			"auth-int with body",
+			R{Method: http.MethodPost, Path: "digest-auth/auth-int/dave/diamond", Body: "test body"},
+			"auth-int",
+			"dave",
+		},
 	} {
-		t.Run(tt.path, func(t *testing.T) {
-			resp, body := digestHandshake(t, tt.path, tt.username, "diamond")
-			assert.Equal(t, http.StatusOK, resp.StatusCode, body)
+		t.Run(tt.name, func(t *testing.T) {
+			s := assert.New(t)
+			resp, body := digestHandshake(t, tt.r, tt.qop, tt.username, "diamond")
+			s.Equal(http.StatusOK, resp.StatusCode, body)
+			s.Equal(c.ApplicationJSON, resp.Header.Get(c.ContentType))
+			s.NotContains(resp.Header, c.WWWAuthenticate)
+			s.JSONEq(`{"authenticated": true, "user": "`+tt.username+`"}`, body)
 		})
 	}
+}
+
+func TestDigestAuthMultipleQopsChallenge(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecRequest(t, R{
+		Path: "digest-auth/auth,auth-int/dave/diamond",
+	})
+	s.Equal(http.StatusUnauthorized, resp.StatusCode)
+	s.Regexp(
+		"^Digest realm=\"httpbun realm\", qop=\"auth,auth-int\", nonce=\"[a-z0-9]+\", opaque=\"[a-z0-9]+\", algorithm=MD5, stale=FALSE$",
+		resp.Header.Get(c.WWWAuthenticate),
+	)
+	s.JSONEq(`{
+		"authenticated": false,
+		"token": "",
+		"error": "missing authorization header"
+	}`, body)
 }

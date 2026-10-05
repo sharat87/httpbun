@@ -27,6 +27,23 @@ func TestBasicAuthSuccess(t *testing.T) {
 	}`, body)
 }
 
+func TestBasicAuthSuccessWithSpecialChars(t *testing.T) {
+	s := assert.New(t)
+	resp, body := ExecRequest(t, R{
+		Path: "basic-auth/hello%20world@example.com/p@ss%2Fw0rd%21",
+		Headers: map[string][]string{
+			"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte("hello world@example.com:p@ss/w0rd!"))},
+		},
+	})
+	s.Equal(http.StatusOK, resp.StatusCode)
+	s.Equal(c.ApplicationJSON, resp.Header.Get(c.ContentType))
+	s.NotContains(resp.Header, c.WWWAuthenticate)
+	s.JSONEq(`{
+		"authenticated": true,
+		"user": "hello world@example.com"
+	}`, body)
+}
+
 func TestBasicAuthIncorrectPassword(t *testing.T) {
 	s := assert.New(t)
 	resp, body := ExecRequest(t, R{

@@ -1,11 +1,7 @@
 package auth
 
 import (
-	"encoding/base64"
-	"net/http"
 	"testing"
-
-	"github.com/sharat87/httpbun/c"
 
 	"github.com/stretchr/testify/assert"
 
@@ -75,52 +71,4 @@ func TestFieldParsingInvalidPath(t *testing.T) {
 
 	s := assert.New(t)
 	s.False(isMatch)
-}
-
-func TestValidBasicAuth(t *testing.T) {
-	s := assert.New(t)
-
-	resp := ex.InvokeHandlerForTest(
-		"basic-auth/jam/bread",
-		http.Request{
-			Header: http.Header{
-				"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte("jam:bread"))},
-			},
-		},
-		BasicAuthRoute,
-		handleAuthBasic,
-	)
-
-	s.Equal(0, resp.Status)
-}
-
-func TestValidBasicAuthWithSpecialChars(t *testing.T) {
-	s := assert.New(t)
-
-	resp := ex.InvokeHandlerForTest(
-		"basic-auth/hello%20world@example.com/p@ss%2Fw0rd%21",
-		http.Request{
-			Header: http.Header{
-				"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte("hello world@example.com:p@ss/w0rd!"))},
-			},
-		},
-		BasicAuthRoute,
-		handleAuthBasic,
-	)
-
-	s.Equal(0, resp.Status)
-}
-
-func TestMissingAuthHeader(t *testing.T) {
-	s := assert.New(t)
-
-	resp := ex.InvokeHandlerForTest(
-		"basic-auth/a/b",
-		http.Request{},
-		BasicAuthRoute,
-		handleAuthBasic,
-	)
-
-	s.Equal(401, resp.Status)
-	s.Equal("Basic realm=\"httpbun realm\"", resp.Header.Get(c.WWWAuthenticate))
 }
