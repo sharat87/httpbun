@@ -306,8 +306,9 @@ Hosted versions:
 
 	<dt id=base64>/base64</dt>
 	<dt id=base64-with-input>/base64/<span class=var>{encoded}</span></dt>
-	<dd>Decodes the <code>encoded</code> text with base64 encoding scheme. Defaults to
-		<code>SFRUUEJVTiBpcyBhd2Vzb21lciE=</code>.
+	<dd>Decodes the <code>encoded</code> text with base64 encoding scheme. Both the standard alphabet (with
+		<code>+</code> and <code>/</code>) and the URL-safe one (with <code>-</code> and <code>_</code>) are accepted,
+		with or without the trailing <code>=</code> padding. Defaults to <code>SFRUUEJVTiBpcyBhd2Vzb21lciE=</code>.
 	</dd>
 
 	<dt id=bytes>/bytes/<span class=var>{count}</span></dt>

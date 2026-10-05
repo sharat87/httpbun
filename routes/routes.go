@@ -168,7 +168,9 @@ func handleDecodeBase64(ex *ex.Exchange) response.Response {
 		encoded = "SFRUUEJVTiBpcyBhd2Vzb21lciE="
 	}
 
-	if decoded, err := base64.StdEncoding.DecodeString(encoded); err != nil {
+	// Accept both the standard and URL-safe alphabets, with or without padding.
+	normalized := strings.TrimRight(strings.NewReplacer("-", "+", "_", "/").Replace(encoded), "=")
+	if decoded, err := base64.RawStdEncoding.DecodeString(normalized); err != nil {
 		return response.BadRequest("Incorrect Base64 data try: 'SFRUUEJVTiBpcyBhd2Vzb21lciE='.")
 	} else {
 		return response.Response{
