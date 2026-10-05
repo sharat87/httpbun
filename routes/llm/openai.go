@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,15 +29,16 @@ func init() {
 
 // CompletionRequest represents the request body for the completions endpoint
 type CompletionRequest struct {
-	Model       string  `json:"model"`
-	Prompt      any     `json:"prompt"` // string or []string
-	MaxTokens   int     `json:"max_tokens"`
-	Temperature float64 `json:"temperature"`
-	N           int     `json:"n"`
-	Stream      bool    `json:"stream"`
-	Stop        any     `json:"stop"` // string or []string
-	User        string  `json:"user"`
-	Suffix      string  `json:"suffix"`
+	Model       string       `json:"model"`
+	Prompt      any          `json:"prompt"` // string or []string
+	MaxTokens   int          `json:"max_tokens"`
+	Temperature float64      `json:"temperature"`
+	N           int          `json:"n"`
+	Stream      bool         `json:"stream"`
+	Stop        any          `json:"stop"` // string or []string
+	User        string       `json:"user"`
+	Suffix      string       `json:"suffix"`
+	Httpbun     *HttpbunMock `json:"httpbun,omitempty"`
 }
 
 // ChatCompletionRequest represents the request body for the chat completions endpoint
@@ -66,7 +68,7 @@ type ResponsesMock struct {
 
 type ChatMessage struct {
 	Role    string `json:"role"`
-	Content string `json:"content"`
+	Content any    `json:"content"` // string or array of content parts
 	Name    string `json:"name,omitempty"`
 }
 
@@ -113,6 +115,9 @@ func handleCompletions(ex *ex.Exchange) response.Response {
 
 	// Generate mock response text
 	mockText := "This is a mock completion response from httpbun. Your prompt was received successfully."
+	if req.Httpbun != nil && req.Httpbun.Content != "" {
+		mockText = req.Httpbun.Content
+	}
 
 	if req.Stream {
 		return streamCompletionResponse(req, mockText, promptTokens)
@@ -178,7 +183,7 @@ func handleChatCompletions(ex *ex.Exchange) response.Response {
 	// Count prompt tokens from all messages
 	var promptText string
 	for _, msg := range req.Messages {
-		promptText += msg.Role + ": " + msg.Content + "\n"
+		promptText += msg.Role + ": " + getResponsesInputText(msg.Content) + "\n"
 	}
 	promptTokens := estimateTokens(promptText)
 
@@ -313,14 +318,10 @@ func streamCompletionResponse(req CompletionRequest, mockText string, promptToke
 			"Cache-Control": []string{"no-cache"},
 		},
 		Writer: func(w response.BodyWriter) {
-			words := strings.Fields(mockText)
+			chunks := splitIntoChunks(mockText)
 			completionID := "cmpl-" + util.RandomString()[:24]
 
-			for i, word := range words {
-				text := word
-				if i < len(words)-1 {
-					text += " "
-				}
+			for _, text := range chunks {
 
 				chunk := map[string]any{
 					"id":      completionID,
@@ -371,7 +372,7 @@ func streamChatCompletionResponse(req ChatCompletionRequest, mockContent string,
 			"Cache-Control": []string{"no-cache"},
 		},
 		Writer: func(w response.BodyWriter) {
-			words := strings.Fields(mockContent)
+			chunks := splitIntoChunks(mockContent)
 			completionID := "chatcmpl-" + util.RandomString()[:24]
 
 			// Send initial chunk with role
@@ -395,11 +396,7 @@ func streamChatCompletionResponse(req ChatCompletionRequest, mockContent string,
 			time.Sleep(50 * time.Millisecond)
 
 			// Stream content word by word
-			for i, word := range words {
-				content := word
-				if i < len(words)-1 {
-					content += " "
-				}
+			for _, content := range chunks {
 
 				chunk := map[string]any{
 					"id":      completionID,
@@ -519,4 +516,12 @@ func estimateTokens(text string) int {
 		return 0
 	}
 	return (len(text) + 3) / 4
+}
+
+var chunkPattern = regexp.MustCompile(`^\s+|\S+\s*`)
+
+// splitIntoChunks splits text into word-sized chunks for streaming, keeping all whitespace so the chunks join back
+// into exactly the original text.
+func splitIntoChunks(text string) []string {
+	return chunkPattern.FindAllString(text, -1)
 }

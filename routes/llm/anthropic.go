@@ -125,7 +125,7 @@ func streamMessagesResponse(req MessagesRequest, mockContent string, inputTokens
 			"Cache-Control": []string{"no-cache"},
 		},
 		Writer: func(w response.BodyWriter) {
-			words := strings.Fields(mockContent)
+			chunks := splitIntoChunks(mockContent)
 			messageID := "msg-" + util.RandomString()[:24]
 
 			// Send initial message_start event
@@ -160,11 +160,7 @@ func streamMessagesResponse(req MessagesRequest, mockContent string, inputTokens
 			time.Sleep(50 * time.Millisecond)
 
 			// Stream content word by word
-			for i, word := range words {
-				text := word
-				if i < len(words)-1 {
-					text += " "
-				}
+			for _, text := range chunks {
 
 				contentBlockDelta := map[string]any{
 					"type":  "content_block_delta",
