@@ -2,10 +2,12 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -92,6 +94,18 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	ex := ex.New(w, req, s.spec)
+
+	// A bug in a handler shouldn't look like a network error to the client, so respond with a 500 that says what
+	// went wrong. If the handler already started the response, this can only log.
+	defer func() {
+		if r := recover(); r != nil {
+			if r == http.ErrAbortHandler {
+				panic(r)
+			}
+			log.Printf("Panic handling %s %s: %v\n%s", req.Method, req.URL, r, debug.Stack())
+			http.Error(w, fmt.Sprintf("Internal server error: %v", r), http.StatusInternalServerError)
+		}
+	}()
 
 	incomingIP := ex.FindIncomingIPAddress()
 	log.Printf(
