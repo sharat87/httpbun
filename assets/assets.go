@@ -41,7 +41,8 @@ func Render(name string, ex ex.Exchange, data map[string]any) response.Response 
 	data["commit"] = ex.ServerSpec.Commit
 	data["commitShort"] = ex.ServerSpec.CommitShort
 	data["date"] = ex.ServerSpec.Date
-	data["host"] = ex.Request.URL.Host
+	// Base URL for examples in docs, so they work as-is when copied, including with a path prefix.
+	data["host"] = ex.FindScheme() + "://" + ex.Request.URL.Host + ex.ServerSpec.PathPrefix
 
 	buf := bytes.Buffer{}
 	err := assetsTemplate.ExecuteTemplate(&buf, name, data)

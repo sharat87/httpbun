@@ -11,7 +11,7 @@
 	<ul>
 		<li>A RequestBin-like functionality with the <code>slack</code> directive.
 		<li>Build response body by writing a Golang template, with the <code>t</code> directive.
-		<li>Learn more at the <a href=help/mixer>Mixer guide</a>.
+		<li>Learn more at the <a href="{{.pathPrefix}}/help/mixer">Mixer guide</a>.
 	</ul>
 	<li>The <code>/run</code> endpoint, and the <a href="{{.pathPrefix}}/runner">Runner</a>. (Beta).
 	<li>A mock <a href=#oauth2-authorize>OAuth2</a> provider. (Beta).
@@ -67,7 +67,7 @@ Hosted versions:
 			<code>httpbun.com</code>) handle per HTTP spec &mdash; they will be stripped or rewritten by the proxy.
 			To test upgrade-like responses, run a local instance (<code>docker run -p 80:80 sharat87/httpbun</code>)
 			and hit it directly without a proxy in front.</p>
-		<br>Learn more in the <a href=help/mixer>guide</a>, and use the <a href=mixer>mixer</a> for a UI to build these URLs.
+		<br>Learn more in the <a href="{{.pathPrefix}}/help/mixer">guide</a>, and use the <a href="{{.pathPrefix}}/mixer">mixer</a> for a UI to build these URLs.
 	</dd>
 
 </dl>
@@ -291,8 +291,8 @@ Hosted versions:
 	<dt id=svg>/svg/<span class=var>{text}</span></dt>
 	<dd>Renders an SVG circle image with fill color determined by the <code>text</code>. The first two letters of the
 		text are also shown at the center of the circle. Examples:
-		<img src="svg/bun" style="height:1.5em;vertical-align:middle"> for <code>svg/bun</code>,
-		<img src="svg/foo" style="height:1.5em;vertical-align:middle"> for <code>svg/foo</code>.
+		<img src="{{.pathPrefix}}/svg/bun" style="height:1.5em;vertical-align:middle"> for <code>svg/bun</code>,
+		<img src="{{.pathPrefix}}/svg/foo" style="height:1.5em;vertical-align:middle"> for <code>svg/foo</code>.
 	</dd>
 
 	<dt id=robots>/robots.txt</dt>
