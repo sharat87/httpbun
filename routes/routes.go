@@ -111,10 +111,15 @@ func handleStatus(ex *ex.Exchange) response.Response {
 		if err != nil {
 			return response.BadRequest("Invalid status code: %s", part)
 		}
-		if code < 100 || code > 599 {
+		if code < 200 || code > 599 {
+			// 1xx codes are informational, and can't be sent as the final status of a response.
 			return response.BadRequest("Invalid status code: %s", part)
 		}
 		codes = append(codes, code)
+	}
+
+	if len(codes) == 0 {
+		return response.BadRequest("No status codes given")
 	}
 
 	var status int
@@ -126,7 +131,7 @@ func handleStatus(ex *ex.Exchange) response.Response {
 
 	acceptHeader := ex.HeaderValueLast("Accept")
 
-	if strings.HasPrefix(acceptHeader, c.TextPlain) {
+	if strings.HasPrefix(acceptHeader, "text/plain") {
 		return response.New(status, nil, []byte(http.StatusText(status)))
 
 	} else {
@@ -179,6 +184,10 @@ func handleRandomBytes(ex *ex.Exchange) response.Response {
 	n, err := strconv.Atoi(sizeField)
 	if err != nil {
 		return response.BadRequest("Invalid size: %s", sizeField)
+	}
+
+	if n < 0 {
+		return response.BadRequest("Size can't be negative")
 	}
 
 	if n > ex.ServerSpec.EndpointBytesSizeLimit {
