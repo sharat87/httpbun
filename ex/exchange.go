@@ -73,6 +73,12 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 		req.URL.Host = req.Host
 	}
 
+	// Go moves the `Host` header out of req.Header and into req.Host. Put it back, so it shows up wherever request
+	// headers are shown, like any other header. HTTP/2 sends `:authority` instead, so there's no header to restore.
+	if req.ProtoMajor == 1 && req.Host != "" && req.Header.Get("Host") == "" {
+		req.Header.Set("Host", req.Host)
+	}
+
 	if ex.responseWriter != nil {
 		// todo: these common headers should be part of a "middleware" system
 

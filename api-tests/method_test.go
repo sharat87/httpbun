@@ -40,7 +40,8 @@ func DoMethodTest(t *testing.T, method, path string) {
 			"args": {},
 			"headers": {
 				`+extraHeaders+`
-				"Accept-Encoding": "gzip"
+				"Accept-Encoding": "gzip",
+				"Host": "127.0.0.1:30001"
 			},
 			"data": "",
 			"files": {},
@@ -71,7 +72,8 @@ func TestGetNameSherlock(t *testing.T) {
 			"name": "Sherlock"
 		},
 		"headers": {
-			"Accept-Encoding": "gzip"
+			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001"
 		},
 		"data": "",
 		"files": {},
@@ -97,7 +99,8 @@ func TestGetFirstSherlockLastHolmes(t *testing.T) {
 			"last":  "Holmes"
 		},
 		"headers": {
-			"Accept-Encoding": "gzip"
+			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001"
 		},
 		"data": "",
 		"files": {},
@@ -124,6 +127,7 @@ func TestGetWithCustomHeader(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001",
 			"X-Custom": "first-custom"
 		},
 		"data": "",
@@ -152,6 +156,7 @@ func TestGetWithTwoCustomHeader(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001",
 			"X-First": "first-custom",
 			"X-Second": "second-custom"
 		},
@@ -180,6 +185,7 @@ func TestGetWithMultipleHeaderValues(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001",
 			"X-One": [
 				"first one",
 				"second one"
@@ -212,6 +218,7 @@ func TestMethodPostWithFormBody(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001",
 			"Content-Length": "9",
 			"Content-Type": "application/x-www-form-urlencoded"
 		},

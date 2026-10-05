@@ -23,6 +23,7 @@ func TestHeaders(t *testing.T) {
 	s.JSONEq(`{
 		"headers": {
 			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001",
 			"X-One": "custom header value",
 			"X-Two": "another custom header"
 		}
@@ -42,6 +43,7 @@ func TestHeadersRepeat(t *testing.T) {
 	s.JSONEq(`{
 		"headers": {
 			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001",
 			"X-One": [
 				"custom header value",
 				"another custom header"

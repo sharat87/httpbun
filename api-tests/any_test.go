@@ -36,7 +36,8 @@ func DoAnythingTest(t *testing.T, method string) {
 		"args": {},
 		"headers": {
 			`+extraHeaders+`
-			"Accept-Encoding": "gzip"
+			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001"
 		},
 		"data": "",
 		"files": {},
@@ -60,7 +61,8 @@ func TestAnythingWithExtraPath(t *testing.T) {
 	s.JSONEq(`{
 		"args": {},
 		"headers": {
-			"Accept-Encoding": "gzip"
+			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001"
 		},
 		"data": "",
 		"files": {},
@@ -96,7 +98,8 @@ func TestAnythingWithQueryParams(t *testing.T) {
 			"name": "Sherlock"
 		},
 		"headers": {
-			"Accept-Encoding": "gzip"
+			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001"
 		},
 		"data": "",
 		"files": {},
@@ -122,7 +125,8 @@ func TestAnythingFirstSherlockLastHolmes(t *testing.T) {
 			"last":  "Holmes"
 		},
 		"headers": {
-			"Accept-Encoding": "gzip"
+			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001"
 		},
 		"data": "",
 		"files": {},
@@ -149,6 +153,7 @@ func TestAnyWithCustomHeader(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001",
 			"X-Custom": "first-custom"
 		},
 		"data": "",
@@ -177,6 +182,7 @@ func TestAnythingWithTwoCustomHeader(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001",
 			"X-First": "first-custom",
 			"X-Second": "second-custom"
 		},
@@ -205,6 +211,7 @@ func TestAnyWithMultipleHeaderValues(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001",
 			"X-One": [
 				"first one",
 				"second one"
@@ -237,6 +244,7 @@ func TestAnythingWithFormBody(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
+			"Host": "127.0.0.1:30001",
 			"Content-Length": "9",
 			"Content-Type": "application/x-www-form-urlencoded"
 		},

@@ -28,9 +28,6 @@ tasks:
       CGO_ENABLED: 0
       GOOS: linux
     cmds:
-      - task: patch
-      - defer:
-          task: unpatch
       - GOARCH=amd64 go build {{.LD_FLAGS}} -a -installsuffix cgo -o bin/httpbun-docker-amd64 .
       - GOARCH=arm64 go build {{.LD_FLAGS}} -a -installsuffix cgo -o bin/httpbun-docker-arm64 .
 
@@ -54,17 +51,6 @@ tasks:
     cmds:
       # The `-count=1` is to disable test caching.
       - go test -cover -count=1 -vet=all -v ./...
-
-  patch:
-    cmds:
-      - sed 's:\(delete(req.Header, "Host")\)$://\1:' "$(go env GOROOT)/src/net/http/server.go" > x
-      - |-
-        $(if [[ -n "$CI" ]] then echo sudo; fi) mv x "$(go env GOROOT)/src/net/http/server.go"
-
-  unpatch:
-    cmds:
-      - sed 's://\(delete(req.Header, "Host")\)$:\1:' "$(go env GOROOT)/src/net/http/server.go" > x
-      - mv x "$(go env GOROOT)/src/net/http/server.go"
 
   llm-sdk-tests:
     aliases: [st]
