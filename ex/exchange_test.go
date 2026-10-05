@@ -1,6 +1,10 @@
 package ex
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestIsAllowedLocationHeader(t *testing.T) {
 	tests := []struct {
@@ -21,46 +25,25 @@ func TestIsAllowedLocationHeader(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isAllowedLocationHeader(tt.location, nil); got != tt.allowed {
-				t.Fatalf("isAllowedLocationHeader(%q) = %v, want %v", tt.location, got, tt.allowed)
-			}
+			assert.Equal(t, tt.allowed, isAllowedLocationHeader(tt.location, nil), "location: %q", tt.location)
 		})
 	}
 }
 
 func TestIsAllowedLocationHeader_CustomDomains(t *testing.T) {
 	domains := []string{"custom.example"}
-
-	if isAllowedLocationHeader("https://example.com/path", domains) {
-		t.Fatal("expected default domain to be disallowed when custom domains are set")
-	}
-
-	if !isAllowedLocationHeader("https://custom.example/path", domains) {
-		t.Fatal("expected configured domain to be allowed")
-	}
+	assert.False(t, isAllowedLocationHeader("https://example.com/path", domains), "default domain should be disallowed when custom domains are set")
+	assert.True(t, isAllowedLocationHeader("https://custom.example/path", domains), "configured domain should be allowed")
 }
 
 func TestIsAllowedLocationHeader_WildcardSubdomains(t *testing.T) {
 	domains := []string{"*.github.io"}
-
-	if !isAllowedLocationHeader("https://docs.github.io/path", domains) {
-		t.Fatal("expected wildcard subdomain to be allowed")
-	}
-
-	if !isAllowedLocationHeader("https://a.b.github.io/path", domains) {
-		t.Fatal("expected nested wildcard subdomain to be allowed")
-	}
-
-	if isAllowedLocationHeader("https://github.io/path", domains) {
-		t.Fatal("expected bare domain to be disallowed for wildcard-only entry")
-	}
+	assert.True(t, isAllowedLocationHeader("https://docs.github.io/path", domains), "wildcard subdomain should be allowed")
+	assert.True(t, isAllowedLocationHeader("https://a.b.github.io/path", domains), "nested wildcard subdomain should be allowed")
+	assert.False(t, isAllowedLocationHeader("https://github.io/path", domains), "bare domain should be disallowed for wildcard-only entry")
 }
 
 func TestIsAllowedLocationHeader_NoDomains(t *testing.T) {
-	if isAllowedLocationHeader("https://example.com/path", []string{}) {
-		t.Fatal("expected no absolute URLs to be allowed with an empty list")
-	}
-	if !isAllowedLocationHeader("/anything", []string{}) {
-		t.Fatal("expected relative paths to be allowed with an empty list")
-	}
+	assert.False(t, isAllowedLocationHeader("https://example.com/path", []string{}), "no absolute URLs should be allowed with an empty list")
+	assert.True(t, isAllowedLocationHeader("/anything", []string{}), "relative paths should be allowed with an empty list")
 }

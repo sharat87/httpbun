@@ -1,12 +1,10 @@
-package svg
+package api_tests
 
 import (
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/sharat87/httpbun/ex"
 )
 
 func TestSVGText(t *testing.T) {
@@ -18,8 +16,11 @@ func TestSVGText(t *testing.T) {
 		"svg/%3Cscript%3E":       ">&lt;S</text>",
 	} {
 		t.Run(path, func(t *testing.T) {
-			resp := ex.InvokeHandlerForTest(path, http.Request{}, `/svg/(?P<seed>.+)`, handleSVGSeeded)
-			assert.Contains(t, resp.Body, text)
+			resp, body := ExecRequest(t, R{Path: path})
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, "image/svg+xml", resp.Header.Get("Content-Type"))
+			assert.Contains(t, body, "<svg ")
+			assert.Contains(t, body, text)
 		})
 	}
 }
