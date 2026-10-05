@@ -35,8 +35,10 @@ func handleResponseHeaders(ex *ex.Exchange) response.Response {
 		}
 	}
 
-	responseHeaders.Set(c.ContentType, c.ApplicationJSON)
-	data[c.ContentType] = c.ApplicationJSON
+	if responseHeaders.Get(c.ContentType) == "" {
+		responseHeaders.Set(c.ContentType, c.ApplicationJSON)
+		data[c.ContentType] = c.ApplicationJSON
+	}
 
 	var jsonContent []byte
 
