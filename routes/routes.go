@@ -281,6 +281,10 @@ func handleLinks(ex *ex.Exchange) response.Response {
 	count, _ := strconv.Atoi(ex.Field("count"))
 	offset, _ := strconv.Atoi(ex.Field("offset"))
 
+	if count > 200 {
+		count = 200
+	}
+
 	var parts []string
 
 	parts = append(parts, "<html><head><title>Links</title></head><body>")
@@ -288,7 +292,7 @@ func handleLinks(ex *ex.Exchange) response.Response {
 		if offset == i {
 			parts = append(parts, strconv.Itoa(i))
 		} else {
-			parts = append(parts, fmt.Sprintf("<a href='/links/%d/%d'>%d</a>", count, i, i))
+			parts = append(parts, fmt.Sprintf("<a href='%s/links/%d/%d'>%d</a>", ex.ServerSpec.PathPrefix, count, i, i))
 		}
 		parts = append(parts, " ")
 	}

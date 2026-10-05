@@ -338,7 +338,8 @@ Hosted versions:
 	<dt id=links>/links/<span class=var>{count}</span></dt>
 	<dt id=links-offset>/links/<span class=var>{count}</span>/<span class=var>{offset}</span></dt>
 	<dd>Returns an HTML document with <code>count</code> links, which in turn respond with HTML documents with links
-		again. You mostly want to use the first version (<em>i.e.</em>, without <code>offset</code>).
+		again. You mostly want to use the first version (<em>i.e.</em>, without <code>offset</code>). The value of
+		<code>count</code> is capped to 200.
 	</dd>
 
 	<dt id=range>/range/<span class=var>{count}</span></dt>
