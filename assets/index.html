@@ -22,6 +22,7 @@
 	<li>Accept <em>any</em> method in <a href=#headers>/headers</a> and most other such endpoints.
 	<li>Not <a href="https://github.com/postmanlabs/httpbin/blob/f8ec666b4d1b654e4ff6aedd356f510dcac09f83/httpbin/helpers.py#L40">hiding some headers</a> in responses.
 	<li>More practical handling of unescaped special characters in <code>x-www-form-urlencoded</code> payloads.
+	<li>A trailing slash is ignored on all endpoints, so <code>/get/</code> works just like <code>/get</code>.
 </ol>
 
 Hosted versions:

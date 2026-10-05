@@ -61,6 +61,9 @@ func handleRedirectCount(ex *ex.Exchange) response.Response {
 		target := fmt.Sprint(n - 1)
 		if isAbsolute {
 			target = "/absolute-redirect/" + target
+		} else if ex.HadTrailingSlash {
+			// Relative targets resolve against the request URL, which has an extra path segment with the slash.
+			target = "../" + target
 		}
 		return *ex.RedirectResponse(target)
 
@@ -68,6 +71,9 @@ func handleRedirectCount(ex *ex.Exchange) response.Response {
 		var target string
 		if isAbsolute {
 			target = "/anything"
+		} else if ex.HadTrailingSlash {
+			// Relative targets resolve against the request URL, which has an extra path segment with the slash.
+			target = "../../anything"
 		} else {
 			target = "../anything"
 		}

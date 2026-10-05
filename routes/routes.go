@@ -164,6 +164,10 @@ func handleIp(ex *ex.Exchange) response.Response {
 
 func handleDecodeBase64(ex *ex.Exchange) response.Response {
 	encoded := ex.Field("encoded")
+	if ex.HadTrailingSlash && encoded != "" {
+		// A trailing `/` can be part of standard base64 data.
+		encoded += "/"
+	}
 	if encoded == "" {
 		encoded = "SFRUUEJVTiBpcyBhd2Vzb21lciE="
 	}

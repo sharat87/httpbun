@@ -26,8 +26,11 @@ type Exchange struct {
 	fields         map[string]string // todo: this should be private!
 	cappedBody     io.Reader
 	RoutedPath     string
-	ServerSpec     spec.Spec
-	bodyBytes      []byte
+	// HadTrailingSlash is true if a trailing slash was removed from RoutedPath. Routes ignore a trailing slash, so
+	// handlers only need this when a trailing slash changes their output.
+	HadTrailingSlash bool
+	ServerSpec       spec.Spec
+	bodyBytes        []byte
 }
 
 type HandlerFn func(ex *Exchange) response.Response
@@ -58,6 +61,12 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 		cappedBody:     io.LimitReader(req.Body, 10000),
 		RoutedPath:     strings.TrimPrefix(req.URL.EscapedPath(), serverSpec.PathPrefix),
 		ServerSpec:     serverSpec,
+	}
+
+	// Ignore a trailing slash for all routes, so `/get/` works like `/get`.
+	if len(ex.RoutedPath) > 1 && strings.HasSuffix(ex.RoutedPath, "/") {
+		ex.RoutedPath = strings.TrimSuffix(ex.RoutedPath, "/")
+		ex.HadTrailingSlash = true
 	}
 
 	if req.URL.Host == "" && req.Host != "" {
