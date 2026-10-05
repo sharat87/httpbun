@@ -51,8 +51,8 @@ func handleRedirectCount(ex *ex.Exchange) response.Response {
 	isAbsolute := ex.Field("mode") == "absolute-"
 	n, _ := strconv.Atoi(ex.Field("count"))
 
-	if n < 0 {
-		return response.BadRequest("count must be a non-negative integer")
+	if n < 1 {
+		return response.BadRequest("count must be a positive integer")
 
 	} else if n > MaxRedirectCount {
 		return response.BadRequest("count cannot be greater than %v", MaxRedirectCount)

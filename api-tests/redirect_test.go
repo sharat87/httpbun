@@ -101,6 +101,16 @@ func TestRedirectNegativeCount(t *testing.T) {
 	s.NotContains(resp.Header, c.Location)
 }
 
+func TestRedirectZeroCount(t *testing.T) {
+	for _, path := range []string{"redirect/0", "relative-redirect/0", "absolute-redirect/0"} {
+		t.Run(path, func(t *testing.T) {
+			resp, _ := ExecRequest(R{Path: path})
+			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+			assert.NotContains(t, resp.Header, c.Location)
+		})
+	}
+}
+
 func TestRedirectExplicitRelative4(t *testing.T) {
 	s := assert.New(t)
 	resp, _ := ExecRequest(R{
