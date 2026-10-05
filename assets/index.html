@@ -558,6 +558,12 @@ print(response.content[0].text)
 	<dt id=endpoint-bytes-size-limit>--endpoint-bytes-size-limit</dt>
 	<dd>Maximum number of bytes allowed in the <a href='#bytes'><code>/bytes</code> endpoint</a>.</dd>
 
+	<dt id=configuration-info>HTTPBUN_INFO_*</dt>
+	<dd>Environment variables with this prefix are shown by the <code>/info</code> endpoint, along with the server's
+		hostname. Useful to tell instances apart, for example by setting <code>HTTPBUN_INFO_REGION</code>. No other
+		environment variables are exposed.
+	</dd>
+
 </dl>
 
 <h2 id=license>License</h2>

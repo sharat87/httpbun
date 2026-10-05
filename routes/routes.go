@@ -351,12 +351,11 @@ func handleInfo(_ *ex.Exchange) response.Response {
 		hostname = "Error: " + err.Error()
 	}
 
+	// Only expose env variables explicitly meant for this, so secrets in the environment aren't leaked.
 	env := make(map[string]any)
 	for _, e := range os.Environ() {
 		name, value, _ := strings.Cut(e, "=")
-		// These env variables get auto-set when run in Docker, so we set marker values in the _image_, and if they're
-		// not set for the _container_, we'll just not include them in the output.
-		if value != "___httpbun_unset_marker" || (name != "PATH" && name != "HOME" && name != "HOSTNAME") {
+		if strings.HasPrefix(name, "HTTPBUN_INFO_") {
 			env[name] = value
 		}
 	}
