@@ -49,7 +49,11 @@ func handleMessages(ex *ex.Exchange) response.Response {
 	}
 
 	var req MessagesRequest
-	if err := json.Unmarshal(ex.BodyBytes(), &req); err != nil {
+	body, errResp := readBody(ex)
+	if errResp != nil {
+		return *errResp
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
 		return response.Response{
 			Status: http.StatusBadRequest,
 			Body: map[string]any{

@@ -88,7 +88,11 @@ func handleCompletions(ex *ex.Exchange) response.Response {
 	}
 
 	var req CompletionRequest
-	if err := json.Unmarshal(ex.BodyBytes(), &req); err != nil {
+	body, errResp := readBody(ex)
+	if errResp != nil {
+		return *errResp
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
 		return response.Response{
 			Status: http.StatusBadRequest,
 			Body: map[string]any{
@@ -162,7 +166,11 @@ func handleChatCompletions(ex *ex.Exchange) response.Response {
 	}
 
 	var req ChatCompletionRequest
-	if err := json.Unmarshal(ex.BodyBytes(), &req); err != nil {
+	body, errResp := readBody(ex)
+	if errResp != nil {
+		return *errResp
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
 		return response.Response{
 			Status: http.StatusBadRequest,
 			Body: map[string]any{
@@ -238,7 +246,11 @@ func handleResponses(ex *ex.Exchange) response.Response {
 	}
 
 	var req ResponsesRequest
-	if err := json.Unmarshal(ex.BodyBytes(), &req); err != nil {
+	body, errResp := readBody(ex)
+	if errResp != nil {
+		return *errResp
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
 		return response.Response{
 			Status: http.StatusBadRequest,
 			Body: map[string]any{

@@ -235,6 +235,22 @@ func (ex *Exchange) BodyBytes() []byte {
 	return ex.bodyBytes
 }
 
+// BodyBytesWithLimit reads the request body allowing a larger size than BodyBytes, and errors if the body is bigger than
+// the limit, instead of truncating it. It can't be used after BodyBytes, which reads the body with its own limit.
+func (ex *Exchange) BodyBytesWithLimit(limit int64) ([]byte, error) {
+	if ex.Request.Body == nil {
+		return nil, nil
+	}
+	body, err := io.ReadAll(io.LimitReader(ex.Request.Body, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(body)) > limit {
+		return nil, fmt.Errorf("request body is larger than %d bytes", limit)
+	}
+	return body, nil
+}
+
 func (ex *Exchange) BodyString() string {
 	return string(ex.BodyBytes())
 }

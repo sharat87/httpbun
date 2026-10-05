@@ -113,6 +113,8 @@ Hosted versions:
 
 	<dt id=payload>/payload</dt>
 	<dd>Responds with the same <code>Content-Type</code> header as the request and the body of the request as is.
+		Only the first 10,000 bytes of the body are read, so larger bodies are truncated. This applies to all other
+		endpoints that echo the request body too, like <a href=#any>/any</a>.
 		<details>
 			<summary><span>Examples</span></summary>
 			<pre>curl -H 'Content-Type: text/plain' -d 'plain body' {{.host}}/payload</pre>
@@ -410,7 +412,8 @@ Hosted versions:
 	<dd>Mock endpoints that mimic real LLM APIs, so you can point an SDK at httpbun instead of a paid provider. Set
 		<code>base_url</code> to <code>{{.host}}/llm</code>, pass any dummy API key, and you're all set. No auth,
 		no keys. Responses are deterministic with a plausible <code>usage</code> block, and the <code>stream</code>
-		flag is honored using the right SSE protocol for each provider.
+		flag is honored using the right SSE protocol for each provider. Request bodies can be up to 1 MB, and larger
+		ones get a 413 response.
 		<br>
 		<strong>Custom responses:</strong> add an <code>httpbun</code> field to the request body to override the mock
 		output:

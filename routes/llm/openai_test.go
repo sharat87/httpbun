@@ -44,3 +44,24 @@ func TestCompletionsWithCustomContent(t *testing.T) {
 	choices := body["choices"].([]map[string]any)
 	assert.Equal(t, "custom", choices[0]["text"])
 }
+
+func postStatus(path, body string, handler ex.HandlerFn) int {
+	resp := ex.InvokeHandlerForTest(path, http.Request{
+		Method: http.MethodPost,
+		Body:   io.NopCloser(bytes.NewBufferString(body)),
+	}, "/"+path, handler)
+	if resp.Status == 0 {
+		return http.StatusOK
+	}
+	return resp.Status
+}
+
+func TestLargeRequestBody(t *testing.T) {
+	message := func(size int) string {
+		return `{"messages": [{"role": "user", "content": "` + strings.Repeat("a", size) + `"}]}`
+	}
+	// Larger than the 10KB limit for other endpoints.
+	assert.Equal(t, http.StatusOK, postStatus("llm/v1/chat/completions", message(100_000), handleChatCompletions))
+	assert.Equal(t, http.StatusOK, postStatus("llm/v1/messages", message(100_000), handleMessages))
+	assert.Equal(t, http.StatusRequestEntityTooLarge, postStatus("llm/v1/chat/completions", message(maxBodySize), handleChatCompletions))
+}
