@@ -270,7 +270,7 @@ func handleDrip(ex *ex.Exchange) response.Response {
 		Status: code,
 		Header: http.Header{
 			"Cache-Control": {"no-cache"},
-			c.ContentType:   {"text/octet-stream"},
+			c.ContentType:   {"application/octet-stream"},
 		},
 		Writer: func(w response.BodyWriter) {
 			for numbytes > 0 {
