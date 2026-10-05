@@ -36,7 +36,7 @@ func TestDigestAuthWithoutCredsRequireCookie(t *testing.T) {
 		Path: "digest-auth/auth/dave/diamond?require-cookie=true",
 	})
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
-	match := regexp.MustCompile("\\bnonce=(\\S+)").FindStringSubmatch(resp.Header.Get("Set-Cookie"))
+	match := regexp.MustCompile(`\bnonce=(\S+)`).FindStringSubmatch(resp.Header.Get("Set-Cookie"))
 	if !s.NotEmpty(match, "cookie match: "+resp.Header.Get("Set-Cookie")) {
 		return
 	}
@@ -97,7 +97,7 @@ func TestDigestAuthWithIncorrectCreds(t *testing.T) {
 		},
 	})
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
-	match := regexp.MustCompile("\\bnonce=(\\S+)").FindStringSubmatch(resp.Header.Get("Set-Cookie"))
+	match := regexp.MustCompile(`\bnonce=(\S+)`).FindStringSubmatch(resp.Header.Get("Set-Cookie"))
 	if !s.NotEmpty(match) {
 		return
 	}

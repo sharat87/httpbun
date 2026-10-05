@@ -61,8 +61,8 @@ func TestMixInvalidStatus(t *testing.T) {
 	}{
 		{"mix/s=", "No status codes given"},
 		{"mix/s=abc", "No status codes given"},
-		{"mix/s=100", "Invalid status code: 100"},
-		{"mix/s=1000", "Invalid status code: 1000"},
+		{"mix/s=100", "invalid status code 100, must be between 200 and 599"},
+		{"mix/s=1000", "invalid status code 1000, must be between 200 and 599"},
 	} {
 		t.Run(tc.path, func(t *testing.T) {
 			s := assert.New(t)
