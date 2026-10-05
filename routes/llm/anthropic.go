@@ -17,6 +17,8 @@ func init() {
 	RouteList = append(RouteList,
 		// https://console.anthropic.com/docs/en/api/messages/create
 		ex.NewRoute("/llm/v1/messages", handleMessages),
+		// Without the /v1/ prefix, like the OpenAI routes. The Anthropic SDK always adds /v1/, but other clients may not.
+		ex.NewRoute("/llm/messages", handleMessages),
 	)
 }
 
