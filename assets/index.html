@@ -50,8 +50,10 @@ Hosted versions:
 			<li><code>s</code>: HTTP response status code.
 			<li><code>h</code>: Set a response header, in the form <code>name:value</code>.
 			<li><code>c</code>: Set a cookie, in the form <code>name:value</code>.
+			<li><code>cd</code>: Delete a cookie with the given name.
 			<li><code>r</code>: Set a redirect URL. Uses status code 307. To change, use <code>s=</code> directive.
 			<li><code>b64</code>: Set the response body to the base64 decoded value.
+			<li><code>d</code>: Delay the response by the given number of seconds, up to 10.
 			<li><code>t</code>: The base64 decoded value of this, is rendered as a Golang text template, and the result is
 				used as the response body.
 			<li><code>end</code>: Takes no value, marks the end of directive processing. Path segment after this is ignored
@@ -101,8 +103,8 @@ Hosted versions:
 
 	<dt id=headers>/headers</dt>
 	<dd>Responds with a JSON object with a single field, <code>headers</code> which is an object of all the headers in
-		the request, as keys and values. If a header repeats in the request, then its values are concatenated with a
-		comma and treated as a single header value.
+		the request, as keys and values. If a header repeats in the request, its value is an array of all the values
+		it was given.
 		<details>
 			<summary><span>Examples</span></summary>
 			<pre>curl -H 'x-custom: custom header value' {{.host}}/headers</pre>
@@ -234,8 +236,12 @@ Hosted versions:
 <dl>
 
 	<dt id=ip>/ip</dt>
-	<dt id=ip-txt>/ip.txt</dt>
+	<dt id=ip-json>/ip.json</dt>
 	<dd>Responds with a JSON object with a single field, <code>origin</code>, with the client's IP Address for value.
+	</dd>
+
+	<dt id=ip-txt>/ip.txt</dt>
+	<dd>Responds with the client's IP Address, as plain text.
 	</dd>
 
 </dl>
