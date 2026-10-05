@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
@@ -210,7 +211,7 @@ func handleDelayedResponse(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Invalid delay: %s", err.Error())
 	}
 
-	if n < 0 || n > 300 {
+	if math.IsNaN(n) || n < 0 || n > 300 {
 		return response.BadRequest("Delay can't be greater than 300 or less than 0")
 	}
 
