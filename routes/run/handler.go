@@ -25,6 +25,27 @@ func handleRunner(ex *ex.Exchange) response.Response {
 	return assets.Render("runner.html", *ex, nil)
 }
 
+// makeReadOnlyRequestJS builds the `R` object from JSON, as plain objects that throw on any attempt to change them.
+// Changing `R` can't affect anything, so it's better to fail early than to silently ignore it. Scripts don't run in
+// strict mode, where a frozen object would silently ignore changes, hence the Proxy.
+const makeReadOnlyRequestJS = `(json) => {
+	const readOnly = (obj, label) => new Proxy(obj, {
+		set(_, name) {
+			throw new TypeError(label + " is read-only, can't set " + String(name) +
+				". To set response headers, return them in the headers field.")
+		},
+		deleteProperty(_, name) {
+			throw new TypeError(label + " is read-only, can't delete " + String(name))
+		},
+		defineProperty(_, name) {
+			throw new TypeError(label + " is read-only, can't define " + String(name))
+		},
+	})
+	const r = JSON.parse(json)
+	r.headers = readOnly(r.headers, "R.headers")
+	return readOnly(r, "R")
+}`
+
 func handleRunJS(ex *ex.Exchange) response.Response {
 	src, err := base64.URLEncoding.DecodeString(ex.Field("encoded"))
 	if err != nil {
@@ -59,7 +80,21 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 		"extraPath": ex.Field("extraPath"),
 	}
 
-	rawResult, err := fn(goja.Undefined(), rt.ToValue(rParam))
+	rParamJSON, err := json.Marshal(rParam)
+	if err != nil {
+		return response.BadRequest("Unable to prepare request: %s", err.Error())
+	}
+	rawMakeR, err := rt.RunString(makeReadOnlyRequestJS)
+	if err != nil {
+		return response.BadRequest("Unable to prepare request: %s", err.Error())
+	}
+	makeR, _ := goja.AssertFunction(rawMakeR)
+	r, err := makeR(goja.Undefined(), rt.ToValue(string(rParamJSON)))
+	if err != nil {
+		return response.BadRequest("Unable to prepare request: %s", err.Error())
+	}
+
+	rawResult, err := fn(goja.Undefined(), r)
 	if err != nil {
 		return response.BadRequest("Evaluation error: %s", err.Error())
 	}

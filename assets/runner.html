@@ -26,11 +26,13 @@
 	<li><code>R.method</code>: The request method, like <code>"GET"</code>.
 	<li><code>R.headers</code>: The request headers, as a plain object. Names are lowercase, like
 		<code>R.headers["user-agent"]</code>. If a header is repeated in the request, its values are joined with
-		<code>", "</code>. It's a normal object, so getting, setting and deleting with square brackets all work, but
-		changing it doesn't change the response.
+		<code>", "</code>.
 	<li><code>R.extraPath</code>: The path after the encoded code in the URL. For
 		<code>/run/{code}/foo/bar</code>, this is <code>"/foo/bar"</code>.
 </ul>
+
+<p><code>R</code> and <code>R.headers</code> are read-only, and trying to change them throws an error. To set
+	response headers, return them in the <code>headers</code> field.</p>
 
 <p>The returned object can have these fields, all optional:</p>
 <ul>
