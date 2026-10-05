@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/dop251/goja"
@@ -45,9 +46,16 @@ func handleRunJS(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Unable to load JS")
 	}
 
+	// A plain object, so it works with normal JS syntax, like `R.headers["user-agent"]`. Names are lowercase, and
+	// repeated headers are joined with a comma, like HTTP allows.
+	requestHeaders := map[string]any{}
+	for name, values := range ex.Request.Header {
+		requestHeaders[strings.ToLower(name)] = strings.Join(values, ", ")
+	}
+
 	rParam := map[string]any{
 		"method":    ex.Request.Method,
-		"headers":   ex.Request.Header,
+		"headers":   requestHeaders,
 		"extraPath": ex.Field("extraPath"),
 	}
 

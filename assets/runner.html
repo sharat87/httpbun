@@ -4,7 +4,7 @@
 
 <p style="font-size:1.2em">Build your own API endpoint, by writing Javascript to handle the request.</p>
 
-<p style="color:red">This is undocumented, experimental, and may/will disappear some day, with little notice.</p>
+<p style="color:red">This is experimental, and may change or disappear some day, with little notice.</p>
 
 <noscript><p style="color:red">This page requires JavaScript. Please enable it.</p></noscript>
 
@@ -17,6 +17,34 @@
     body: "Httpbun is awesome!"
 }</textarea>
 </label>
+
+<h2>Reference</h2>
+
+<p>The code is the body of a function, that gets the request as <code>R</code>, and returns the response. It has
+	100ms to run. <code>R</code> has these fields:</p>
+<ul>
+	<li><code>R.method</code>: The request method, like <code>"GET"</code>.
+	<li><code>R.headers</code>: The request headers, as a plain object. Names are lowercase, like
+		<code>R.headers["user-agent"]</code>. If a header is repeated in the request, its values are joined with
+		<code>", "</code>. It's a normal object, so getting, setting and deleting with square brackets all work, but
+		changing it doesn't change the response.
+	<li><code>R.extraPath</code>: The path after the encoded code in the URL. For
+		<code>/run/{code}/foo/bar</code>, this is <code>"/foo/bar"</code>.
+</ul>
+
+<p>The returned object can have these fields, all optional:</p>
+<ul>
+	<li><code>status</code>: The response status code, between 200 and 599. Default: 200.
+	<li><code>headers</code>: The response headers, as an object of names to a string, or to a list of strings for a
+		repeated header. Like <code>{"x-one": "1", "x-many": ["a", "b"]}</code>.
+	<li><code>body</code>: The response body. A string is sent as is, and anything else is sent as JSON.
+</ul>
+
+<p>For example, to respond with the request's user agent:</p>
+<pre><code>return {
+    headers: {"content-type": "text/plain"},
+    body: "You are " + R.headers["user-agent"]
+}</code></pre>
 
 <script>
 {{template "common.js" .}}

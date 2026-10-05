@@ -52,3 +52,27 @@ func TestRunInvalidScripts(t *testing.T) {
 		})
 	}
 }
+
+func TestRunRequestHeaders(t *testing.T) {
+	s := assert.New(t)
+	script := `
+		const before = Object.keys(R.headers).sort().join(",")
+		R.headers["x-new"] = "added"
+		delete R.headers["x-gone"]
+		return {body: JSON.stringify({
+			before,
+			after: Object.keys(R.headers).sort().join(","),
+			multi: R.headers["x-multi"],
+			missing: R.headers["X-Multi"] === undefined,
+		})}`
+	resp := ex.InvokeHandlerForTest(
+		"run/"+base64.URLEncoding.EncodeToString([]byte(script)),
+		http.Request{
+			Method: http.MethodGet,
+			Header: http.Header{"X-Multi": {"1", "2"}, "X-Gone": {"bye"}},
+		},
+		`/run`+restPathPattern,
+		handleRunJS,
+	)
+	s.JSONEq(`{"before": "x-gone,x-multi", "after": "x-multi,x-new", "multi": "1, 2", "missing": true}`, string(resp.Body.([]byte)))
+}
