@@ -28,8 +28,10 @@ func handleCache(ex *ex.Exchange) response.Response {
 			return response.BadRequest("%s", err.Error())
 		}
 		return response.Response{Body: info}
-	} else {
+	} else if ex.Request.Method == http.MethodGet || ex.Request.Method == http.MethodHead {
 		return response.Response{Status: http.StatusNotModified}
+	} else {
+		return response.Response{Status: http.StatusPreconditionFailed}
 	}
 }
 

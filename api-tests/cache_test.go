@@ -138,3 +138,28 @@ func TestEtagRejectsInvalidOpaqueValues(t *testing.T) {
 		})
 	}
 }
+
+func TestCacheConditionalRequests(t *testing.T) {
+	for _, tt := range []struct {
+		method string
+		header string
+		want   int
+	}{
+		{http.MethodGet, "", http.StatusOK},
+		{http.MethodGet, "If-None-Match", http.StatusNotModified},
+		{http.MethodGet, "If-Modified-Since", http.StatusNotModified},
+		{http.MethodHead, "If-None-Match", http.StatusNotModified},
+		{http.MethodPost, "If-None-Match", http.StatusPreconditionFailed},
+	} {
+		t.Run(tt.method+"/"+tt.header, func(t *testing.T) {
+			headers := http.Header{}
+			if tt.header != "" {
+				headers.Set(tt.header, `"x"`)
+			}
+			resp, _ := ExecRequest(R{Method: tt.method, Path: "cache", Headers: headers})
+			if resp.StatusCode != tt.want {
+				t.Fatalf("status = %d, want %d", resp.StatusCode, tt.want)
+			}
+		})
+	}
+}
