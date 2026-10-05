@@ -327,10 +327,11 @@ Hosted versions:
 	<dd>Drips data over a duration, with an interval between each piece of data. The piece of data is the <code>*</code>
 		character. The following query params can be used to configure this endpoint:
 		<ul>
-			<li><code>duration</code>: Total number of seconds over which to stream the data. <em>Default: 2</em>.
+			<li><code>duration</code>: Total number of seconds over which to stream the data, up to two decimal places,
+				like <code>1.5</code>. <em>Default: 2</em>.
 			<li><code>numbytes</code>: Total number of bytes to stream. <em>Default: 10</em>.
 			<li><code>code</code>: The HTTP status code to be used in their response. <em>Default: 200</em>.
-			<li><code>delay</code>: An initial delay, in seconds. <em>Default: 2</em>.
+			<li><code>delay</code>: An initial delay, in seconds, up to two decimal places. <em>Default: 2</em>.
 		</ul>
 		When using <code>/drip-lines</code>, a newline character is written after every piece of data.
 	</dd>

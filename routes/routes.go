@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -227,17 +228,17 @@ func handleDrip(ex *ex.Exchange) response.Response {
 		// todo: docs duplicated from index.html
 		return response.BadRequest("Unknown extra path: %s"+
 			"\nUse `/drip` or `/drip-lines` with query params:\n"+
-			"  duration: Total number of seconds over which to stream the data. Default: 2.\n"+
+			"  duration: Total number of seconds over which to stream the data, up to two decimal places. Default: 2.\n"+
 			"  numbytes: Total number of bytes to stream. Default: 10.\n"+
 			"  code: The HTTP status code to be used in their response. Default: 200.\n"+
-			"  delay: An initial delay, in seconds. Default: 2.\n",
+			"  delay: An initial delay, in seconds, up to two decimal places. Default: 2.\n",
 			extra,
 		)
 	}
 
 	writeNewLines := ex.Field("mode") == "lines"
 
-	duration, err := ex.QueryParamInt("duration", 2)
+	duration, err := querySeconds(ex, "duration", 2*time.Second)
 	if err != nil {
 		return response.BadRequest("%s", err.Error())
 	}
@@ -255,16 +256,19 @@ func handleDrip(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Invalid status code: %d", code)
 	}
 
-	delay, err := ex.QueryParamInt("delay", 2)
+	delay, err := querySeconds(ex, "delay", 2*time.Second)
 	if err != nil {
 		return response.BadRequest("%s", err.Error())
 	}
 
 	if delay > 0 {
-		time.Sleep(time.Duration(delay) * time.Second)
+		time.Sleep(delay)
 	}
 
-	interval := time.Duration(float32(time.Second) * float32(duration) / float32(numbytes))
+	var interval time.Duration
+	if numbytes > 0 {
+		interval = duration / time.Duration(numbytes)
+	}
 
 	return response.Response{
 		Status: code,
@@ -293,6 +297,24 @@ func handleDrip(ex *ex.Exchange) response.Response {
 			}
 		},
 	}
+}
+
+var secondsPattern = regexp.MustCompile(`^(\d+(\.\d{1,2})?|\.\d{1,2})$`)
+
+// querySeconds reads a query param as a non-negative number of seconds, with up to two decimal places.
+func querySeconds(ex *ex.Exchange, name string, value time.Duration) (time.Duration, error) {
+	values := ex.Request.URL.Query()[name]
+	if len(values) == 0 {
+		return value, nil
+	}
+	if !secondsPattern.MatchString(values[0]) {
+		return 0, fmt.Errorf("%s must be a non-negative number of seconds, with up to two decimal places", name)
+	}
+	seconds, err := strconv.ParseFloat(values[0], 64)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be a number: %w", name, err)
+	}
+	return time.Duration(seconds * float64(time.Second)), nil
 }
 
 func handleLinks(ex *ex.Exchange) response.Response {
