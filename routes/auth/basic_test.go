@@ -53,6 +53,16 @@ func TestFieldParsingWithUrlEncodedChars(t *testing.T) {
 	s.Equal(2, len(fields))
 }
 
+func TestFieldParsingKeepsPlusSign(t *testing.T) {
+	fields, isMatch := util.MatchRoutePat(ex.MakePat(BasicAuthRoute), "/basic-auth/a+b/c%2Bd")
+
+	s := assert.New(t)
+	s.True(isMatch)
+	s.Equal("a+b", fields["user"])
+	s.Equal("c+d", fields["pass"])
+	s.Equal(2, len(fields))
+}
+
 func TestFieldParsingNoMatch(t *testing.T) {
 	_, isMatch := util.MatchRoutePat(ex.MakePat(BasicAuthRoute), "/basic-auth/")
 
