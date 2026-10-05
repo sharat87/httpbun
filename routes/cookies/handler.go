@@ -43,6 +43,10 @@ func handleCookiesDelete(ex *ex.Exchange) response.Response {
 		})
 	}
 
+	if err := validateCookies(res.Cookies); err != nil {
+		return response.BadRequest("%s", err.Error())
+	}
+
 	return *res
 }
 
@@ -67,8 +71,23 @@ func handleCookiesSet(ex *ex.Exchange) response.Response {
 
 	}
 
+	if err := validateCookies(cookies); err != nil {
+		return response.BadRequest("%s", err.Error())
+	}
+
 	res := ex.RedirectResponse("/cookies")
 	res.Cookies = cookies
 
 	return *res
+}
+
+// validateCookies checks cookies are valid to send, since Go writes an invalid cookie as an empty Set-Cookie header,
+// and silently drops invalid characters in values.
+func validateCookies(cookies []http.Cookie) error {
+	for _, cookie := range cookies {
+		if err := cookie.Valid(); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -143,3 +143,18 @@ func (s *CookiesSuite) TestSetCookiesWithNameAndValueInQueryMultiple() {
 	s.Contains(expected, resp.Cookies[0].String())
 	s.Contains(expected, resp.Cookies[1].String())
 }
+
+func (s *CookiesSuite) TestSetInvalidCookies() {
+	for _, path := range []string{"cookies/set/a%20b/v", "cookies/set/k/a%3Bb", "cookies/set?a%20b=v&ok=1"} {
+		s.Run(path, func() {
+			resp := ex.InvokeHandlerForTest(path, http.Request{}, CookiesSetRoute, handleCookiesSet)
+			s.Equal(http.StatusBadRequest, resp.Status)
+			s.Empty(resp.Cookies)
+		})
+	}
+}
+
+func (s *CookiesSuite) TestDeleteInvalidCookie() {
+	resp := ex.InvokeHandlerForTest("cookies/delete?a%20b", http.Request{}, CookiesDeleteRoute, handleCookiesDelete)
+	s.Equal(http.StatusBadRequest, resp.Status)
+}
