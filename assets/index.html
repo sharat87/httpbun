@@ -41,7 +41,7 @@ Hosted versions:
 
 <dl>
 
-	<dt>/mix</dt>
+	<dt id=mix-endpoint>/mix</dt>
 	<dd>
 		Combine behaviour from multiple of other endpoints, into one. For example, if we want an endpoint with some
 		response headers, as well as a specific status code, we can use:
@@ -98,7 +98,7 @@ Hosted versions:
 	</dd>
 
 	<dt id=any>/any</dt>
-	<dt>/any/<span class=var>{extraPath}</span></dt>
+	<dt id=any-extra-path>/any/<span class=var>{extraPath}</span></dt>
 	<dd>Acts like <a href=#get>/get</a>, <a href=#post>/post</a> etc., but works on any method, and any extra path after
 		<code>/any</code> is also accepted.</dd>
 
