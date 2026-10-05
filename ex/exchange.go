@@ -167,7 +167,7 @@ func singleParamValue(args map[string][]string, name string) (string, error) {
 }
 
 func (ex Exchange) HeaderValueLast(name string) string {
-	if values := ex.Request.Header[name]; values != nil && len(values) > 0 {
+	if values := ex.Request.Header.Values(name); len(values) > 0 {
 		return values[len(values)-1]
 	}
 

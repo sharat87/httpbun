@@ -3,11 +3,7 @@ package util
 import (
 	"net/url"
 	"regexp"
-	"sync"
 )
-
-var patCache = map[string]regexp.Regexp{}
-var cacheLock = sync.RWMutex{}
 
 func MatchRoutePat(re regexp.Regexp, path string) (map[string]string, bool) {
 	match := re.FindStringSubmatch(path)
@@ -29,20 +25,4 @@ func MatchRoutePat(re regexp.Regexp, path string) (map[string]string, bool) {
 	}
 
 	return result, true
-}
-
-func getPattern(pat string) regexp.Regexp {
-	// this implementation is fine since we don't ever delete items from cache.
-	cacheLock.RLock()
-	re, isCacheHit := patCache[pat]
-	cacheLock.RUnlock()
-
-	if !isCacheHit {
-		cacheLock.Lock()
-		defer cacheLock.Unlock()
-		re = *regexp.MustCompile(pat)
-		patCache[pat] = re
-	}
-
-	return re
 }
