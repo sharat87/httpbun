@@ -30,31 +30,13 @@ jobs:
           curl --silent --show-error --location 'https://github.com/go-task/task/releases/download/v3.29.1/task_linux_amd64.tar.gz' \
             | tar -xzf - -C /usr/local/bin task
 
-      - name: Test
-        run: task test
-
-      - name: Run Python SDK tests
+      - name: Get uv
         run: |
-          # The SDK tests need a running httpbun instance, so build one and
-          # start it on localhost:3090 for the duration of this step.
-          go build -o /tmp/httpbun .
-          /tmp/httpbun --bind localhost:3090 &
-          httpbun_pid=$!
-          trap 'kill "$httpbun_pid" 2>/dev/null || true' EXIT
-
-          # Wait for the server to be ready.
-          for i in $(seq 1 30); do
-            curl -fsS http://localhost:3090/any >/dev/null 2>&1 && break
-            sleep 1
-          done
-          curl -fsS http://localhost:3090/any >/dev/null
-
-          # Install uv for the Python SDK test suite.
           curl --silent --show-error --location 'https://astral.sh/uv/install.sh' | sh
-          export PATH="$HOME/.local/bin:$PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-          # Run the lint + Python SDK tests (task llm-sdk-tests).
-          task llm-sdk-tests
+      - name: Check
+        run: task check
 
       - name: Build binaries
         run: task docker

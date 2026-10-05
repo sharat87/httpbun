@@ -10,6 +10,9 @@ vars:
   LD_FLAGS: >-
     -ldflags '-X github.com/sharat87/httpbun/server/spec.Commit={{.COMMIT}} -X github.com/sharat87/httpbun/server/spec.Date={{.NOW}}'
   GOIMPORTS_VERSION: v0.31.0
+  STATICCHECK_VERSION: 2026.2.1
+  # Directories of all Go packages, which leaves out any nested worktrees, unlike `.`.
+  GO_DIRS: go list -f '{{"{{"}}.Dir{{"}}"}}' ./...
   proxy:
     sh: |
       # Disable setting proxy automatically for now. We'll come back.
@@ -31,14 +34,41 @@ tasks:
       - GOARCH=amd64 go build {{.LD_FLAGS}} -a -installsuffix cgo -o bin/httpbun-docker-amd64 .
       - GOARCH=arm64 go build {{.LD_FLAGS}} -a -installsuffix cgo -o bin/httpbun-docker-arm64 .
 
+  check:
+    desc: Run all checks, the same as CI. This passing means a change is done.
+    cmds:
+      - task: fmt-check
+      - task: lint
+      - task: test
+      - task: llm-sdk-tests
+
   fmt:
+    desc: Format Go and Python code.
     deps:
       - goimports
     cmds:
-      - go fmt ./...
-      - ./bin/goimports -w -local github.com/sharat87/httpbun .
-    sources:
-      - "**/*.go"
+      - ./bin/goimports -w -local github.com/sharat87/httpbun $({{.GO_DIRS}})
+      - cd llm-sdk-tests && uv run ruff check --fix . && uv run ruff format .
+
+  fmt-check:
+    desc: Fail if any Go or Python code isn't formatted. Run `task fmt` to fix.
+    deps:
+      - goimports
+    cmds:
+      - |
+        unformatted="$(./bin/goimports -l -local github.com/sharat87/httpbun $({{.GO_DIRS}}))"
+        if [ -n "$unformatted" ]; then
+          echo "Not formatted, run 'task fmt':"
+          echo "$unformatted"
+          exit 1
+        fi
+      - cd llm-sdk-tests && uv run ruff check . && uv run ruff format --check .
+
+  lint:
+    desc: Run go vet and staticcheck.
+    cmds:
+      - go vet ./...
+      - go run honnef.co/go/tools/cmd/staticcheck@{{.STATICCHECK_VERSION}} ./...
 
   goimports:
     internal: true
@@ -48,21 +78,18 @@ tasks:
       - test -x ./bin/goimports
 
   test:
+    desc: Run the Go tests.
     cmds:
       # The `-count=1` is to disable test caching.
-      - go test -cover -count=1 -vet=all -v ./...
+      - go test -count=1 ./...
 
   llm-sdk-tests:
+    desc: Run the LLM mock tests with the real OpenAI and Anthropic SDKs, against a server started for them.
     aliases: [st]
-    dir: llm-sdk-tests
     env:
-      BASE_URL: http://localhost:3090/llm
       HTTP_PROXY: "{{.proxy}}"
       HTTPS_PROXY: "{{.proxy}}"
       NO_PROXY: localhost,127.0.0.1
       no_proxy: localhost,127.0.0.1
     cmds:
-      - curl -fsS "$(dirname "$BASE_URL")" >/dev/null
-      - uv run ruff check --fix .
-      - uv run ruff format .
-      - uv run pytest tests
+      - bash llm-sdk-tests/run.sh
