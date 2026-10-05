@@ -360,3 +360,16 @@ func TestMixTemplateDirective(t *testing.T) {
 	s.Equal([]byte("length is 3"), resp.Body)
 	s.Equal(0, len(resp.Cookies))
 }
+
+func TestMixTemplateWithZeroStepSeq(t *testing.T) {
+	s := assert.New(t)
+
+	resp := ex.InvokeHandlerForTest(
+		"mix/t="+base64.StdEncoding.EncodeToString([]byte("{{range seq 0 5 0}}x{{end}}")),
+		http.Request{},
+		PatMix,
+		handleMix,
+	)
+
+	s.Equal(http.StatusBadRequest, resp.Status)
+}
