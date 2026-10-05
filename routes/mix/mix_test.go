@@ -373,3 +373,25 @@ func TestMixTemplateWithZeroStepSeq(t *testing.T) {
 
 	s.Equal(http.StatusBadRequest, resp.Status)
 }
+
+func TestMixInvalidStatus(t *testing.T) {
+	for _, path := range []string{"mix/s=", "mix/s=abc", "mix/s=100", "mix/s=1000"} {
+		t.Run(path, func(t *testing.T) {
+			resp := ex.InvokeHandlerForTest(path, http.Request{}, PatMix, handleMix)
+			assert.Equal(t, http.StatusBadRequest, resp.Status)
+		})
+	}
+}
+
+func TestMixTemplateParseError(t *testing.T) {
+	s := assert.New(t)
+
+	resp := ex.InvokeHandlerForTest(
+		"mix/t="+base64.StdEncoding.EncodeToString([]byte("{{if}}")),
+		http.Request{},
+		PatMix,
+		handleMix,
+	)
+
+	s.Equal(http.StatusBadRequest, resp.Status)
+}

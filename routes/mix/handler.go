@@ -117,6 +117,10 @@ func handleMix(ex *ex.Exchange) response.Response {
 			value := entry.Args[0]
 			codes := regexp.MustCompile(`\d+`).FindAllString(value, -1)
 
+			if len(codes) == 0 {
+				return response.BadRequest("No status codes given")
+			}
+
 			var code string
 			if len(codes) > 1 {
 				code = codes[rand.Intn(len(codes))]
@@ -127,6 +131,10 @@ func handleMix(ex *ex.Exchange) response.Response {
 			res.Status, err = strconv.Atoi(code)
 			if err != nil {
 				return response.BadRequest("%s", err.Error())
+			}
+			if res.Status < 200 || res.Status > 599 {
+				// 1xx codes are informational, and can't be sent as the final status of a response.
+				return response.BadRequest("Invalid status code: %s", code)
 			}
 
 		case "h":
@@ -183,7 +191,7 @@ func handleMix(ex *ex.Exchange) response.Response {
 			if err != nil {
 				return response.BadRequest("%s", err.Error())
 			}
-			payload, err = renderTemplate(ex, string(templateContent))
+			payload, err = renderTemplate(string(templateContent))
 			if err != nil {
 				return response.BadRequest("%s", err.Error())
 			}
@@ -223,10 +231,9 @@ func handleMixerHelp(ex *ex.Exchange) response.Response {
 	return assets.Render("mixer-help.html", *ex, nil)
 }
 
-func renderTemplate(ex *ex.Exchange, templateContent string) ([]byte, error) {
+func renderTemplate(templateContent string) ([]byte, error) {
 	tpl, err := template.New("mix").Funcs(templateFuncMap).Parse(templateContent)
 	if err != nil {
-		ex.Finish(response.BadRequest("%s", err.Error()))
 		return nil, err
 	}
 	buf := &bytes.Buffer{}
