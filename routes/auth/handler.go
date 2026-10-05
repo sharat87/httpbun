@@ -211,7 +211,11 @@ func parseDigestAuthHeader(header string) map[string]string {
 // Digest auth response computer.
 func computeDigestAuthResponse(username, password, serverNonce, nc, clientNonce, qop string, ex *ex.Exchange) (string, error) {
 	method := ex.Request.Method
-	path := ex.Request.URL.Path
+	// The client hashes the request target as it sent it, including the query string and any percent-encoding.
+	path := ex.Request.RequestURI
+	if path == "" {
+		path = ex.Request.URL.RequestURI()
+	}
 	entityBody := ex.BodyString()
 
 	// Source: <https://en.wikipedia.org/wiki/Digest_access_authentication>.

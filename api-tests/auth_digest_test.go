@@ -3,11 +3,13 @@ package api_tests
 import (
 	"net/http"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sharat87/httpbun/c"
+	"github.com/sharat87/httpbun/util"
 )
 
 func TestDigestAuthSuccess(t *testing.T) {
@@ -28,7 +30,7 @@ func TestDigestAuthSuccess(t *testing.T) {
 	}`, body)
 }
 
-func TestDigestAuthWithoutCreds(t *testing.T) {
+func TestDigestAuthWithoutCredsRequireCookie(t *testing.T) {
 	s := assert.New(t)
 	resp, body := ExecRequest(R{
 		Path: "digest-auth/auth/dave/diamond?require-cookie=true",
@@ -50,7 +52,7 @@ func TestDigestAuthWithoutCreds(t *testing.T) {
 	}`, body)
 }
 
-func TestDigestAuthWithoutCredsRequireCookie(t *testing.T) {
+func TestDigestAuthWithoutCreds(t *testing.T) {
 	s := assert.New(t)
 	resp, body := ExecRequest(R{
 		Path: "digest-auth/auth/dave/diamond",
@@ -105,4 +107,42 @@ func TestDigestAuthWithIncorrectCredsWithoutCookie(t *testing.T) {
 	).FindString(resp.Header.Get(c.WWWAuthenticate))
 	s.NotEmpty(m, "Unexpected value for "+c.WWWAuthenticate+": "+resp.Header.Get(c.WWWAuthenticate))
 	s.Contains(body, "Response code mismatch")
+}
+
+// digestHandshake does a full digest auth exchange like a real client: it requests the path, reads the challenge, then
+// retries with credentials, signing the request target exactly as sent.
+func digestHandshake(t *testing.T, path, username, password string) (http.Response, string) {
+	challenge, _ := ExecRequest(R{Path: path})
+	if !assert.Equal(t, http.StatusUnauthorized, challenge.StatusCode) {
+		return challenge, ""
+	}
+	nonce := regexp.MustCompile(`nonce="([^"]+)"`).FindStringSubmatch(challenge.Header.Get(c.WWWAuthenticate))[1]
+
+	uri := "/" + path
+	ha1 := util.Md5sum(username + ":httpbun realm:" + password)
+	ha2 := util.Md5sum("GET:" + uri)
+	response := util.Md5sum(ha1 + ":" + nonce + ":00000001:abc:auth:" + ha2)
+
+	headers := map[string][]string{
+		"Authorization": {`Digest username="` + username + `", realm="httpbun realm", nonce="` + nonce + `", uri="` + uri +
+			`", algorithm=MD5, response="` + response + `", qop=auth, nc=00000001, cnonce="abc"`},
+	}
+	if cookie := challenge.Header.Get("Set-Cookie"); cookie != "" {
+		headers["Cookie"] = []string{strings.Split(cookie, ";")[0]}
+	}
+	return ExecRequest(R{Path: path, Headers: headers})
+}
+
+func TestDigestAuthHandshake(t *testing.T) {
+	for _, tt := range []struct{ path, username string }{
+		{"digest-auth/auth/dave/diamond", "dave"},
+		{"digest-auth/auth/dave/diamond?x=1", "dave"},
+		{"digest-auth/auth/dave/diamond?require-cookie=1", "dave"},
+		{"digest-auth/auth/da%20ve/diamond", "da ve"},
+	} {
+		t.Run(tt.path, func(t *testing.T) {
+			resp, body := digestHandshake(t, tt.path, tt.username, "diamond")
+			assert.Equal(t, http.StatusOK, resp.StatusCode, body)
+		})
+	}
 }
