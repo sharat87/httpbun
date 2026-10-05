@@ -241,3 +241,44 @@ def test_openai_responses_backward_compatible_path(base_url: str):
     assert isinstance(response, Response)
     assert response.model == MODEL_NAME
     assert response.object == "response"
+
+
+def test_openai_responses_streaming(openai_base_url: str):
+    """Test that streaming yields the full event sequence, and the deltas join into the output text."""
+    client = OpenAI(base_url=openai_base_url, api_key=API_KEY)
+
+    events = list(client.responses.create(model=MODEL_NAME, input="Hello", stream=True))
+
+    types = [event.type for event in events]
+    assert types[:4] == [
+        "response.created",
+        "response.in_progress",
+        "response.output_item.added",
+        "response.content_part.added",
+    ]
+    assert types[-4:] == [
+        "response.output_text.done",
+        "response.content_part.done",
+        "response.output_item.done",
+        "response.completed",
+    ]
+    assert [event.sequence_number for event in events] == list(range(len(events)))
+
+    deltas = "".join(event.delta for event in events if event.type == "response.output_text.delta")
+    assert deltas == EXPECTED_OUTPUT_TEXT
+    assert events[-1].response.output_text == EXPECTED_OUTPUT_TEXT
+
+
+def test_openai_responses_stream_helper(openai_base_url: str):
+    """Test the SDK's stream helper, which needs a well-formed event sequence to build the final response."""
+    client = OpenAI(base_url=openai_base_url, api_key=API_KEY)
+
+    with client.responses.stream(
+        model=MODEL_NAME,
+        input="Hello",
+        extra_body={"httpbun": {"output_text": "Line one\n\nLine  two"}},
+    ) as stream:
+        final = stream.get_final_response()
+
+    assert final.status == "completed"
+    assert final.output_text == "Line one\n\nLine  two"

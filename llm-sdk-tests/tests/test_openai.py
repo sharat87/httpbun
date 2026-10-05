@@ -301,3 +301,30 @@ def test_openai_backward_compatible_path(base_url: str):
     assert response.model == "gpt-5-nano"
     assert response.object == "chat.completion"
     assert response.choices[0].message.role == "assistant"
+
+
+def test_openai_streaming_keeps_whitespace(openai_base_url: str):
+    """Test that streamed chunks join back into the exact custom content, whitespace included."""
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
+    content = "Hello\n\nWorld  with   spaces"
+
+    stream = client.chat.completions.create(
+        model="gpt-5-nano",
+        messages=[{"role": "user", "content": "Hello"}],
+        stream=True,
+        extra_body={"httpbun": {"content": content}},
+    )
+
+    assert "".join(chunk.choices[0].delta.content or "" for chunk in stream) == content
+
+
+def test_openai_content_parts(openai_base_url: str):
+    """Test that messages with content as a list of parts are accepted."""
+    client = OpenAI(base_url=openai_base_url, api_key="dummy-key")
+
+    response = client.chat.completions.create(
+        model="gpt-5-nano",
+        messages=[{"role": "user", "content": [{"type": "text", "text": "Hello"}]}],
+    )
+
+    assert response.choices[0].message.role == "assistant"

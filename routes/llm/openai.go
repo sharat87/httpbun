@@ -3,6 +3,7 @@ package llm
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"regexp"
 	"strings"
@@ -305,9 +306,67 @@ func handleResponses(ex *ex.Exchange) response.Response {
 		"tools":               []any{},
 	}
 
+	if req.Stream {
+		return streamResponsesResponse(responseBody, outputMessage, mockOutputText)
+	}
+
 	return response.Response{
 		Header: http.Header{c.ContentType: []string{c.ApplicationJSON}},
 		Body:   responseBody,
+	}
+}
+
+// streamResponsesResponse streams the given completed response, as the sequence of events the Responses API sends.
+// See https://platform.openai.com/docs/api-reference/responses-streaming.
+func streamResponsesResponse(responseBody, outputMessage map[string]any, text string) response.Response {
+	return response.Response{
+		Header: http.Header{
+			c.ContentType:   []string{"text/event-stream"},
+			"Cache-Control": []string{"no-cache"},
+		},
+		Writer: func(w response.BodyWriter) {
+			sequenceNumber := 0
+			send := func(eventType string, event map[string]any) {
+				event["type"] = eventType
+				event["sequence_number"] = sequenceNumber
+				sequenceNumber++
+				data, _ := json.Marshal(event)
+				w.Write("event: " + eventType + "\ndata: " + string(data) + "\n\n")
+			}
+
+			inProgress := maps.Clone(responseBody)
+			inProgress["status"] = "in_progress"
+			inProgress["output"] = []any{}
+			inProgress["output_text"] = ""
+			inProgress["usage"] = nil
+			send("response.created", map[string]any{"response": inProgress})
+			send("response.in_progress", map[string]any{"response": inProgress})
+
+			itemID := outputMessage["id"]
+			itemInProgress := maps.Clone(outputMessage)
+			itemInProgress["status"] = "in_progress"
+			itemInProgress["content"] = []any{}
+			send("response.output_item.added", map[string]any{"output_index": 0, "item": itemInProgress})
+
+			part := func(text string) map[string]any {
+				return map[string]any{"type": "output_text", "text": text, "annotations": []any{}, "logprobs": []any{}}
+			}
+			position := map[string]any{"item_id": itemID, "output_index": 0, "content_index": 0}
+			withPosition := func(fields map[string]any) map[string]any {
+				maps.Copy(fields, position)
+				return fields
+			}
+
+			send("response.content_part.added", withPosition(map[string]any{"part": part("")}))
+			for _, chunk := range splitIntoChunks(text) {
+				time.Sleep(50 * time.Millisecond)
+				send("response.output_text.delta", withPosition(map[string]any{"delta": chunk, "logprobs": []any{}}))
+			}
+			send("response.output_text.done", withPosition(map[string]any{"text": text, "logprobs": []any{}}))
+			send("response.content_part.done", withPosition(map[string]any{"part": part(text)}))
+			send("response.output_item.done", map[string]any{"output_index": 0, "item": outputMessage})
+			send("response.completed", map[string]any{"response": responseBody})
+		},
 	}
 }
 
