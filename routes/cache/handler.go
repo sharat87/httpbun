@@ -2,7 +2,6 @@ package cache
 
 import (
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/sharat87/httpbun/ex"
@@ -10,10 +9,12 @@ import (
 	"github.com/sharat87/httpbun/routes/responses"
 )
 
+var EtagRoute = "/etag/(?P<etag>[^/]+)"
+
 var RouteList = []ex.Route{
 	ex.NewRoute("/cache", handleCache),
 	ex.NewRoute("/cache/(?P<age>\\d+)", handleCacheControl),
-	ex.NewRoute("/etag/(?P<etag>[^/]+)", handleEtag),
+	ex.NewRoute(EtagRoute, handleEtag),
 }
 
 func handleCache(ex *ex.Exchange) response.Response {
@@ -48,8 +49,8 @@ func handleCacheControl(ex *ex.Exchange) response.Response {
 
 func handleEtag(ex *ex.Exchange) response.Response {
 	// TODO: Handle If-Match header in etag endpoint: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match>.
-	etagInUrl, err := url.PathUnescape(strings.TrimPrefix(ex.RoutedPath, "/etag/"))
-	if err != nil || !validEtagOpaqueValue(etagInUrl) {
+	etagInUrl := ex.Field("etag")
+	if !validEtagOpaqueValue(etagInUrl) {
 		return response.BadRequest("Invalid ETag value")
 	}
 	etag := `"` + etagInUrl + `"`

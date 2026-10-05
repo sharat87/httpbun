@@ -52,7 +52,7 @@ func TestEtagConditionalRequests(t *testing.T) {
 					Method:     method,
 					Header:     headers,
 					RemoteAddr: "127.0.0.1:1234",
-				}, `/etag/(?P<etag>[^/]+)`, handleEtag)
+				}, EtagRoute, handleEtag)
 				status := resp.Status
 				if status == 0 {
 					status = http.StatusOK
@@ -115,7 +115,7 @@ func TestEtagOpaqueValues(t *testing.T) {
 					Method:     http.MethodGet,
 					Header:     headers,
 					RemoteAddr: "127.0.0.1:1234",
-				}, `/etag/(?P<etag>[^/]+)`, handleEtag)
+				}, EtagRoute, handleEtag)
 				status := resp.Status
 				if status == 0 {
 					status = http.StatusOK
@@ -140,7 +140,7 @@ func TestEtagRejectsInvalidOpaqueValues(t *testing.T) {
 			resp := ex.InvokeHandlerForTest("etag/"+url.PathEscape(opaque), http.Request{
 				Method:     http.MethodGet,
 				RemoteAddr: "127.0.0.1:1234",
-			}, `/etag/(?P<etag>[^/]+)`, handleEtag)
+			}, EtagRoute, handleEtag)
 			if resp.Status != http.StatusBadRequest {
 				t.Fatalf("status = %d, want 400", resp.Status)
 			}
@@ -157,7 +157,7 @@ func TestEtagPathPrefix(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "http://localhost/mount/etag/"+path, nil)
 			req.Header.Set("If-None-Match", `"foo+bar"`)
 			exchange := ex.New(nil, req, spec.Spec{PathPrefix: "/mount"})
-			if !exchange.MatchAndLoadFields(RouteList[2].Pat) {
+			if !exchange.MatchAndLoadFields(ex.MakePat(EtagRoute)) {
 				t.Fatal("ETag route did not match")
 			}
 			resp := handleEtag(exchange)
