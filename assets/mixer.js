@@ -125,11 +125,11 @@ customElements.define("entry-b64", class extends EntryElement {
 	}
 
 	get value() {
-		return btoa(this.querySelector("textarea").value)
+		return encodeURIComponent(utf8ToBase64(this.querySelector("textarea").value))
 	}
 
 	set value(v) {
-		this.querySelector("textarea").value = atob(v)
+		this.querySelector("textarea").value = base64ToUtf8(decodeURIComponent(v))
 	}
 })
 
@@ -139,11 +139,11 @@ customElements.define("entry-t", class extends EntryElement {
 	}
 
 	get value() {
-		return btoa(this.querySelector("textarea").value)
+		return encodeURIComponent(utf8ToBase64(this.querySelector("textarea").value))
 	}
 
 	set value(v) {
-		this.querySelector("textarea").value = atob(v)
+		this.querySelector("textarea").value = base64ToUtf8(decodeURIComponent(v))
 	}
 })
 
@@ -237,4 +237,13 @@ function checkAddButtons() {
 	for (const btn of addBtnsEl.querySelectorAll("button[no-repeat]")) {
 		btn.disabled = added.has(btn.dataset.directive)
 	}
+}
+
+// Unlike plain btoa/atob, these handle any Unicode text, by encoding it as UTF-8.
+function utf8ToBase64(text) {
+	return btoa(Array.from(new TextEncoder().encode(text), (b) => String.fromCharCode(b)).join(""))
+}
+
+function base64ToUtf8(data) {
+	return new TextDecoder().decode(Uint8Array.from(atob(data), (c) => c.charCodeAt(0)))
 }

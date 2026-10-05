@@ -395,3 +395,17 @@ func TestMixTemplateParseError(t *testing.T) {
 
 	s.Equal(http.StatusBadRequest, resp.Status)
 }
+
+func TestMixRedirectKeepsEncodedCharacters(t *testing.T) {
+	s := assert.New(t)
+
+	resp := ex.InvokeHandlerForTest(
+		"mix/r=https%3A%2F%2Fexample.com%2F%3Fq%3Da%252Bb%2Bc",
+		http.Request{},
+		PatMix,
+		handleMix,
+	)
+
+	s.Equal(307, resp.Status)
+	s.Equal("https://example.com/?q=a%2Bb+c", resp.Header.Get("Location"))
+}

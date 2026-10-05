@@ -159,10 +159,8 @@ func handleMix(ex *ex.Exchange) response.Response {
 			if redirectTo != "" {
 				return response.BadRequest("multiple redirects not allowed")
 			}
-			redirectTo, err = url.QueryUnescape(entry.Args[0])
-			if err != nil {
-				return response.BadRequest("%s", err.Error())
-			}
+			// Already unescaped when parsing the directives.
+			redirectTo = entry.Args[0]
 
 		case "b64":
 			payload, err = base64.StdEncoding.DecodeString(entry.Args[0])
