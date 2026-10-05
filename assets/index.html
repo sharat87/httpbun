@@ -352,8 +352,18 @@ Hosted versions:
 	</dd>
 
 	<dt id=range>/range/<span class=var>{count}</span></dt>
-	<dd>Returns <code>count</code> random bytes, that are generated with the <em>same</em> random seed every time. The
-		value of <code>count</code> is capped to 1000.
+	<dd>Returns <code>count</code> bytes, where each byte is its own offset, wrapping around after 255. That is, the
+		bytes are <code>0, 1, 2, &hellip;, 255, 0, 1, &hellip;</code>. The value of <code>count</code> is capped to 1000.
+		<br>
+		Supports <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests">range requests</a> with
+		a single range in the <code>Range</code> header, like <code>bytes=10-19</code>, <code>bytes=10-</code>, or
+		<code>bytes=-10</code>, responding with <code>206 Partial Content</code>. Since each byte is its own offset,
+		it's easy to check that a partial response starts at the right place. A range starting after the end gets a
+		<code>416</code>, and multiple ranges are ignored, sending the whole content.
+		<details>
+			<summary><span>Examples</span></summary>
+			<pre>curl -H 'Range: bytes=300-309' {{.host}}/range/1000 | od -An -tu1</pre>
+		</details>
 	</dd>
 
 </dl>

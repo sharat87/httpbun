@@ -350,7 +350,6 @@ func handleLinks(ex *ex.Exchange) response.Response {
 }
 
 func handleRange(ex *ex.Exchange) response.Response {
-	// TODO: Cache range response, don't have to generate over and over again.
 	count, _ := strconv.Atoi(ex.Field("count"))
 
 	if count > 1000 {
@@ -359,18 +358,64 @@ func handleRange(ex *ex.Exchange) response.Response {
 		count = 0
 	}
 
-	var b []byte
-	if count > 0 {
-		b = make([]byte, count)
-		rand.New(rand.NewSource(42)).Read(b)
+	// Each byte is its own offset (mod 256), so it's easy to check a partial response starts at the right place.
+	b := make([]byte, count)
+	for i := range b {
+		b[i] = byte(i % 256)
 	}
 
-	return response.Response{
-		Header: http.Header{
-			c.ContentType: []string{"application/octet-stream"},
-		},
-		Body: b,
+	header := http.Header{
+		c.ContentType:   []string{"application/octet-stream"},
+		"Accept-Ranges": []string{"bytes"},
 	}
+
+	start, end, ok := parseByteRange(ex.HeaderValueLast("Range"), count)
+	if !ok {
+		// No range, or one we don't support, like multiple ranges. Servers can ignore those, and send everything.
+		return response.Response{Header: header, Body: b}
+	}
+	if start >= count {
+		header.Set("Content-Range", fmt.Sprintf("bytes */%d", count))
+		return response.Response{Status: http.StatusRequestedRangeNotSatisfiable, Header: header}
+	}
+
+	header.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, count))
+	return response.Response{Status: http.StatusPartialContent, Header: header, Body: b[start : end+1]}
+}
+
+var byteRangePattern = regexp.MustCompile(`^bytes=(\d*)-(\d*)$`)
+
+// parseByteRange parses a Range header with a single byte range, for content of the given size. It returns the
+// inclusive start and end offsets, with end clamped to the content. The start can be past the content, which isn't
+// satisfiable.
+func parseByteRange(header string, size int) (int, int, bool) {
+	m := byteRangePattern.FindStringSubmatch(strings.TrimSpace(header))
+	if m == nil || (m[1] == "" && m[2] == "") {
+		return 0, 0, false
+	}
+
+	if m[1] == "" {
+		// A suffix range, like `bytes=-10` for the last 10 bytes.
+		suffix, err := strconv.Atoi(m[2])
+		if err != nil || suffix == 0 {
+			return 0, 0, false
+		}
+		return max(size-suffix, 0), size - 1, true
+	}
+
+	start, err := strconv.Atoi(m[1])
+	if err != nil {
+		return 0, 0, false
+	}
+	end := size - 1
+	if m[2] != "" {
+		end, err = strconv.Atoi(m[2])
+		if err != nil || end < start {
+			return 0, 0, false
+		}
+		end = min(end, size-1)
+	}
+	return start, end, true
 }
 
 func handleInfo(_ *ex.Exchange) response.Response {
