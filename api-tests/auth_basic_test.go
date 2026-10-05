@@ -12,7 +12,7 @@ import (
 
 func TestBasicAuthSuccess(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "basic-auth/scott/tiger",
 		Headers: map[string][]string{
 			"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte("scott:tiger"))},
@@ -29,7 +29,7 @@ func TestBasicAuthSuccess(t *testing.T) {
 
 func TestBasicAuthIncorrectPassword(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "basic-auth/scott/tiger",
 		Headers: map[string][]string{
 			"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte("scott:incorrect"))},
@@ -43,7 +43,7 @@ func TestBasicAuthIncorrectPassword(t *testing.T) {
 
 func TestBasicAuthIncorrectUsername(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "basic-auth/scott/tiger",
 		Headers: map[string][]string{
 			"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte("tom:tiger"))},
@@ -57,7 +57,7 @@ func TestBasicAuthIncorrectUsername(t *testing.T) {
 
 func TestBasicAuthIncorrectCreds(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "basic-auth/scott/tiger",
 		Headers: map[string][]string{
 			"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte("tom:lion"))},
@@ -71,7 +71,7 @@ func TestBasicAuthIncorrectCreds(t *testing.T) {
 
 func TestBasicAuthMissingCreds(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "basic-auth/scott/tiger",
 	})
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)

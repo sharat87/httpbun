@@ -11,7 +11,7 @@ import (
 
 func TestMixRedirectAllowsApprovedDomain(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "mix/r=https%3A%2F%2Fexample.com",
 	})
 	s.Equal(http.StatusTemporaryRedirect, resp.StatusCode)
@@ -20,7 +20,7 @@ func TestMixRedirectAllowsApprovedDomain(t *testing.T) {
 
 func TestMixRedirectRejectsUnknownDomain(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/r=https%3A%2F%2Ftarget-url",
 	})
 	s.Equal(http.StatusForbidden, resp.StatusCode)
@@ -30,7 +30,7 @@ func TestMixRedirectRejectsUnknownDomain(t *testing.T) {
 
 func TestMixHeaderRedirectRejectsUnknownDomain(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/s=301/h=location:https%3A%2F%2Ftarget-url",
 	})
 	s.Equal(http.StatusForbidden, resp.StatusCode)

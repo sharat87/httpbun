@@ -15,7 +15,7 @@ import (
 
 func TestDrip(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "drip?duration=1&delay=0",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -25,7 +25,7 @@ func TestDrip(t *testing.T) {
 
 func TestDripWithCode(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "drip-lines?duration=0&delay=0&numbytes=2&code=503",
 	})
 	s.Equal(http.StatusServiceUnavailable, resp.StatusCode)
@@ -35,7 +35,7 @@ func TestDripWithCode(t *testing.T) {
 func TestDripWithInvalidCode(t *testing.T) {
 	for _, code := range []string{"100", "999"} {
 		t.Run(code, func(t *testing.T) {
-			resp, _ := ExecRequest(R{Path: "drip?delay=0&code=" + code})
+			resp, _ := ExecRequest(t, R{Path: "drip?delay=0&code=" + code})
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		})
 	}
@@ -44,7 +44,7 @@ func TestDripWithInvalidCode(t *testing.T) {
 func TestDripWithDecimalSeconds(t *testing.T) {
 	s := assert.New(t)
 	start := time.Now()
-	resp, body := ExecRequest(R{Path: "drip?delay=0.25&duration=.5&numbytes=5"})
+	resp, body := ExecRequest(t, R{Path: "drip?delay=0.25&duration=.5&numbytes=5"})
 	elapsed := time.Since(start)
 	s.Equal(http.StatusOK, resp.StatusCode)
 	s.Equal("*****", body)
@@ -55,7 +55,7 @@ func TestDripWithDecimalSeconds(t *testing.T) {
 func TestDripWithInvalidSeconds(t *testing.T) {
 	for _, query := range []string{"delay=0.125", "duration=-1", "delay=abc", "duration=1e3", "delay=1."} {
 		t.Run(query, func(t *testing.T) {
-			resp, _ := ExecRequest(R{Path: "drip?" + query})
+			resp, _ := ExecRequest(t, R{Path: "drip?" + query})
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		})
 	}

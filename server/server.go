@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -25,23 +24,11 @@ type Server struct {
 	closeCh chan error
 }
 
-func StartNew(spec spec.Spec) Server {
-	tlsCertFile := os.Getenv("HTTPBUN_TLS_CERT")
-	tlsKeyFile := os.Getenv("HTTPBUN_TLS_KEY")
-
-	bindTarget := spec.BindTarget
-	if bindTarget == "" {
-		if tlsCertFile != "" {
-			bindTarget = ":443"
-		} else {
-			bindTarget = ":80"
-		}
-	}
-
+// New creates a server for the given spec, without starting it. It's an http.Handler, so it can also be used directly,
+// like with httptest.NewServer.
+func New(spec spec.Spec) *Server {
 	server := &Server{
-		Server: &http.Server{
-			Addr: bindTarget,
-		},
+		Server:  &http.Server{},
 		spec:    spec,
 		closeCh: make(chan error, 1),
 	}
@@ -52,6 +39,22 @@ func StartNew(spec spec.Spec) Server {
 		server.routes = routes.GetRoutes()
 	}
 
+	return server
+}
+
+func StartNew(spec spec.Spec) Server {
+	bindTarget := spec.BindTarget
+	if bindTarget == "" {
+		if spec.TLSCertFile != "" {
+			bindTarget = ":443"
+		} else {
+			bindTarget = ":80"
+		}
+	}
+
+	server := New(spec)
+	server.Addr = bindTarget
+
 	listener, err := net.Listen("tcp", bindTarget)
 	if err != nil {
 		log.Fatalf("Error listening on %q: %v", spec.BindTarget, err)
@@ -59,10 +62,10 @@ func StartNew(spec spec.Spec) Server {
 
 	go func() {
 		defer close(server.closeCh)
-		if tlsCertFile == "" {
+		if spec.TLSCertFile == "" {
 			server.closeCh <- server.Serve(listener)
 		} else {
-			server.closeCh <- server.ServeTLS(listener, tlsCertFile, tlsKeyFile)
+			server.closeCh <- server.ServeTLS(listener, spec.TLSCertFile, spec.TLSKeyFile)
 		}
 	}()
 

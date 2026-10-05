@@ -3,6 +3,7 @@ package spec
 import (
 	"flag"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/sharat87/httpbun/util"
@@ -27,6 +28,32 @@ type Spec struct {
 
 	// Route configurations
 	EndpointBytesSizeLimit int
+
+	// TLS is enabled when both of these are set.
+	TLSCertFile string
+	TLSKeyFile  string
+
+	// Hosts that absolute redirect targets are allowed to point to. Entries like `*.example.com` allow subdomains.
+	// When nil, DefaultAllowedRedirectDomains is used.
+	AllowedRedirectDomains []string
+
+	// Env variables exposed by the `/info` endpoint.
+	InfoEnv map[string]string
+}
+
+var DefaultAllowedRedirectDomains = []string{"example.com", "httpbun.com"}
+
+var allowedRedirectDomainsSplitter = regexp.MustCompile(`\s*,\s*|\s+`)
+
+// ParseAllowedRedirectDomains parses a comma or whitespace separated list of domains.
+func ParseAllowedRedirectDomains(raw string) []string {
+	domains := []string{}
+	for _, domain := range allowedRedirectDomainsSplitter.Split(strings.TrimSpace(raw), -1) {
+		if domain != "" {
+			domains = append(domains, domain)
+		}
+	}
+	return domains
 }
 
 func ParseArgs() Spec {
@@ -42,10 +69,31 @@ func ParseArgs() Spec {
 	flag.IntVar(&spec.EndpointBytesSizeLimit, "endpoint-bytes-size-limit", 90, "Size limit on the /bytes endpoint, in number of bytes")
 	flag.Parse()
 
+	applyEnv(spec, os.Environ())
+
 	spec.PathPrefix = strings.Trim(spec.PathPrefix, "/")
 	if spec.PathPrefix != "" {
 		spec.PathPrefix = "/" + spec.PathPrefix
 	}
 
 	return *spec
+}
+
+// applyEnv sets the configuration that comes from env variables, given as `NAME=value` items, like os.Environ.
+func applyEnv(spec *Spec, environ []string) {
+	spec.InfoEnv = map[string]string{}
+
+	for _, e := range environ {
+		name, value, _ := strings.Cut(e, "=")
+		switch {
+		case name == "HTTPBUN_TLS_CERT":
+			spec.TLSCertFile = value
+		case name == "HTTPBUN_TLS_KEY":
+			spec.TLSKeyFile = value
+		case name == "HTTPBUN_ALLOWED_REDIRECT_DOMAINS":
+			spec.AllowedRedirectDomains = ParseAllowedRedirectDomains(value)
+		case strings.HasPrefix(name, "HTTPBUN_INFO_"):
+			spec.InfoEnv[name] = value
+		}
+	}
 }

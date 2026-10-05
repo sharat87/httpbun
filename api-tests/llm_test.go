@@ -10,7 +10,7 @@ import (
 func TestLLMAnthropicMessagesWithoutV1(t *testing.T) {
 	for _, path := range []string{"llm/v1/messages", "llm/messages"} {
 		t.Run(path, func(t *testing.T) {
-			resp, body := ExecRequest(R{
+			resp, body := ExecRequest(t, R{
 				Method: http.MethodPost,
 				Path:   path,
 				Body:   `{"max_tokens": 10, "messages": [{"role": "user", "content": "Hi"}]}`,

@@ -25,7 +25,7 @@ func TestEtagConditionalRequests(t *testing.T) {
 	for _, method := range []string{http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut} {
 		for _, validator := range validators {
 			t.Run(method+"/"+validator.name, func(t *testing.T) {
-				resp, body := ExecRequest(R{
+				resp, body := ExecRequest(t, R{
 					Method: method,
 					Path:   "etag/foo",
 					Body:   "request body",
@@ -54,7 +54,7 @@ func TestEtagConditionalRequests(t *testing.T) {
 func TestEtagWithoutMatchingValidator(t *testing.T) {
 	for _, values := range [][]string{nil, {`"other"`}, {`"foo`}, {`"foo"extra`}, {`"foo", "unterminated`}, {`"foo", *`}, {"foo", `"other"`}, {"\"fo\to\""}} {
 		t.Run(http.Header{"If-None-Match": values}.Get("If-None-Match"), func(t *testing.T) {
-			resp, body := ExecRequest(R{
+			resp, body := ExecRequest(t, R{
 				Path:    "etag/foo?one=two",
 				Headers: map[string][]string{"If-None-Match": values},
 			})
@@ -107,7 +107,7 @@ func TestEtagOpaqueValues(t *testing.T) {
 					headers.Set("If-None-Match", `"other", W/`+tag)
 					wantStatus = http.StatusNotModified
 				}
-				resp, body := ExecRequest(R{
+				resp, body := ExecRequest(t, R{
 					Path:    "etag/" + tt.path,
 					Headers: headers,
 				})
@@ -128,7 +128,7 @@ func TestEtagOpaqueValues(t *testing.T) {
 func TestEtagRejectsInvalidOpaqueValues(t *testing.T) {
 	for _, opaque := range []string{"foo bar", `foo"bar`, "foo\tbar", "foo\x7fbar"} {
 		t.Run(url.PathEscape(opaque), func(t *testing.T) {
-			resp, _ := ExecRequest(R{Path: "etag/" + url.PathEscape(opaque)})
+			resp, _ := ExecRequest(t, R{Path: "etag/" + url.PathEscape(opaque)})
 			if resp.StatusCode != http.StatusBadRequest {
 				t.Fatalf("status = %d, want 400", resp.StatusCode)
 			}
@@ -156,7 +156,7 @@ func TestCacheConditionalRequests(t *testing.T) {
 			if tt.header != "" {
 				headers.Set(tt.header, `"x"`)
 			}
-			resp, _ := ExecRequest(R{Method: tt.method, Path: "cache", Headers: headers})
+			resp, _ := ExecRequest(t, R{Method: tt.method, Path: "cache", Headers: headers})
 			if resp.StatusCode != tt.want {
 				t.Fatalf("status = %d, want %d", resp.StatusCode, tt.want)
 			}

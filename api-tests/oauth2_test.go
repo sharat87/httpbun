@@ -21,7 +21,7 @@ func oauthAuthorize(t *testing.T) string {
 		"email":        {"user@example.com"},
 		"decision":     {"approve"},
 	}
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Method:  http.MethodPost,
 		Path:    "oauth2/authorize",
 		Body:    form.Encode(),
@@ -35,12 +35,12 @@ func oauthAuthorize(t *testing.T) string {
 	return location.Query().Get("code")
 }
 
-func oauthToken(form url.Values, headers map[string][]string) (http.Response, map[string]any) {
+func oauthToken(t *testing.T, form url.Values, headers map[string][]string) (http.Response, map[string]any) {
 	if headers == nil {
 		headers = map[string][]string{}
 	}
 	headers["Content-Type"] = []string{"application/x-www-form-urlencoded"}
-	resp, body := ExecRequest(R{Method: http.MethodPost, Path: "oauth2/token", Body: form.Encode(), Headers: headers})
+	resp, body := ExecRequest(t, R{Method: http.MethodPost, Path: "oauth2/token", Body: form.Encode(), Headers: headers})
 	var data map[string]any
 	_ = json.Unmarshal([]byte(body), &data)
 	return resp, data
@@ -61,14 +61,14 @@ func TestOAuth2CodeFlow(t *testing.T) {
 				headers["Authorization"] = []string{"Basic " + base64.StdEncoding.EncodeToString([]byte("my-app:secret"))}
 			}
 
-			resp, token := oauthToken(form, headers)
+			resp, token := oauthToken(t, form, headers)
 			if !s.Equal(http.StatusOK, resp.StatusCode, token) {
 				return
 			}
 			accessToken, _ := token["access_token"].(string)
 			s.NotEmpty(accessToken)
 
-			resp, body := ExecRequest(R{
+			resp, body := ExecRequest(t, R{
 				Path:    "oauth2/userinfo",
 				Headers: map[string][]string{"Authorization": {"bearer " + accessToken}},
 			})
@@ -80,7 +80,7 @@ func TestOAuth2CodeFlow(t *testing.T) {
 
 func TestOAuth2TokenWrongClient(t *testing.T) {
 	code := oauthAuthorize(t)
-	resp, data := oauthToken(url.Values{
+	resp, data := oauthToken(t, url.Values{
 		"grant_type":    {"authorization_code"},
 		"code":          {code},
 		"redirect_uri":  {oauthRedirectURI},

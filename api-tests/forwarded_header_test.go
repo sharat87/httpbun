@@ -11,7 +11,7 @@ import (
 
 func TestIpInXForwardedFor(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "ip",
 		Headers: map[string][]string{
 			"X-Httpbun-Forwarded-For": {"12.34.56.78"},

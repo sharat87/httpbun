@@ -20,7 +20,7 @@ func TestBase64(t *testing.T) {
 		"base64/Pz8-":     "??>",
 	} {
 		t.Run(path, func(t *testing.T) {
-			resp, body := ExecRequest(R{Path: path})
+			resp, body := ExecRequest(t, R{Path: path})
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 			assert.Equal(t, want, body)
 		})
@@ -30,7 +30,7 @@ func TestBase64(t *testing.T) {
 func TestBase64Invalid(t *testing.T) {
 	for _, path := range []string{"base64/a", "base64/a!b=", "base64/aGk=x"} {
 		t.Run(path, func(t *testing.T) {
-			resp, _ := ExecRequest(R{Path: path})
+			resp, _ := ExecRequest(t, R{Path: path})
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		})
 	}

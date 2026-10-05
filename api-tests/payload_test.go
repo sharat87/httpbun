@@ -11,7 +11,7 @@ import (
 
 func TestPayloadGetWithFormBody(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: http.MethodGet,
 		Path:   "payload",
 		Body:   "payload for get isn't an abomination",
@@ -26,7 +26,7 @@ func TestPayloadGetWithFormBody(t *testing.T) {
 
 func TestPayloadPostWithFormBody(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: http.MethodPost,
 		Path:   "payload",
 		Body:   "answer=42",
@@ -41,7 +41,7 @@ func TestPayloadPostWithFormBody(t *testing.T) {
 
 func TestPayloadPutWithJSONBody(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: http.MethodPut,
 		Path:   "payload",
 		Body:   "true",

@@ -418,19 +418,16 @@ func parseByteRange(header string, size int) (int, int, bool) {
 	return start, end, true
 }
 
-func handleInfo(_ *ex.Exchange) response.Response {
+func handleInfo(ex *ex.Exchange) response.Response {
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "Error: " + err.Error()
 	}
 
-	// Only expose env variables explicitly meant for this, so secrets in the environment aren't leaked.
-	env := make(map[string]any)
-	for _, e := range os.Environ() {
-		name, value, _ := strings.Cut(e, "=")
-		if strings.HasPrefix(name, "HTTPBUN_INFO_") {
-			env[name] = value
-		}
+	// Only env variables explicitly meant for this, so secrets in the environment aren't leaked.
+	env := ex.ServerSpec.InfoEnv
+	if env == nil {
+		env = map[string]string{}
 	}
 
 	return response.Response{

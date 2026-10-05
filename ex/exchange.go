@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,8 +16,6 @@ import (
 	"github.com/sharat87/httpbun/server/spec"
 	"github.com/sharat87/httpbun/util"
 )
-
-const allowedRedirectDomainsEnvVar = "HTTPBUN_ALLOWED_REDIRECT_DOMAINS"
 
 type Exchange struct {
 	Request        *http.Request
@@ -39,14 +36,6 @@ type Route struct {
 	Pat regexp.Regexp
 	Fn  HandlerFn
 }
-
-var (
-	defaultAllowedRedirectDomains = []string{
-		"example.com",
-		"httpbun.com",
-	}
-	allowedRedirectDomainsSplitter = regexp.MustCompile(`\s*,\s*|\s+`)
-)
 
 type allowedRedirectDomains struct {
 	exactHosts       map[string]struct{}
@@ -201,8 +190,7 @@ func (ex Exchange) FindScheme() string {
 		return forwardedProto
 	}
 
-	// todo: this should use the current server's spec, not the global env var to decide if TLS is enabled
-	if os.Getenv("HTTPBUN_TLS_CERT") != "" {
+	if ex.ServerSpec.TLSCertFile != "" {
 		return "https"
 	}
 
@@ -286,7 +274,7 @@ func (ex Exchange) Finish(resp response.Response) {
 
 	if locationHeaders := resp.Header.Values("Location"); len(locationHeaders) > 0 {
 		for _, location := range locationHeaders {
-			if !isAllowedLocationHeader(location) {
+			if !isAllowedLocationHeader(location, ex.ServerSpec.AllowedRedirectDomains) {
 				ex.Finish(response.Response{
 					Status: http.StatusForbidden,
 					Body:   "Forbidden redirect URL. Please be careful with this link.",
@@ -332,7 +320,9 @@ func (ex Exchange) Finish(resp response.Response) {
 	}
 }
 
-func isAllowedLocationHeader(location string) bool {
+// isAllowedLocationHeader checks a redirect target, allowing absolute URLs only to the given domains, or the default
+// ones if nil.
+func isAllowedLocationHeader(location string, allowedDomains []string) bool {
 	parsedURL, err := url.Parse(location)
 	if err != nil {
 		return false
@@ -342,7 +332,10 @@ func isAllowedLocationHeader(location string) bool {
 		if !isAllowedRedirectScheme(parsedURL.Scheme) {
 			return false
 		}
-		return getAllowedRedirectDomains().allowsHost(parsedURL.Hostname())
+		if allowedDomains == nil {
+			allowedDomains = spec.DefaultAllowedRedirectDomains
+		}
+		return newAllowedRedirectDomains(allowedDomains).allowsHost(parsedURL.Hostname())
 	}
 
 	if parsedURL.Scheme != "" {
@@ -359,18 +352,6 @@ func isAllowedLocationHeader(location string) bool {
 
 func isAllowedRedirectScheme(scheme string) bool {
 	return strings.EqualFold(scheme, "http") || strings.EqualFold(scheme, "https")
-}
-
-func getAllowedRedirectDomains() allowedRedirectDomains {
-	rawDomains, hasEnvValue := os.LookupEnv(allowedRedirectDomainsEnvVar)
-	if !hasEnvValue {
-		return newAllowedRedirectDomains(defaultAllowedRedirectDomains)
-	}
-	return newAllowedRedirectDomains(splitAllowedRedirectDomains(rawDomains))
-}
-
-func splitAllowedRedirectDomains(rawDomains string) []string {
-	return allowedRedirectDomainsSplitter.Split(strings.TrimSpace(rawDomains), -1)
 }
 
 func newAllowedRedirectDomains(domains []string) allowedRedirectDomains {

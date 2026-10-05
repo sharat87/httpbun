@@ -10,13 +10,13 @@ import (
 
 func TestMixStatus(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: http.MethodGet,
 		Path:   "mix/s=200",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
 	s.Equal("", body)
-	resp, body = ExecRequest(R{
+	resp, body = ExecRequest(t, R{
 		Method: http.MethodPost,
 		Path:   "mix/s=200",
 	})
@@ -26,7 +26,7 @@ func TestMixStatus(t *testing.T) {
 
 func TestMixHeaders(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/h=x-key:val%2fmore",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -36,7 +36,7 @@ func TestMixHeaders(t *testing.T) {
 
 func TestMixHeaders2(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/h=x-key:val/h=x-key2:val2",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -47,7 +47,7 @@ func TestMixHeaders2(t *testing.T) {
 
 func TestMixCookies(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/c=name:content",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -57,7 +57,7 @@ func TestMixCookies(t *testing.T) {
 
 func TestMixCookies2(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/c=name:content/c=another:more",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -67,7 +67,7 @@ func TestMixCookies2(t *testing.T) {
 
 func TestMixDeleteCookie(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/cd=name",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -77,7 +77,7 @@ func TestMixDeleteCookie(t *testing.T) {
 
 func TestMixDeleteCookie2(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/cd=name/cd=another",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -90,7 +90,7 @@ func TestMixDeleteCookie2(t *testing.T) {
 
 func TestMixRedirect(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/r=http%3A%2F%2Fexample.com",
 	})
 	s.Equal(http.StatusTemporaryRedirect, resp.StatusCode)
@@ -100,7 +100,7 @@ func TestMixRedirect(t *testing.T) {
 
 func TestMixRedirect2(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/r=http%3A%2F%2Fexample.com/r=another",
 	})
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -110,7 +110,7 @@ func TestMixRedirect2(t *testing.T) {
 
 func TestMixRedirectWithStatus(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/s=301/r=http%3A%2F%2Fexample.com",
 	})
 	s.Equal(301, resp.StatusCode)
@@ -120,7 +120,7 @@ func TestMixRedirectWithStatus(t *testing.T) {
 
 func TestMixBody(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/b64=c2FtcGxl",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -129,7 +129,7 @@ func TestMixBody(t *testing.T) {
 
 func TestMixInvalidBase64(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/b64=invalid!base64",
 	})
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -140,7 +140,7 @@ func TestMixXSSAttack(t *testing.T) {
 	s := assert.New(t)
 	xssPayload := "<script>alert('XSS')</script>"
 	encodedPayload := "PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4="
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "mix/h=Content-Type:text%2Fhtml/b64=" + encodedPayload,
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)

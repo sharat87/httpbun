@@ -6,14 +6,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sharat87/httpbun/server/spec"
 )
 
-func TestInfoOnlyExposesPrefixedEnv(t *testing.T) {
+func TestInfo(t *testing.T) {
 	s := assert.New(t)
-	t.Setenv("HTTPBUN_INFO_REGION", "test-region")
-	t.Setenv("SOME_SECRET_TOKEN", "hunter2")
+	srv := NewServer(t, spec.Spec{InfoEnv: map[string]string{"HTTPBUN_INFO_REGION": "test-region"}})
 
-	resp, body := ExecRequest(R{Path: "info"})
+	resp, body := srv.Exec(t, R{Path: "info"})
 	s.Equal(http.StatusOK, resp.StatusCode)
 
 	var info struct {
@@ -22,9 +23,5 @@ func TestInfoOnlyExposesPrefixedEnv(t *testing.T) {
 	}
 	s.NoError(json.Unmarshal([]byte(body), &info))
 	s.NotEmpty(info.Hostname)
-	s.Equal("test-region", info.Env["HTTPBUN_INFO_REGION"])
-	s.NotContains(body, "hunter2")
-	for name := range info.Env {
-		s.Regexp("^HTTPBUN_INFO_", name)
-	}
+	s.Equal(map[string]string{"HTTPBUN_INFO_REGION": "test-region"}, info.Env)
 }

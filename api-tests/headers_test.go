@@ -11,7 +11,7 @@ import (
 
 func TestHeaders(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "headers",
 		Headers: map[string][]string{
 			"X-One": {"custom header value"},
@@ -23,7 +23,7 @@ func TestHeaders(t *testing.T) {
 	s.JSONEq(`{
 		"headers": {
 			"Accept-Encoding": "gzip",
-			"Host": "127.0.0.1:30001",
+			"Host": "httpbun.test",
 			"X-One": "custom header value",
 			"X-Two": "another custom header"
 		}
@@ -32,7 +32,7 @@ func TestHeaders(t *testing.T) {
 
 func TestHeadersRepeat(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "headers",
 		Headers: map[string][]string{
 			"X-One": {"custom header value", "another custom header"},
@@ -43,7 +43,7 @@ func TestHeadersRepeat(t *testing.T) {
 	s.JSONEq(`{
 		"headers": {
 			"Accept-Encoding": "gzip",
-			"Host": "127.0.0.1:30001",
+			"Host": "httpbun.test",
 			"X-One": [
 				"custom header value",
 				"another custom header"

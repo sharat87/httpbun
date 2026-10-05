@@ -11,7 +11,7 @@ import (
 
 func TestRedirectTo(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "redirect?url=https://example.com",
 	})
 	s.Equal(http.StatusFound, resp.StatusCode)
@@ -20,7 +20,7 @@ func TestRedirectTo(t *testing.T) {
 
 func TestRedirectToWithEncodedURL(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "redirect?url=https%3A%2F%2Fexample.com",
 	})
 	s.Equal(http.StatusFound, resp.StatusCode)
@@ -29,7 +29,7 @@ func TestRedirectToWithEncodedURL(t *testing.T) {
 
 func TestRedirectToWithStatus(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "redirect?url=https://example.com&status=301",
 	})
 	s.Equal(http.StatusMovedPermanently, resp.StatusCode)
@@ -38,7 +38,7 @@ func TestRedirectToWithStatus(t *testing.T) {
 
 func TestRedirectToRejectsUnknownDomain(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "redirect?url=https://target-url",
 	})
 	s.Equal(http.StatusForbidden, resp.StatusCode)
@@ -48,7 +48,7 @@ func TestRedirectToRejectsUnknownDomain(t *testing.T) {
 
 func TestRedirectToRejectsSchemeRelativeURL(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "redirect?url=%2F%2Fevil.example",
 	})
 	s.Equal(http.StatusForbidden, resp.StatusCode)
@@ -58,7 +58,7 @@ func TestRedirectToRejectsSchemeRelativeURL(t *testing.T) {
 
 func TestRedirectToWithoutURL(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "redirect",
 	})
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -67,7 +67,7 @@ func TestRedirectToWithoutURL(t *testing.T) {
 
 func TestRedirectRelative4(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "redirect/4",
 	})
 	s.Equal(http.StatusFound, resp.StatusCode)
@@ -76,7 +76,7 @@ func TestRedirectRelative4(t *testing.T) {
 
 func TestRedirectRelative1(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "redirect/1",
 	})
 	s.Equal(http.StatusFound, resp.StatusCode)
@@ -85,7 +85,7 @@ func TestRedirectRelative1(t *testing.T) {
 
 func TestRedirectCountTooHigh(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "redirect/40",
 	})
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -94,7 +94,7 @@ func TestRedirectCountTooHigh(t *testing.T) {
 
 func TestRedirectNegativeCount(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "redirect/-5",
 	})
 	s.NotEqual(http.StatusFound, resp.StatusCode)
@@ -104,7 +104,7 @@ func TestRedirectNegativeCount(t *testing.T) {
 func TestRedirectZeroCount(t *testing.T) {
 	for _, path := range []string{"redirect/0", "relative-redirect/0", "absolute-redirect/0"} {
 		t.Run(path, func(t *testing.T) {
-			resp, _ := ExecRequest(R{Path: path})
+			resp, _ := ExecRequest(t, R{Path: path})
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 			assert.NotContains(t, resp.Header, c.Location)
 		})
@@ -113,7 +113,7 @@ func TestRedirectZeroCount(t *testing.T) {
 
 func TestRedirectExplicitRelative4(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "relative-redirect/4",
 	})
 	s.Equal(http.StatusFound, resp.StatusCode)
@@ -122,7 +122,7 @@ func TestRedirectExplicitRelative4(t *testing.T) {
 
 func TestRedirectAbsolute4(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "absolute-redirect/4",
 	})
 	s.Equal(http.StatusFound, resp.StatusCode)
@@ -131,7 +131,7 @@ func TestRedirectAbsolute4(t *testing.T) {
 
 func TestRedirectAbsolute1(t *testing.T) {
 	s := assert.New(t)
-	resp, _ := ExecRequest(R{
+	resp, _ := ExecRequest(t, R{
 		Path: "absolute-redirect/1",
 	})
 	s.Equal(http.StatusFound, resp.StatusCode)

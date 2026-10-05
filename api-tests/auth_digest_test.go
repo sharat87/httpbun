@@ -14,7 +14,7 @@ import (
 
 func TestDigestAuthSuccess(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "digest-auth/auth/dave/diamond",
 		Headers: map[string][]string{
 			"Cookie":        {"nonce=d9fc96d7fe39099441042eea21006d77"},
@@ -32,7 +32,7 @@ func TestDigestAuthSuccess(t *testing.T) {
 
 func TestDigestAuthWithoutCredsRequireCookie(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "digest-auth/auth/dave/diamond?require-cookie=true",
 	})
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
@@ -54,7 +54,7 @@ func TestDigestAuthWithoutCredsRequireCookie(t *testing.T) {
 
 func TestDigestAuthWithoutCreds(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "digest-auth/auth/dave/diamond",
 	})
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
@@ -72,7 +72,7 @@ func TestDigestAuthWithoutCreds(t *testing.T) {
 
 func TestDigestAuthWithIncorrectCreds(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "digest-auth/auth/dave/diamond?require-cookie=true",
 		Headers: map[string][]string{
 			"Cookie":        {"nonce=0801ff8cf72e952e08643d2dc735231d"},
@@ -94,7 +94,7 @@ func TestDigestAuthWithIncorrectCreds(t *testing.T) {
 
 func TestDigestAuthWithIncorrectCredsWithoutCookie(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "digest-auth/auth/dave/diamond",
 		Headers: map[string][]string{
 			"Authorization": {"Authorization: Digest username=\"dave2\", realm=\"httpbun realm\", nonce=\"0801ff8cf72e952e08643d2dc735231d\", uri=\"/digest-auth/auth/dave/diamond\", algorithm=MD5, response=\"72cdee27bacbfa650470d0428fe7c4e8\", opaque=\"74061f9b6361455b1a7a74c5b075fd98\", qop=auth, nc=00000001, cnonce=\"810eae48ae823e66\""},
@@ -112,7 +112,7 @@ func TestDigestAuthWithIncorrectCredsWithoutCookie(t *testing.T) {
 // digestHandshake does a full digest auth exchange like a real client: it requests the path, reads the challenge, then
 // retries with credentials, signing the request target exactly as sent.
 func digestHandshake(t *testing.T, path, username, password string) (http.Response, string) {
-	challenge, _ := ExecRequest(R{Path: path})
+	challenge, _ := ExecRequest(t, R{Path: path})
 	if !assert.Equal(t, http.StatusUnauthorized, challenge.StatusCode) {
 		return challenge, ""
 	}
@@ -130,7 +130,7 @@ func digestHandshake(t *testing.T, path, username, password string) (http.Respon
 	if cookie := challenge.Header.Get("Set-Cookie"); cookie != "" {
 		headers["Cookie"] = []string{strings.Split(cookie, ";")[0]}
 	}
-	return ExecRequest(R{Path: path, Headers: headers})
+	return ExecRequest(t, R{Path: path, Headers: headers})
 }
 
 func TestDigestAuthHandshake(t *testing.T) {

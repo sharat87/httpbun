@@ -12,7 +12,7 @@ import (
 
 func TestResponseHeaders(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "response-headers?one=two&three=four",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -31,7 +31,7 @@ func TestResponseHeaders(t *testing.T) {
 
 func TestResponseHeadersRepeated(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "response-headers?one=two&one=four",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -48,7 +48,7 @@ func TestResponseHeadersRepeated(t *testing.T) {
 
 func TestResponseHeadersRejectsExternalLocation(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "response-headers?Location=https://target-url",
 	})
 	s.Equal(http.StatusForbidden, resp.StatusCode)
@@ -58,7 +58,7 @@ func TestResponseHeadersRejectsExternalLocation(t *testing.T) {
 
 func TestResponseHeadersWithContentType(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Path: "response-headers?Content-Type=text/plain",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)

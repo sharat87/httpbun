@@ -22,7 +22,7 @@ func DoMethodTest(t *testing.T, method, path string) {
 	t.Helper()
 	s := assert.New(t)
 
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: method,
 		Path:   path,
 	})
@@ -41,7 +41,7 @@ func DoMethodTest(t *testing.T, method, path string) {
 			"headers": {
 				`+extraHeaders+`
 				"Accept-Encoding": "gzip",
-				"Host": "127.0.0.1:30001"
+				"Host": "httpbun.test"
 			},
 			"data": "",
 			"files": {},
@@ -49,7 +49,7 @@ func DoMethodTest(t *testing.T, method, path string) {
 			"json": null,
 			"method": "`+method+`",
 			"origin": "127.0.0.1",
-			"url": "http://127.0.0.1:30001/`+path+`"
+			"url": "http://httpbun.test/`+path+`"
 		}`, body)
 
 	} else {
@@ -61,7 +61,7 @@ func DoMethodTest(t *testing.T, method, path string) {
 
 func TestGetNameSherlock(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: http.MethodGet,
 		Path:   "get?name=Sherlock",
 	})
@@ -73,7 +73,7 @@ func TestGetNameSherlock(t *testing.T) {
 		},
 		"headers": {
 			"Accept-Encoding": "gzip",
-			"Host": "127.0.0.1:30001"
+			"Host": "httpbun.test"
 		},
 		"data": "",
 		"files": {},
@@ -81,13 +81,13 @@ func TestGetNameSherlock(t *testing.T) {
 		"json": null,
 		"method": "GET",
 		"origin": "127.0.0.1",
-		"url": "http://127.0.0.1:30001/get?name=Sherlock"
+		"url": "http://httpbun.test/get?name=Sherlock"
 	}`, body)
 }
 
 func TestGetFirstSherlockLastHolmes(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: http.MethodGet,
 		Path:   "get?first=Sherlock&last=Holmes",
 	})
@@ -100,7 +100,7 @@ func TestGetFirstSherlockLastHolmes(t *testing.T) {
 		},
 		"headers": {
 			"Accept-Encoding": "gzip",
-			"Host": "127.0.0.1:30001"
+			"Host": "httpbun.test"
 		},
 		"data": "",
 		"files": {},
@@ -108,13 +108,13 @@ func TestGetFirstSherlockLastHolmes(t *testing.T) {
 		"json": null,
 		"method": "GET",
 		"origin": "127.0.0.1",
-		"url": "http://127.0.0.1:30001/get?first=Sherlock&last=Holmes"
+		"url": "http://httpbun.test/get?first=Sherlock&last=Holmes"
 	}`, body)
 }
 
 func TestGetWithCustomHeader(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: http.MethodGet,
 		Path:   "get",
 		Headers: map[string][]string{
@@ -127,7 +127,7 @@ func TestGetWithCustomHeader(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
-			"Host": "127.0.0.1:30001",
+			"Host": "httpbun.test",
 			"X-Custom": "first-custom"
 		},
 		"data": "",
@@ -136,13 +136,13 @@ func TestGetWithCustomHeader(t *testing.T) {
 		"json": null,
 		"method": "GET",
 		"origin": "127.0.0.1",
-		"url": "http://127.0.0.1:30001/get"
+		"url": "http://httpbun.test/get"
 	}`, body)
 }
 
 func TestGetWithTwoCustomHeader(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: http.MethodGet,
 		Path:   "get",
 		Headers: map[string][]string{
@@ -156,7 +156,7 @@ func TestGetWithTwoCustomHeader(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
-			"Host": "127.0.0.1:30001",
+			"Host": "httpbun.test",
 			"X-First": "first-custom",
 			"X-Second": "second-custom"
 		},
@@ -166,13 +166,13 @@ func TestGetWithTwoCustomHeader(t *testing.T) {
 		"json": null,
 		"method": "GET",
 		"origin": "127.0.0.1",
-		"url": "http://127.0.0.1:30001/get"
+		"url": "http://httpbun.test/get"
 	}`, body)
 }
 
 func TestGetWithMultipleHeaderValues(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: http.MethodGet,
 		Path:   "get",
 		Headers: map[string][]string{
@@ -185,7 +185,7 @@ func TestGetWithMultipleHeaderValues(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
-			"Host": "127.0.0.1:30001",
+			"Host": "httpbun.test",
 			"X-One": [
 				"first one",
 				"second one"
@@ -197,13 +197,13 @@ func TestGetWithMultipleHeaderValues(t *testing.T) {
 		"json": null,
 		"method": "GET",
 		"origin": "127.0.0.1",
-		"url": "http://127.0.0.1:30001/get"
+		"url": "http://httpbun.test/get"
 	}`, body)
 }
 
 func TestMethodPostWithFormBody(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{
+	resp, body := ExecRequest(t, R{
 		Method: http.MethodPost,
 		Path:   "post",
 		Body:   "answer=42",
@@ -218,7 +218,7 @@ func TestMethodPostWithFormBody(t *testing.T) {
 		"args": {},
 		"headers": {
 			"Accept-Encoding": "gzip",
-			"Host": "127.0.0.1:30001",
+			"Host": "httpbun.test",
 			"Content-Length": "9",
 			"Content-Type": "application/x-www-form-urlencoded"
 		},
@@ -229,6 +229,6 @@ func TestMethodPostWithFormBody(t *testing.T) {
 		"json": null,
 		"files": {},
 		"origin": "127.0.0.1",
-		"url": "http://127.0.0.1:30001/post"
+		"url": "http://httpbun.test/post"
 	}`, body)
 }

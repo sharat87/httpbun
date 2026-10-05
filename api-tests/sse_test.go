@@ -14,7 +14,7 @@ import (
 func TestSSE(t *testing.T) {
 	s := assert.New(t)
 	start := time.Now()
-	resp, body := ExecRequest(R{Path: "sse?count=2&delay=1"})
+	resp, body := ExecRequest(t, R{Path: "sse?count=2&delay=1"})
 	elapsed := time.Since(start)
 	s.Equal(http.StatusOK, resp.StatusCode)
 	s.Equal("text/event-stream", resp.Header.Get(c.ContentType))
@@ -27,7 +27,7 @@ func TestSSE(t *testing.T) {
 func TestSSELimits(t *testing.T) {
 	for _, query := range []string{"count=0", "count=101", "delay=0", "delay=11"} {
 		t.Run(query, func(t *testing.T) {
-			resp, _ := ExecRequest(R{Path: "sse?" + query})
+			resp, _ := ExecRequest(t, R{Path: "sse?" + query})
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		})
 	}

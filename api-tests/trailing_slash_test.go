@@ -23,8 +23,8 @@ func TestTrailingSlashIsIgnored(t *testing.T) {
 			if before, after, found := strings.Cut(path, "?"); found {
 				withSlash = before + "/?" + after
 			}
-			resp, body := ExecRequest(R{Path: path})
-			slashResp, slashBody := ExecRequest(R{Path: withSlash})
+			resp, body := ExecRequest(t, R{Path: path})
+			slashResp, slashBody := ExecRequest(t, R{Path: withSlash})
 			if path != "bearer" { // Which is a 404 with usage help.
 				assert.NotEqual(t, http.StatusNotFound, resp.StatusCode)
 			}
@@ -38,7 +38,7 @@ func TestTrailingSlashIsIgnored(t *testing.T) {
 
 // Standard base64 can end with a `/`, which is kept.
 func TestTrailingSlashKeptInBase64(t *testing.T) {
-	_, body := ExecRequest(R{Path: "base64/aGk/"})
+	_, body := ExecRequest(t, R{Path: "base64/aGk/"})
 	assert.Equal(t, "hi?", body)
 }
 
@@ -47,7 +47,7 @@ func TestRelativeRedirectsWithTrailingSlash(t *testing.T) {
 		t.Run(path, func(t *testing.T) {
 			current, _ := url.Parse(BaseURL + path)
 			for range 5 {
-				resp, _ := ExecRequest(R{Path: strings.TrimPrefix(current.Path, "/") + "?" + current.RawQuery})
+				resp, _ := ExecRequest(t, R{Path: strings.TrimPrefix(current.Path, "/") + "?" + current.RawQuery})
 				if resp.StatusCode != http.StatusFound {
 					break
 				}

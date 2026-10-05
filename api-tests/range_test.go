@@ -17,7 +17,7 @@ func offsets(start, end int) string {
 
 func TestRangeFullBody(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{Path: "range/300"})
+	resp, body := ExecRequest(t, R{Path: "range/300"})
 	s.Equal(http.StatusOK, resp.StatusCode)
 	s.Equal("bytes", resp.Header.Get("Accept-Ranges"))
 	s.Equal(offsets(0, 299), body)
@@ -39,7 +39,7 @@ func TestRangePartial(t *testing.T) {
 		{"bytes=-999", 0, 299, "bytes 0-299/300"},
 	} {
 		t.Run(tt.header, func(t *testing.T) {
-			resp, body := ExecRequest(R{Path: "range/300", Headers: map[string][]string{"Range": {tt.header}}})
+			resp, body := ExecRequest(t, R{Path: "range/300", Headers: map[string][]string{"Range": {tt.header}}})
 			assert.Equal(t, http.StatusPartialContent, resp.StatusCode)
 			assert.Equal(t, tt.contentRange, resp.Header.Get("Content-Range"))
 			assert.Equal(t, offsets(tt.start, tt.end), body)
@@ -49,7 +49,7 @@ func TestRangePartial(t *testing.T) {
 
 func TestRangeNotSatisfiable(t *testing.T) {
 	s := assert.New(t)
-	resp, body := ExecRequest(R{Path: "range/300", Headers: map[string][]string{"Range": {"bytes=300-"}}})
+	resp, body := ExecRequest(t, R{Path: "range/300", Headers: map[string][]string{"Range": {"bytes=300-"}}})
 	s.Equal(http.StatusRequestedRangeNotSatisfiable, resp.StatusCode)
 	s.Equal("bytes */300", resp.Header.Get("Content-Range"))
 	s.Empty(body)
@@ -58,7 +58,7 @@ func TestRangeNotSatisfiable(t *testing.T) {
 func TestRangeIgnoredHeaders(t *testing.T) {
 	for _, header := range []string{"bytes=0-1,5-6", "bytes=5-2", "items=0-1", "bytes=-", "nonsense"} {
 		t.Run(header, func(t *testing.T) {
-			resp, body := ExecRequest(R{Path: "range/20", Headers: map[string][]string{"Range": {header}}})
+			resp, body := ExecRequest(t, R{Path: "range/20", Headers: map[string][]string{"Range": {header}}})
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 			assert.Equal(t, offsets(0, 19), body)
 		})
