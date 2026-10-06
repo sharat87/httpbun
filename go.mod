@@ -1,6 +1,6 @@
 module github.com/sharat87/httpbun
 
-go 1.25.1
+go 1.27.1
 
 require (
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
