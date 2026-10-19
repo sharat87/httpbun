@@ -10,7 +10,7 @@ vars:
   LD_FLAGS: >-
     -ldflags '-X github.com/sharat87/httpbun/server/spec.Commit={{.COMMIT}} -X github.com/sharat87/httpbun/server/spec.Date={{.NOW}}'
   GOIMPORTS_VERSION: v0.31.0
-  STATICCHECK_VERSION: 2026.2.1
+  STATICCHECK_VERSION: 2026.2.2
   # Directories of all Go packages, which leaves out any nested worktrees, unlike `.`.
   GO_DIRS: go list -f '{{"{{"}}.Dir{{"}}"}}' ./...
   proxy:
