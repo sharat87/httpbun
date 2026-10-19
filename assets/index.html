@@ -572,6 +572,16 @@ print(response.content[0].text)
 	<dt id=endpoint-bytes-size-limit>--endpoint-bytes-size-limit</dt>
 	<dd>Maximum number of bytes allowed in the <a href='#bytes'><code>/bytes</code> endpoint</a>.</dd>
 
+	<dt id=configuration-any-hosts>--any-hosts</dt>
+	<dd>Hosts on which all endpoints behave like <code>/any</code>, like <code>--root-is-any</code>, but only for those
+		hosts. Comma separated. Also <code>HTTPBUN_ANY_HOSTS</code>.
+	</dd>
+
+	<dt id=configuration-hsts>--hsts</dt>
+	<dd>Send a <code>Strict-Transport-Security</code> header on HTML pages served over https. Off by default. Also
+		<code>HTTPBUN_HSTS=true</code>.
+	</dd>
+
 	<dt id=configuration-info>HTTPBUN_INFO_*</dt>
 	<dd>Environment variables with this prefix are shown by the <code>/info</code> endpoint, along with the server's
 		hostname. Useful to tell instances apart, for example by setting <code>HTTPBUN_INFO_REGION</code>. No other
@@ -579,6 +589,27 @@ print(response.content[0].text)
 	</dd>
 
 </dl>
+
+<h3 id=behind-a-proxy>Behind a proxy <a href="#behind-a-proxy">&para;</a></h3>
+
+<p>Behind a proxy, httpbun needs to be told which headers carry the client's IP and scheme, and which of the proxy's
+	headers to leave out of responses like <code>/headers</code>.</p>
+
+<table>
+	<tr><th>Env variable / flag</th><th>Default</th><th>Purpose</th></tr>
+	<tr><td><code>HTTPBUN_CLIENT_IP_HEADER</code><br><code>--client-ip-header</code></td><td><code>X-Httpbun-Forwarded-For</code></td><td>Client's IP</td></tr>
+	<tr><td><code>HTTPBUN_SCHEME_HEADER</code><br><code>--scheme-header</code></td><td><code>X-Httpbun-Forwarded-Proto</code></td><td>Client's scheme, <code>http</code> or <code>https</code></td></tr>
+	<tr><td><code>HTTPBUN_HIDE_HEADERS</code><br><code>--hide-headers</code></td><td>None</td><td>Headers to leave out, with <code>*</code> wildcards</td></tr>
+</table>
+
+<p>The client IP and scheme headers are left out too. For example:</p>
+
+<pre>HTTPBUN_CLIENT_IP_HEADER=X-Real-Ip
+HTTPBUN_SCHEME_HEADER=X-Forwarded-Proto
+HTTPBUN_HIDE_HEADERS=X-Forwarded-*
+HTTPBUN_ANY_HOSTS=any.example.com</pre>
+
+<p><strong>Only set these when the proxy always overwrites these headers</strong>, or clients can fake them.</p>
 
 <h2 id=license>License</h2>
 

@@ -41,6 +41,12 @@ A handler takes an `*ex.Exchange`, and returns a `response.Response`. Routes are
 - **Stop streaming when the client goes away.** A handler that streams with `Writer` must stop when
   `ex.Request.Context()` is done.
 - **Configuration goes in `spec.Spec`.** Don't read env variables anywhere else.
+- **Proxy headers are opt-in.** `ClientIPHeader`, `SchemeHeader`, `HideHeaders` and `AnyHosts` in `spec.Spec` let
+  httpbun run behind any proxy. They're read in `ex/exchange.go` (`FindIncomingIPAddress`, `FindScheme`,
+  `ExposableHeadersMap`) and `server/server.go`. By default, only httpbun's own `X-Httpbun-Forwarded-*` headers are
+  trusted. Never trust a client-supplied header like `X-Forwarded-For` by default, since anyone can send it.
+- **Pages get security headers** in `assets.Render`: `nosniff` and `frame-ancestors 'none'` always, and HSTS only with
+  `--hsts`, over https.
 
 ## Tests
 

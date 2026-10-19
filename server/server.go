@@ -118,8 +118,8 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		req.URL.String()[2:],
 	)
 
-	// Skip all route checking when root-is-any is enabled.
-	if s.spec.RootIsAny {
+	// Skip all route checking when root-is-any is enabled, or for any-hosts.
+	if s.spec.RootIsAny || s.spec.IsAnyHost(req.Host) {
 		info, err := responses.InfoJSON(ex)
 		if err != nil {
 			ex.Finish(response.BadRequest("%s", err.Error()))

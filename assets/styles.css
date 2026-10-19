@@ -96,6 +96,19 @@ pre {
 	overflow-x: auto;
 }
 
+table {
+	border-collapse: collapse;
+	display: block;
+	overflow-x: auto;
+}
+
+th, td {
+	border: 1px solid #ccc;
+	padding: .25em .5em;
+	text-align: left;
+	vertical-align: top;
+}
+
 ::placeholder {
 	font-family: system-ui;
 	font-style: italic;
@@ -259,6 +272,10 @@ url-pane a {
 
 	dt .var {
 		color: #8fc;
+	}
+
+	th, td {
+		border-color: #555;
 	}
 
 	footer {

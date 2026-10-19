@@ -182,7 +182,7 @@ func (ex Exchange) ExposableHeadersMap() map[string]any {
 	}
 
 	for name, values := range ex.Request.Header {
-		if !strings.HasPrefix(name, "X-Httpbun-") {
+		if !ex.ServerSpec.IsHiddenHeader(name) {
 			if len(values) > 1 {
 				headers[name] = values
 			} else {
@@ -195,7 +195,7 @@ func (ex Exchange) ExposableHeadersMap() map[string]any {
 }
 
 func (ex Exchange) FindScheme() string {
-	if forwardedProto := ex.HeaderValueLast("X-Httpbun-Forwarded-Proto"); forwardedProto != "" {
+	if forwardedProto := ex.HeaderValueLast(ex.ServerSpec.SchemeHeaderName()); forwardedProto != "" {
 		return forwardedProto
 	}
 
@@ -217,7 +217,7 @@ func (ex Exchange) FullUrl() string {
 // FindIncomingIPAddress Find the IP address of the client that made this Exchange.
 func (ex Exchange) FindIncomingIPAddress() string {
 	// Compare with <http://httpbin.org/ip> or <http://checkip.amazonaws.com/> or <http://getmyip.co.in/>.
-	ipStr := ex.HeaderValueLast("X-Httpbun-Forwarded-For")
+	ipStr := strings.TrimSpace(ex.HeaderValueLast(ex.ServerSpec.ClientIPHeaderName()))
 
 	// If that's also not available, get it directly from the connection.
 	if ipStr == "" {

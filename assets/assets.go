@@ -51,13 +51,16 @@ func Render(name string, ex ex.Exchange, data map[string]any) response.Response 
 		log.Fatalf("Error executing %q template %v.", name, err)
 	}
 
-	return response.New(
-		http.StatusOK,
-		http.Header{
-			c.ContentType: []string{c.TextHTML},
-		},
-		buf.Bytes(),
-	)
+	header := http.Header{
+		c.ContentType:             []string{c.TextHTML},
+		"X-Content-Type-Options":  []string{"nosniff"},
+		"Content-Security-Policy": []string{"frame-ancestors 'none'"},
+	}
+	if ex.ServerSpec.HSTS && ex.FindScheme() == "https" {
+		header.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+	}
+
+	return response.New(http.StatusOK, header, buf.Bytes())
 }
 
 func WriteAsset(name string) *response.Response {

@@ -16,6 +16,19 @@ To override the external redirect allowlist used by endpoints like `/redirect-to
 `HTTPBUN_ALLOWED_REDIRECT_DOMAINS` to a comma- or whitespace-separated list such as
 `example.com, httpbun.com, *.github.io`.
 
+Behind a proxy, tell httpbun which headers carry the client's IP and scheme, and which of the proxy's headers to leave
+out of responses like `/headers`. For example:
+
+```sh
+HTTPBUN_CLIENT_IP_HEADER=X-Real-Ip
+HTTPBUN_SCHEME_HEADER=X-Forwarded-Proto
+HTTPBUN_HIDE_HEADERS=X-Forwarded-*
+HTTPBUN_ANY_HOSTS=any.example.com  # All endpoints behave like /any on this host
+```
+
+Only set these when the proxy always overwrites these headers, or clients can fake them. See
+[Configuration](https://httpbun.com/#configuration) for all options.
+
 A project by [Shri](https://sharats.me).
 
 :warning: If you are using this from your CI, please don't. Run a local version using the above Docker command, within your CI system, and use that "locally".
