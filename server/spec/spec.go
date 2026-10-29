@@ -2,10 +2,13 @@ package spec
 
 import (
 	"flag"
+	"fmt"
+	"log"
 	"net"
 	"os"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/sharat87/httpbun/util"
@@ -57,11 +60,23 @@ type Spec struct {
 
 	// If true, HTML pages served over https get a `Strict-Transport-Security` header.
 	HSTS bool
+
+	// Most requests handled at the same time. More get a 503 right away. When zero, DefaultMaxConcurrentRequests is
+	// used.
+	MaxConcurrentRequests int
+
+	// Largest request body allowed, in bytes. Bigger bodies get a 413. When zero, DefaultMaxBodySize is used.
+	MaxBodySize int64
 }
 
 const (
 	DefaultClientIPHeader = "X-Httpbun-Forwarded-For"
 	DefaultSchemeHeader   = "X-Httpbun-Forwarded-Proto"
+
+	// Httpbun isn't meant for high load, so these limits are always on, and keep any single client or burst from
+	// exhausting the process.
+	DefaultMaxConcurrentRequests       = 256
+	DefaultMaxBodySize           int64 = 10 << 20
 )
 
 var DefaultAllowedRedirectDomains = []string{"example.com", "httpbun.com"}
@@ -91,6 +106,20 @@ func (spec Spec) SchemeHeaderName() string {
 		return spec.SchemeHeader
 	}
 	return DefaultSchemeHeader
+}
+
+func (spec Spec) MaxConcurrentRequestsLimit() int {
+	if spec.MaxConcurrentRequests > 0 {
+		return spec.MaxConcurrentRequests
+	}
+	return DefaultMaxConcurrentRequests
+}
+
+func (spec Spec) MaxBodySizeLimit() int64 {
+	if spec.MaxBodySize > 0 {
+		return spec.MaxBodySize
+	}
+	return DefaultMaxBodySize
 }
 
 // IsHiddenHeader tells if a request header should be left out of responses that echo request headers.
@@ -138,9 +167,13 @@ func ParseArgs() Spec {
 	hideHeaders := flag.String("hide-headers", "", "Comma separated request headers to leave out of responses, with `*` wildcards")
 	anyHosts := flag.String("any-hosts", "", "Comma separated hosts on which all endpoints behave like `/any`")
 	flag.BoolVar(&spec.HSTS, "hsts", false, "Send a Strict-Transport-Security header on HTML pages served over https")
+	maxConcurrentRequests := flag.Int("max-concurrent-requests", DefaultMaxConcurrentRequests, "Most requests handled at the same time, more get a 503")
+	maxBodySize := flag.Int64("max-body-size", DefaultMaxBodySize, "Largest request body allowed, in bytes, bigger ones get a 413")
 	flag.Parse()
 
-	applyEnv(spec, os.Environ())
+	if err := applyEnv(spec, os.Environ()); err != nil {
+		log.Fatal(err)
+	}
 
 	// Flags win over env variables.
 	flag.Visit(func(f *flag.Flag) {
@@ -155,6 +188,16 @@ func ParseArgs() Spec {
 			spec.AnyHosts = ParseList(*anyHosts)
 		case "hsts":
 			spec.HSTS = f.Value.String() == "true"
+		case "max-concurrent-requests":
+			if *maxConcurrentRequests <= 0 {
+				log.Fatalf("--max-concurrent-requests must be a positive integer, got %d", *maxConcurrentRequests)
+			}
+			spec.MaxConcurrentRequests = *maxConcurrentRequests
+		case "max-body-size":
+			if *maxBodySize <= 0 {
+				log.Fatalf("--max-body-size must be a positive integer, got %d", *maxBodySize)
+			}
+			spec.MaxBodySize = *maxBodySize
 		}
 	})
 
@@ -167,7 +210,7 @@ func ParseArgs() Spec {
 }
 
 // applyEnv sets the configuration that comes from env variables, given as `NAME=value` items, like os.Environ.
-func applyEnv(spec *Spec, environ []string) {
+func applyEnv(spec *Spec, environ []string) error {
 	spec.InfoEnv = map[string]string{}
 
 	for _, e := range environ {
@@ -189,8 +232,29 @@ func applyEnv(spec *Spec, environ []string) {
 			spec.AnyHosts = ParseList(value)
 		case name == "HTTPBUN_HSTS":
 			spec.HSTS = value == "1" || strings.EqualFold(value, "true")
+		case name == "HTTPBUN_MAX_CONCURRENT_REQUESTS":
+			limit, err := parsePositiveInt(name, value)
+			if err != nil {
+				return err
+			}
+			spec.MaxConcurrentRequests = int(limit)
+		case name == "HTTPBUN_MAX_BODY_SIZE":
+			limit, err := parsePositiveInt(name, value)
+			if err != nil {
+				return err
+			}
+			spec.MaxBodySize = limit
 		case strings.HasPrefix(name, "HTTPBUN_INFO_"):
 			spec.InfoEnv[name] = value
 		}
 	}
+	return nil
+}
+
+func parsePositiveInt(name, raw string) (int64, error) {
+	value, err := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
+	if err != nil || value <= 0 {
+		return 0, fmt.Errorf("%s must be a positive integer, got %q", name, raw)
+	}
+	return value, nil
 }

@@ -210,7 +210,8 @@ func handleDelayedResponse(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Delay can't be greater than 300 or less than 0")
 	}
 
-	time.Sleep(time.Duration(n * float64(time.Second)))
+	// Stop waiting if the client goes away, so abandoned requests don't hold on to server resources.
+	util.Sleep(ex.Request.Context(), time.Duration(n*float64(time.Second)))
 	return response.New(http.StatusOK, nil, []byte("OK"))
 }
 
@@ -232,7 +233,7 @@ func handleDrip(ex *ex.Exchange) response.Response {
 
 	writeNewLines := ex.Field("mode") == "lines"
 
-	duration, err := querySeconds(ex, "duration", 2*time.Second)
+	duration, err := querySeconds(ex, "duration", 2*time.Second, maxDripSeconds)
 	if err != nil {
 		return response.BadRequest("%s", err.Error())
 	}
@@ -247,13 +248,14 @@ func handleDrip(ex *ex.Exchange) response.Response {
 		return response.BadRequest("%s", err.Error())
 	}
 
-	delay, err := querySeconds(ex, "delay", 2*time.Second)
+	delay, err := querySeconds(ex, "delay", 2*time.Second, maxDripSeconds)
 	if err != nil {
 		return response.BadRequest("%s", err.Error())
 	}
 
-	if delay > 0 {
-		time.Sleep(delay)
+	if delay > 0 && !util.Sleep(ex.Request.Context(), delay) {
+		// The client has disconnected.
+		return response.Response{}
 	}
 
 	var interval time.Duration
@@ -292,8 +294,11 @@ func handleDrip(ex *ex.Exchange) response.Response {
 
 var secondsPattern = regexp.MustCompile(`^(\d+(\.\d{1,2})?|\.\d{1,2})$`)
 
-// querySeconds reads a query param as a non-negative number of seconds, with up to two decimal places.
-func querySeconds(ex *ex.Exchange, name string, value time.Duration) (time.Duration, error) {
+// The most a drip's delay, or its duration, can be, like `/delay`.
+const maxDripSeconds = 300
+
+// querySeconds reads a query param as a non-negative number of seconds, with up to two decimal places, up to max.
+func querySeconds(ex *ex.Exchange, name string, value time.Duration, max int) (time.Duration, error) {
 	values := ex.Request.URL.Query()[name]
 	if len(values) == 0 {
 		return value, nil
@@ -304,6 +309,9 @@ func querySeconds(ex *ex.Exchange, name string, value time.Duration) (time.Durat
 	seconds, err := strconv.ParseFloat(values[0], 64)
 	if err != nil {
 		return 0, fmt.Errorf("%s must be a number: %w", name, err)
+	}
+	if seconds > float64(max) {
+		return 0, fmt.Errorf("%s can't be more than %d seconds", name, max)
 	}
 	return time.Duration(seconds * float64(time.Second)), nil
 }

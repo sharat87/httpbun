@@ -371,7 +371,9 @@ func streamResponsesResponse(responseBody, outputMessage map[string]any, text st
 
 			send("response.content_part.added", withPosition(map[string]any{"part": part("")}))
 			for _, chunk := range splitIntoChunks(text) {
-				time.Sleep(50 * time.Millisecond)
+				if !w.Sleep(50 * time.Millisecond) {
+					return
+				}
 				send("response.output_text.delta", withPosition(map[string]any{"delta": chunk, "logprobs": []any{}}))
 			}
 			send("response.output_text.done", withPosition(map[string]any{"text": text, "logprobs": []any{}}))
@@ -411,7 +413,9 @@ func streamCompletionResponse(req CompletionRequest, mockText string, promptToke
 
 				data, _ := json.Marshal(chunk)
 				w.Write("data: " + string(data) + "\n\n")
-				time.Sleep(50 * time.Millisecond)
+				if !w.Sleep(50 * time.Millisecond) {
+					return
+				}
 			}
 
 			// Send final chunk with finish_reason
@@ -464,7 +468,9 @@ func streamChatCompletionResponse(req ChatCompletionRequest, mockContent string,
 			}
 			data, _ := json.Marshal(initialChunk)
 			w.Write("data: " + string(data) + "\n\n")
-			time.Sleep(50 * time.Millisecond)
+			if !w.Sleep(50 * time.Millisecond) {
+				return
+			}
 
 			// Stream content word by word
 			for _, content := range chunks {
@@ -487,7 +493,9 @@ func streamChatCompletionResponse(req ChatCompletionRequest, mockContent string,
 
 				data, _ := json.Marshal(chunk)
 				w.Write("data: " + string(data) + "\n\n")
-				time.Sleep(50 * time.Millisecond)
+				if !w.Sleep(50 * time.Millisecond) {
+					return
+				}
 			}
 
 			// Send final chunk with finish_reason

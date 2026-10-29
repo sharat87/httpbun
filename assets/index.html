@@ -321,7 +321,7 @@ Hosted versions:
 
 	<dt id=delay>/delay/<span class=var>{seconds}</span></dt>
 	<dd>Respond with a delay of <code>seconds</code> seconds. The <code>seconds</code> parameter can be a positive
-		integer or floating point number.
+		integer or floating point number, up to 300.
 	</dd>
 
 	<dt id=drip>/drip</dt>
@@ -330,10 +330,11 @@ Hosted versions:
 		character. The following query params can be used to configure this endpoint:
 		<ul>
 			<li><code>duration</code>: Total number of seconds over which to stream the data, up to two decimal places,
-				like <code>1.5</code>. <em>Default: 2</em>.
+				like <code>1.5</code>, up to 300. <em>Default: 2</em>.
 			<li><code>numbytes</code>: Total number of bytes to stream, up to 10 MB. <em>Default: 10</em>.
 			<li><code>code</code>: The HTTP status code to be used in their response. <em>Default: 200</em>.
-			<li><code>delay</code>: An initial delay, in seconds, up to two decimal places. <em>Default: 2</em>.
+			<li><code>delay</code>: An initial delay, in seconds, up to two decimal places, up to 300.
+				<em>Default: 2</em>.
 		</ul>
 		When using <code>/drip-lines</code>, a newline character is written after every piece of data.
 	</dd>
@@ -546,6 +547,10 @@ print(response.content[0].text)
 		href="https://github.com/sharat87/httpbun/blob/{{.commit}}/.github/workflows/container-run.yml">container-run.yml</a>
 	workflow.</p>
 
+<p>Httpbun isn't built for high load, hosted or self-hosted, so it always limits how many requests it handles at once,
+	and how large request bodies can be. See <a href="#configuration-max-concurrent-requests"><code>--max-concurrent-requests</code></a>
+	and <a href="#configuration-max-body-size"><code>--max-body-size</code></a>.</p>
+
 <h2 id=configuration>Configuration <a href="#configuration">&para;</a></h2>
 
 <dl>
@@ -580,6 +585,18 @@ print(response.content[0].text)
 	<dt id=configuration-hsts>--hsts</dt>
 	<dd>Send a <code>Strict-Transport-Security</code> header on HTML pages served over https. Off by default. Also
 		<code>HTTPBUN_HSTS=true</code>.
+	</dd>
+
+	<dt id=configuration-max-concurrent-requests>--max-concurrent-requests</dt>
+	<dd>Most requests handled at the same time, including ones that are streaming or waiting, like
+		<code>/delay</code>. When this many are being handled, more get a <code>503</code> right away, with a
+		<code>Retry-After</code> header. <code>/health</code> isn't limited. Default <code>256</code>. Also
+		<code>HTTPBUN_MAX_CONCURRENT_REQUESTS</code>.
+	</dd>
+
+	<dt id=configuration-max-body-size>--max-body-size</dt>
+	<dd>Largest request body allowed, in bytes, on any endpoint. Larger bodies get a <code>413</code>. Default
+		<code>10485760</code>, which is 10 MiB. Also <code>HTTPBUN_MAX_BODY_SIZE</code>.
 	</dd>
 
 	<dt id=configuration-info>HTTPBUN_INFO_*</dt>

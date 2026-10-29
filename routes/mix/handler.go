@@ -3,6 +3,7 @@ package mix
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -204,7 +205,7 @@ func handleMix(ex *ex.Exchange) response.Response {
 	}
 
 	if delay > 0 {
-		time.Sleep(delay)
+		util.Sleep(ex.Request.Context(), delay)
 	}
 
 	if len(payload) > 0 {
@@ -225,17 +226,33 @@ func handleMixerHelp(ex *ex.Exchange) response.Response {
 	return assets.Render("mixer-help.html", *ex, nil)
 }
 
+// The most a template can render, so a template with nested loops can't use up all memory.
+const maxTemplateOutput = 1 << 20
+
 func renderTemplate(templateContent string) ([]byte, error) {
 	tpl, err := template.New("mix").Funcs(templateFuncMap).Parse(templateContent)
 	if err != nil {
 		return nil, err
 	}
-	buf := &bytes.Buffer{}
-	err = tpl.Execute(buf, nil)
+	out := &cappedBuffer{limit: maxTemplateOutput}
+	err = tpl.Execute(out, nil)
 	if err != nil {
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	return out.Bytes(), nil
+}
+
+// cappedBuffer is a bytes.Buffer that errors on writes that would take it past its limit, which stops a template.
+type cappedBuffer struct {
+	bytes.Buffer
+	limit int
+}
+
+func (b *cappedBuffer) Write(p []byte) (int, error) {
+	if b.Len()+len(p) > b.limit {
+		return 0, fmt.Errorf("template output can't be more than %d bytes", b.limit)
+	}
+	return b.Buffer.Write(p)
 }
 
 func sendRequestToSlack(param string, ex *ex.Exchange) {

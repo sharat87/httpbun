@@ -1,8 +1,12 @@
 package response
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
+
+	"github.com/sharat87/httpbun/util"
 )
 
 type Response struct {
@@ -29,11 +33,18 @@ func BadRequest(message string, vars ...any) Response {
 }
 
 type BodyWriter struct {
-	w http.ResponseWriter
+	w   http.ResponseWriter
+	ctx context.Context
 }
 
-func NewBodyWriter(w http.ResponseWriter) BodyWriter {
-	return BodyWriter{w}
+// NewBodyWriter makes a BodyWriter for a response, with the request's context, which is done when the client goes away.
+func NewBodyWriter(ctx context.Context, w http.ResponseWriter) BodyWriter {
+	return BodyWriter{w: w, ctx: ctx}
+}
+
+// Sleep waits between writes. It returns false if the client went away, and the writer should stop.
+func (bw BodyWriter) Sleep(d time.Duration) bool {
+	return util.Sleep(bw.ctx, d)
 }
 
 func (bw BodyWriter) Write(content string) error {

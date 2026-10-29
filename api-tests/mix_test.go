@@ -418,6 +418,11 @@ func TestMixInvalidTemplate(t *testing.T) {
 			"mix/t=" + base64.StdEncoding.EncodeToString([]byte("{{range seq 0 5 0}}x{{end}}")),
 			`template: mix:1:8: executing "mix" at <seq 0 5 0>: error calling seq: seq step can't be zero`,
 		},
+		{
+			"output too large",
+			"mix/t=" + base64.StdEncoding.EncodeToString([]byte("{{range seq 10000}}{{range seq 200}}x{{end}}{{end}}")),
+			"template output can't be more than 1048576 bytes",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s := assert.New(t)

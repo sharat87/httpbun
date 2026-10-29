@@ -18,11 +18,14 @@ func TestPanicBecomesServerError(t *testing.T) {
 	log.SetOutput(io.Discard)
 	t.Cleanup(func() { log.SetOutput(os.Stderr) })
 
-	s := Server{routes: []ex.Route{
-		ex.NewRoute("/boom", func(_ *ex.Exchange) response.Response {
-			panic("something broke")
-		}),
-	}}
+	s := Server{
+		routes: []ex.Route{
+			ex.NewRoute("/boom", func(_ *ex.Exchange) response.Response {
+				panic("something broke")
+			}),
+		},
+		inFlight: make(chan struct{}, 1),
+	}
 	ts := httptest.NewServer(s)
 	defer ts.Close()
 
