@@ -61,5 +61,4 @@ A handler takes an `*ex.Exchange`, and returns a `response.Response`. Routes are
 ## Documentation
 
 `assets/index.html` is the user facing documentation. When an endpoint's behaviour changes, update its docs in the same
-change. The `/mix` and `/run` endpoints are documented on their own pages, `assets/mixer-help.html` and
-`assets/runner.html`.
+change. The `/mix` endpoint is documented on its own page, `assets/mixer-help.html`.

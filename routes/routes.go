@@ -27,7 +27,6 @@ import (
 	"github.com/sharat87/httpbun/routes/mix"
 	"github.com/sharat87/httpbun/routes/oauth2"
 	"github.com/sharat87/httpbun/routes/redirect"
-	"github.com/sharat87/httpbun/routes/run"
 	"github.com/sharat87/httpbun/routes/sse"
 	"github.com/sharat87/httpbun/routes/static"
 	"github.com/sharat87/httpbun/routes/svg"
@@ -64,7 +63,6 @@ func GetRoutes() []ex.Route {
 		mix.RouteList,
 		oauth2.RouteList,
 		redirect.RouteList,
-		run.RouteList,
 		sse.RouteList,
 		static.RouteList,
 		svg.RouteList,
