@@ -427,8 +427,9 @@ Hosted versions:
 	<dd>Mock endpoints that mimic real LLM APIs, so you can point an SDK at httpbun instead of a paid provider. Set
 		<code>base_url</code> to <code>{{.host}}/llm</code>, pass any dummy API key, and you're all set. No auth,
 		no keys. Responses are deterministic with a plausible <code>usage</code> block, and the <code>stream</code>
-		flag is honored using the right SSE protocol for each provider. Request bodies can be up to 1 MB, and larger
-		ones get a 413 response.
+		flag is honored using the right SSE protocol for each provider. Streams send the content a word at a time, every
+		50ms, in at most 600 chunks: longer content gets several words per chunk, so it's all sent in about 30 seconds.
+		Request bodies can be up to 1 MB, and larger ones get a 413 response.
 		<br>
 		<strong>Custom responses:</strong> add an <code>httpbun</code> field to the request body to override the mock
 		output:

@@ -33,6 +33,8 @@ type R struct {
 	Path    string
 	Body    string
 	Headers map[string][]string
+	// Timeout for the whole request, including reading the body. When zero, the client's default of 5 seconds is used.
+	Timeout time.Duration
 }
 
 var defaultServer *TestServer
@@ -101,7 +103,14 @@ func (s *TestServer) Exec(t *testing.T, r R) (http.Response, string) {
 		req.Header[name] = values
 	}
 
-	resp, err := s.client.Do(req)
+	client := s.client
+	if r.Timeout > 0 {
+		withTimeout := *client
+		withTimeout.Timeout = r.Timeout
+		client = &withTimeout
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Fatalf("Error sending request: %v", err)
 	}

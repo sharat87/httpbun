@@ -471,11 +471,17 @@ func TestMixTemplateTooMuchWork(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s := assert.New(t)
+			// The race detector makes templates several times slower, more so with other tests running in parallel.
+			bound := 2 * time.Second
+			if raceEnabled {
+				bound = 20 * time.Second
+			}
 			start := time.Now()
 			resp, body := ExecRequest(t, R{
-				Path: "mix/t=" + base64.StdEncoding.EncodeToString([]byte(tc.template)),
+				Path:    "mix/t=" + base64.StdEncoding.EncodeToString([]byte(tc.template)),
+				Timeout: 2 * bound,
 			})
-			s.Less(time.Since(start), 2*time.Second, "stopped quickly")
+			s.Less(time.Since(start), bound, "stopped quickly")
 			s.Equal(http.StatusBadRequest, resp.StatusCode)
 			s.Equal(
 				"template does too much work, it can take at most 100000 steps, like loop iterations, seq items and function calls",
