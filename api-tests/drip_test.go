@@ -60,3 +60,20 @@ func TestDripWithInvalidSeconds(t *testing.T) {
 		})
 	}
 }
+
+func TestDripLimits(t *testing.T) {
+	for _, tc := range []struct {
+		query string
+		body  string
+	}{
+		{"delay=300.01", "delay can't be more than 300 seconds"},
+		{"delay=0&duration=301", "duration can't be more than 300 seconds"},
+	} {
+		t.Run(tc.query, func(t *testing.T) {
+			s := assert.New(t)
+			resp, body := ExecRequest(t, R{Path: "drip?" + tc.query})
+			s.Equal(http.StatusBadRequest, resp.StatusCode)
+			s.Equal(tc.body, body)
+		})
+	}
+}

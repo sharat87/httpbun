@@ -2,6 +2,7 @@ package util
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	cryptoRand "crypto/rand"
 	"encoding/hex"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func ToJsonMust(data any) []byte {
@@ -87,4 +89,17 @@ func ParseStatusCode(raw string) (int, error) {
 		return 0, fmt.Errorf("invalid status code %q", raw)
 	}
 	return code, CheckStatusCode(code)
+}
+
+// Sleep waits for the given duration, or until the context is done, like when the client goes away. It returns false
+// if the context is done, so the caller can stop.
+func Sleep(ctx context.Context, d time.Duration) bool {
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
 }

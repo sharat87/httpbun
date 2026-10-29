@@ -87,6 +87,7 @@ func InfoJSON(ex *ex.Exchange) (*Info, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error reading multipart form data: %v", err)
 		}
+		defer allFileData.RemoveAll()
 
 		for name, fileHeaders := range allFileData.File {
 			fileHeader := fileHeaders[0]

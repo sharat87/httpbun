@@ -153,7 +153,9 @@ func streamMessagesResponse(req MessagesRequest, mockContent string, inputTokens
 			}
 			data, _ := json.Marshal(messageStart)
 			w.Write("event: message_start\ndata: " + string(data) + "\n\n")
-			time.Sleep(50 * time.Millisecond)
+			if !w.Sleep(50 * time.Millisecond) {
+				return
+			}
 
 			// Send content_block_start
 			contentBlockStart := map[string]any{
@@ -163,7 +165,9 @@ func streamMessagesResponse(req MessagesRequest, mockContent string, inputTokens
 			}
 			data, _ = json.Marshal(contentBlockStart)
 			w.Write("event: content_block_start\ndata: " + string(data) + "\n\n")
-			time.Sleep(50 * time.Millisecond)
+			if !w.Sleep(50 * time.Millisecond) {
+				return
+			}
 
 			// Stream content word by word
 			for _, text := range chunks {
@@ -178,7 +182,9 @@ func streamMessagesResponse(req MessagesRequest, mockContent string, inputTokens
 				}
 				data, _ = json.Marshal(contentBlockDelta)
 				w.Write("event: content_block_delta\ndata: " + string(data) + "\n\n")
-				time.Sleep(50 * time.Millisecond)
+				if !w.Sleep(50 * time.Millisecond) {
+					return
+				}
 			}
 
 			outputTokens := estimateTokens(mockContent)
@@ -190,7 +196,9 @@ func streamMessagesResponse(req MessagesRequest, mockContent string, inputTokens
 			}
 			data, _ = json.Marshal(contentBlockStop)
 			w.Write("event: content_block_stop\ndata: " + string(data) + "\n\n")
-			time.Sleep(50 * time.Millisecond)
+			if !w.Sleep(50 * time.Millisecond) {
+				return
+			}
 
 			// Send message_delta with stop_reason
 			messageDelta := map[string]any{
@@ -205,7 +213,9 @@ func streamMessagesResponse(req MessagesRequest, mockContent string, inputTokens
 			}
 			data, _ = json.Marshal(messageDelta)
 			w.Write("event: message_delta\ndata: " + string(data) + "\n\n")
-			time.Sleep(50 * time.Millisecond)
+			if !w.Sleep(50 * time.Millisecond) {
+				return
+			}
 
 			// Send message_stop
 			messageStop := map[string]any{

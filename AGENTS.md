@@ -39,7 +39,10 @@ A handler takes an `*ex.Exchange`, and returns a `response.Response`. Routes are
 - **A trailing slash is removed before routing.** So `/get/` is `/get`, and patterns shouldn't allow one. If a handler's
   output depends on it, like a relative redirect, check `ex.HadTrailingSlash`.
 - **Stop streaming when the client goes away.** A handler that streams with `Writer` must stop when
-  `ex.Request.Context()` is done.
+  `ex.Request.Context()` is done. Wait with `util.Sleep`, or `BodyWriter.Sleep`, not `time.Sleep`.
+- **Bound everything the client controls.** Httpbun isn't meant for high load, so any size, count or duration that
+  comes from a request, like a query param, path, or template, needs a maximum. The server already limits concurrent
+  requests and body size (`MaxConcurrentRequests`, `MaxBodySize` in `spec.Spec`), but not what handlers do.
 - **Configuration goes in `spec.Spec`.** Don't read env variables anywhere else.
 - **Proxy headers are opt-in.** `ClientIPHeader`, `SchemeHeader`, `HideHeaders` and `AnyHosts` in `spec.Spec` let
   httpbun run behind any proxy. They're read in `ex/exchange.go` (`FindIncomingIPAddress`, `FindScheme`,

@@ -109,7 +109,8 @@
     <li>Mnemonic: <b>T</b>emplate.
 </ul>
 <p>The given value is base64-decoded, and the result is expected to be a valid Golang text template. This template will
-    be rendered, and the result will be the response body.</p>
+    be rendered, and the result will be the response body. The rendered body can be up to 1 MiB, and a template that
+    renders more gets a 400.</p>
 <p>This is a very powerful directive, and offers rich and creative ways of constructing the response body. This
     directive is very much beta, and the API is subject to change (or disappear) with little notice.</p>
 
