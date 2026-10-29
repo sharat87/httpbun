@@ -175,24 +175,6 @@ customElements.define("entry-d", class extends EntryElement {
 	}
 })
 
-customElements.define("entry-slack", class extends EntryElement {
-	formControl() {
-		return [
-			`<input pattern="^https://hooks.slack.com/services/[/\w]+" required placeholder="Slack webhook URL">`,
-			`<small>Full request details will be posted as a message to this Slack webhook.</small>`,
-		].join("")
-	}
-
-	get value() {
-		const rawPath = this.querySelector("input").value.match(/services\/(.+)$/);
-		return rawPath ? encodeURIComponent(rawPath[1]) : ""
-	}
-
-	set value(v) {
-		this.querySelector("input").value = v ? "https://hooks.slack.com/services/" + decodeURIComponent(v) : ""
-	}
-})
-
 addBtnsEl.addEventListener("click", (event) => {
 	if (event.target.dataset.directive)
 		formEl.append(document.createElement("entry-" + event.target.dataset.directive))
@@ -212,7 +194,12 @@ function loadFromURL() {
 	const parts = Array.from(location.pathname.matchAll(/\/\w+=[^\/]+/g))
 	for (const [part] of parts) {
 		const [_, dir, data] = part.match(/^\/(\w+)=(.*)$/)
-		addBtnsEl.querySelector("button[data-directive=" + dir + "]").click()
+		const btn = addBtnsEl.querySelector("button[data-directive=" + dir + "]")
+		if (!btn) {
+			// A directive the Mixer doesn't offer, like the removed `slack`.
+			continue
+		}
+		btn.click()
 		formEl.lastElementChild.value = data
 	}
 	if (parts.length === 0) {

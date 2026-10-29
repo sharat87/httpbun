@@ -125,6 +125,9 @@ func handleCompletions(ex *ex.Exchange) response.Response {
 	}
 
 	if req.Stream {
+		if busy := holdStreamSlot(ex); busy != nil {
+			return *busy
+		}
 		return streamCompletionResponse(req, mockText, promptTokens)
 	}
 
@@ -203,6 +206,9 @@ func handleChatCompletions(ex *ex.Exchange) response.Response {
 	}
 
 	if req.Stream {
+		if busy := holdStreamSlot(ex); busy != nil {
+			return *busy
+		}
 		return streamChatCompletionResponse(req, mockContent, promptTokens)
 	}
 
@@ -319,6 +325,9 @@ func handleResponses(ex *ex.Exchange) response.Response {
 	}
 
 	if req.Stream {
+		if busy := holdStreamSlot(ex); busy != nil {
+			return *busy
+		}
 		return streamResponsesResponse(responseBody, outputMessage, mockOutputText)
 	}
 

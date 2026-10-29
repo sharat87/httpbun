@@ -3,8 +3,8 @@ package mix
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
-	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/sharat87/httpbun/assets"
-	"github.com/sharat87/httpbun/c"
 	"github.com/sharat87/httpbun/ex"
 	"github.com/sharat87/httpbun/response"
 	"github.com/sharat87/httpbun/util"
@@ -36,13 +35,12 @@ var RouteList = []ex.Route{
 }
 
 var singleValueDirectives = map[string]any{
-	"s":     nil,
-	"cd":    nil,
-	"r":     nil,
-	"b64":   nil,
-	"d":     nil,
-	"t":     nil,
-	"slack": nil,
+	"s":   nil,
+	"cd":  nil,
+	"r":   nil,
+	"b64": nil,
+	"d":   nil,
+	"t":   nil,
 }
 
 var pairValueDirectives = map[string]any{
@@ -78,6 +76,12 @@ func computeMixEntries(ex *ex.Exchange) ([]entry, error) {
 		}
 
 		directive, value, _ := strings.Cut(part, "=")
+		if directive == "slack" {
+			// Unknown directives are ignored, but this one sent the request to Slack, so say it's gone, rather than
+			// silently not doing that.
+			return entries, errors.New("the slack directive has been removed")
+		}
+
 		value, err := unescape(value)
 		if err != nil {
 			log.Printf("Error unescaping %s: %v", value, err)
@@ -191,9 +195,6 @@ func handleMix(ex *ex.Exchange) response.Response {
 				return response.BadRequest("%s", err.Error())
 			}
 
-		case "slack":
-			sendRequestToSlack(entry.Args[0], ex)
-
 		}
 	}
 
@@ -205,6 +206,9 @@ func handleMix(ex *ex.Exchange) response.Response {
 	}
 
 	if delay > 0 {
+		if !ex.HoldLongSlot() {
+			return response.LongBusy()
+		}
 		util.Sleep(ex.Request.Context(), delay)
 	}
 
@@ -230,13 +234,20 @@ func handleMixerHelp(ex *ex.Exchange) response.Response {
 const maxTemplateOutput = 1 << 20
 
 func renderTemplate(templateContent string) ([]byte, error) {
-	tpl, err := template.New("mix").Funcs(templateFuncMap).Parse(templateContent)
+	funcs := templateFuncs(&workBudget{})
+	tpl, err := template.New("mix").Funcs(funcs).Parse(templateContent)
 	if err != nil {
+		return nil, err
+	}
+	if err := chargeForWork(tpl, funcs); err != nil {
 		return nil, err
 	}
 	out := &cappedBuffer{limit: maxTemplateOutput}
 	err = tpl.Execute(out, nil)
-	if err != nil {
+	if errors.Is(err, errTooMuchWork) {
+		// Without where in the template it happened, which is often in the charges added by chargeForWork.
+		return nil, errTooMuchWork
+	} else if err != nil {
 		return nil, err
 	}
 	return out.Bytes(), nil
@@ -253,42 +264,4 @@ func (b *cappedBuffer) Write(p []byte) (int, error) {
 		return 0, fmt.Errorf("template output can't be more than %d bytes", b.limit)
 	}
 	return b.Buffer.Write(p)
-}
-
-func sendRequestToSlack(param string, ex *ex.Exchange) {
-	message := "*From*: `" + ex.Request.RemoteAddr + "`\n\n```\n" + ex.Request.Method + " " + ex.FullUrl() + "\n"
-
-	for k, v := range ex.Request.Header {
-		message += k + ": " + v[0] + "\n"
-	}
-
-	incomingBody, err := io.ReadAll(ex.Request.Body)
-	if err == nil {
-		if len(incomingBody) > 0 {
-			message += "\n" + string(incomingBody) + "\n```\n"
-		} else {
-			message += "```\n\n_No request body._\n"
-		}
-	} else {
-		message += "```\n\n_*Error reading body: " + err.Error() + "*_\n"
-	}
-
-	message += "\n-- Httpbun (<" + ex.FindScheme() + "://" + ex.Request.Host + "|" + ex.Request.Host + ">)\n"
-
-	if strings.HasPrefix(param, "xoxb-") {
-		// param is Slack API token
-		// not supported yet
-	} else if strings.Count(param, "/") == 2 {
-		// param is Slack webhook URL
-		resp, err := http.DefaultClient.Post(
-			"https://hooks.slack.com/services/"+param,
-			c.ApplicationJSON,
-			bytes.NewReader(util.ToJsonMust(map[string]any{
-				"text": message,
-			})),
-		)
-		if err != nil {
-			log.Printf("Error sending message to Slack: %v :: %v", err, resp)
-		}
-	}
 }

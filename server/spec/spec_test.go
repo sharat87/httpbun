@@ -88,13 +88,16 @@ func TestApplyEnvLimits(t *testing.T) {
 	s := assert.New(t)
 	var spec Spec
 	s.Equal(DefaultMaxConcurrentRequests, spec.MaxConcurrentRequestsLimit())
+	s.Equal(DefaultMaxLongRequests, spec.MaxLongRequestsLimit())
 	s.Equal(DefaultMaxBodySize, spec.MaxBodySizeLimit())
 
 	s.NoError(applyEnv(&spec, []string{
 		"HTTPBUN_MAX_CONCURRENT_REQUESTS=8",
+		"HTTPBUN_MAX_LONG_REQUESTS=4",
 		"HTTPBUN_MAX_BODY_SIZE=1024",
 	}))
 	s.Equal(8, spec.MaxConcurrentRequestsLimit())
+	s.Equal(4, spec.MaxLongRequestsLimit())
 	s.Equal(int64(1024), spec.MaxBodySizeLimit())
 }
 
@@ -102,6 +105,8 @@ func TestApplyEnvInvalidLimits(t *testing.T) {
 	for _, e := range []string{
 		"HTTPBUN_MAX_CONCURRENT_REQUESTS=0",
 		"HTTPBUN_MAX_CONCURRENT_REQUESTS=lots",
+		"HTTPBUN_MAX_LONG_REQUESTS=0",
+		"HTTPBUN_MAX_LONG_REQUESTS=-3",
 		"HTTPBUN_MAX_BODY_SIZE=-1",
 	} {
 		var spec Spec

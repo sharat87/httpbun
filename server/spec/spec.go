@@ -65,6 +65,11 @@ type Spec struct {
 	// used.
 	MaxConcurrentRequests int
 
+	// Most requests handled at the same time on endpoints that can hold a connection for long, like `/delay`, `/drip`,
+	// `/sse` and streaming `/llm` responses. More get a 503 right away. It's smaller than MaxConcurrentRequests, so these
+	// can't take up all the slots. When zero, DefaultMaxLongRequests is used.
+	MaxLongRequests int
+
 	// Largest request body allowed, in bytes. Bigger bodies get a 413. When zero, DefaultMaxBodySize is used.
 	MaxBodySize int64
 }
@@ -76,6 +81,7 @@ const (
 	// Httpbun isn't meant for high load, so these limits are always on, and keep any single client or burst from
 	// exhausting the process.
 	DefaultMaxConcurrentRequests       = 256
+	DefaultMaxLongRequests             = 64
 	DefaultMaxBodySize           int64 = 10 << 20
 )
 
@@ -113,6 +119,13 @@ func (spec Spec) MaxConcurrentRequestsLimit() int {
 		return spec.MaxConcurrentRequests
 	}
 	return DefaultMaxConcurrentRequests
+}
+
+func (spec Spec) MaxLongRequestsLimit() int {
+	if spec.MaxLongRequests > 0 {
+		return spec.MaxLongRequests
+	}
+	return DefaultMaxLongRequests
 }
 
 func (spec Spec) MaxBodySizeLimit() int64 {
@@ -168,6 +181,7 @@ func ParseArgs() Spec {
 	anyHosts := flag.String("any-hosts", "", "Comma separated hosts on which all endpoints behave like `/any`")
 	flag.BoolVar(&spec.HSTS, "hsts", false, "Send a Strict-Transport-Security header on HTML pages served over https")
 	maxConcurrentRequests := flag.Int("max-concurrent-requests", DefaultMaxConcurrentRequests, "Most requests handled at the same time, more get a 503")
+	maxLongRequests := flag.Int("max-long-requests", DefaultMaxLongRequests, "Most requests handled at the same time on endpoints that can take long, like /delay, more get a 503")
 	maxBodySize := flag.Int64("max-body-size", DefaultMaxBodySize, "Largest request body allowed, in bytes, bigger ones get a 413")
 	flag.Parse()
 
@@ -193,6 +207,11 @@ func ParseArgs() Spec {
 				log.Fatalf("--max-concurrent-requests must be a positive integer, got %d", *maxConcurrentRequests)
 			}
 			spec.MaxConcurrentRequests = *maxConcurrentRequests
+		case "max-long-requests":
+			if *maxLongRequests <= 0 {
+				log.Fatalf("--max-long-requests must be a positive integer, got %d", *maxLongRequests)
+			}
+			spec.MaxLongRequests = *maxLongRequests
 		case "max-body-size":
 			if *maxBodySize <= 0 {
 				log.Fatalf("--max-body-size must be a positive integer, got %d", *maxBodySize)
@@ -238,6 +257,12 @@ func applyEnv(spec *Spec, environ []string) error {
 				return err
 			}
 			spec.MaxConcurrentRequests = int(limit)
+		case name == "HTTPBUN_MAX_LONG_REQUESTS":
+			limit, err := parsePositiveInt(name, value)
+			if err != nil {
+				return err
+			}
+			spec.MaxLongRequests = int(limit)
 		case name == "HTTPBUN_MAX_BODY_SIZE":
 			limit, err := parsePositiveInt(name, value)
 			if err != nil {

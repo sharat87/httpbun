@@ -28,6 +28,10 @@ type Exchange struct {
 	HadTrailingSlash bool
 	ServerSpec       spec.Spec
 	bodyBytes        []byte
+
+	// A semaphore with a slot for each request that can take long, shared by all requests. See HoldLongSlot.
+	longSlots chan struct{}
+	holdsLong bool
 }
 
 type HandlerFn func(ex *Exchange) response.Response
@@ -93,6 +97,35 @@ func New(w http.ResponseWriter, req *http.Request, serverSpec spec.Spec) *Exchan
 	}
 
 	return ex
+}
+
+// SetLongSlots sets the semaphore that HoldLongSlot takes a slot from. Without it, HoldLongSlot always succeeds.
+func (ex *Exchange) SetLongSlots(slots chan struct{}) {
+	ex.longSlots = slots
+}
+
+// HoldLongSlot takes a slot for a request that can hold its connection for long, like one that waits or streams, so
+// those can't take up all of the server's slots. It returns false if there's no free slot, and the handler should then
+// respond with response.Busy. The slot is freed by ReleaseLongSlot, when the request is done.
+func (ex *Exchange) HoldLongSlot() bool {
+	if ex.longSlots == nil || ex.holdsLong {
+		return true
+	}
+	select {
+	case ex.longSlots <- struct{}{}:
+		ex.holdsLong = true
+		return true
+	default:
+		return false
+	}
+}
+
+// ReleaseLongSlot frees the slot taken by HoldLongSlot, if any.
+func (ex *Exchange) ReleaseLongSlot() {
+	if ex.holdsLong {
+		<-ex.longSlots
+		ex.holdsLong = false
+	}
 }
 
 func (ex Exchange) MatchAndLoadFields(routePat regexp.Regexp) bool {

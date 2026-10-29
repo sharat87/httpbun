@@ -89,7 +89,9 @@
     <li>Mnemonic: <b>D</b>elay.
 </ul>
 <p>Delays response from the server by given number of seconds. Decimal point values are allowed. Must be between 0 and
-    10.</p>
+    10. A request with a delay counts toward the server's limit on
+    <a href="{{.pathPrefix}}/#configuration-max-long-requests">long-running requests</a>, and gets a <code>503</code>
+    when that's reached.</p>
 
 <h3>Directive <code>b64</code></h3>
 <ul>
@@ -110,22 +112,12 @@
 </ul>
 <p>The given value is base64-decoded, and the result is expected to be a valid Golang text template. This template will
     be rendered, and the result will be the response body. The rendered body can be up to 1 MiB, and a template that
-    renders more gets a 400.</p>
+    renders more gets a 400. A template can also do only so much work, at most 100000 steps, where each loop iteration,
+    each item made by <code>seq</code>, and each function call is a step, and a template that does more gets a 400.
+    This is plenty for a loop over the largest <code>seq</code>, of 10000 items, with a few function calls for each,
+    but not for loops nested in it.</p>
 <p>This is a very powerful directive, and offers rich and creative ways of constructing the response body. This
     directive is very much beta, and the API is subject to change (or disappear) with little notice.</p>
-
-<h3>Directive <code>slack</code></h3>
-<ul>
-    <li>1️⃣ Non-repeatable.
-    <li>Syntax: <code>/slack=</code>.
-</ul>
-<p>This directive should be set to the "token" part of a Slack webhook URL, after being URL encoded. Or when using the
-    mixer, just enter the Slack webhook URL.</p>
-<p>If provided, the full request will be sent as a message to Slack. This provides functionality like a RequestBin. For
-    example, if we use a <code>/mix</code> URL as the webhook endpoint on any service, we can get a nice log of all
-    requests made to it on Slack.</p>
-<p>Note that Slack webhook URLs should be treated like secrets, like passwords. In that sense, <code>/mix</code> URLs
-    that us the <code>slack</code> directive, should also be treated like passwords. Exercise prudence.</p>
 
 <h3>Directive <code>end</code></h3>
 <ul>

@@ -2,6 +2,7 @@ package api_tests
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"testing"
@@ -420,8 +421,13 @@ func TestMixInvalidTemplate(t *testing.T) {
 		},
 		{
 			"output too large",
-			"mix/t=" + base64.StdEncoding.EncodeToString([]byte("{{range seq 10000}}{{range seq 200}}x{{end}}{{end}}")),
+			"mix/t=" + base64.StdEncoding.EncodeToString([]byte(`{{range seq 10000}}{{printf "%0200d" .N}}{{end}}`)),
 			"template output can't be more than 1048576 bytes",
+		},
+		{
+			"slack directive",
+			"mix/s=200/slack=T000%2FB000%2FXXXX",
+			"the slack directive has been removed",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -432,6 +438,49 @@ func TestMixInvalidTemplate(t *testing.T) {
 			s.Equal(http.StatusBadRequest, resp.StatusCode)
 			s.Equal(plainTextHeaders(tc.body), mixHeaders(resp))
 			s.Equal(tc.body, body)
+		})
+	}
+}
+
+func TestMixTemplateLargeLoop(t *testing.T) {
+	s := assert.New(t)
+	// The largest seq, with a few commands for each item, is well within the work budget.
+	resp, body := ExecRequest(t, R{
+		Path: "mix/t=" + base64.StdEncoding.EncodeToString([]byte(
+			`[{{range seq 10000}}{"n": {{.N}}, "json": {{toJSON .N}}, "len": {{len "ab"}}}{{if not .IsLast}},{{end}}{{end}}]`,
+		)),
+	})
+	s.Equal(http.StatusOK, resp.StatusCode)
+	var items []map[string]int
+	s.NoError(json.Unmarshal([]byte(body), &items))
+	s.Len(items, 10000)
+	s.Equal(map[string]int{"n": 9999, "json": 9999, "len": 2}, items[9999])
+}
+
+func TestMixTemplateTooMuchWork(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		template string
+	}{
+		{"nested seq loops", `{{range seq 10000}}{{range seq 10000}}{{end}}{{end}}`},
+		{"seq calls in a loop", `{{range seq 10000}}{{len (seq 10000)}}{{end}}`},
+		{"range over an int", `{{range 1000000000}}{{end}}`},
+		{"nested ranges over ints", `{{range 100000}}{{range 100000}}{{end}}{{end}}`},
+		{"range over an int variable", `{{$n := 1000000000}}{{range $i := $n}}{{end}}`},
+		{"recursive template", `{{define "a"}}{{template "a"}}{{template "a"}}{{end}}{{template "a"}}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := assert.New(t)
+			start := time.Now()
+			resp, body := ExecRequest(t, R{
+				Path: "mix/t=" + base64.StdEncoding.EncodeToString([]byte(tc.template)),
+			})
+			s.Less(time.Since(start), 2*time.Second, "stopped quickly")
+			s.Equal(http.StatusBadRequest, resp.StatusCode)
+			s.Equal(
+				"template does too much work, it can take at most 100000 steps, like loop iterations, seq items and function calls",
+				body,
+			)
 		})
 	}
 }

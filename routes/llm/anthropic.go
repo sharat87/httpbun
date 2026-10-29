@@ -90,6 +90,9 @@ func handleMessages(ex *ex.Exchange) response.Response {
 	}
 
 	if req.Stream {
+		if busy := holdStreamSlot(ex); busy != nil {
+			return *busy
+		}
 		return streamMessagesResponse(req, mockContent, inputTokens)
 	}
 
