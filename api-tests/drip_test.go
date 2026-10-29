@@ -68,6 +68,8 @@ func TestDripLimits(t *testing.T) {
 	}{
 		{"delay=300.01", "delay can't be more than 300 seconds"},
 		{"delay=0&duration=301", "duration can't be more than 300 seconds"},
+		{"delay=0&numbytes=10001", `numbytes must be an integer between 0 and 10000, got "10001"`},
+		{"delay=0&numbytes=-1", `numbytes must be an integer between 0 and 10000, got "-1"`},
 	} {
 		t.Run(tc.query, func(t *testing.T) {
 			s := assert.New(t)

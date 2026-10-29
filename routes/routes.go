@@ -208,6 +208,10 @@ func handleDelayedResponse(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Delay can't be greater than 300 or less than 0")
 	}
 
+	if n > 0 && !ex.HoldLongSlot() {
+		return response.LongBusy()
+	}
+
 	// Stop waiting if the client goes away, so abandoned requests don't hold on to server resources.
 	util.Sleep(ex.Request.Context(), time.Duration(n*float64(time.Second)))
 	return response.New(http.StatusOK, nil, []byte("OK"))
@@ -222,7 +226,7 @@ func handleDrip(ex *ex.Exchange) response.Response {
 		return response.BadRequest("Unknown extra path: %s"+
 			"\nUse `/drip` or `/drip-lines` with query params:\n"+
 			"  duration: Total number of seconds over which to stream the data, up to two decimal places. Default: 2.\n"+
-			"  numbytes: Total number of bytes to stream. Default: 10.\n"+
+			"  numbytes: Total number of bytes to stream, up to 10000. Default: 10.\n"+
 			"  code: The HTTP status code to be used in their response. Default: 200.\n"+
 			"  delay: An initial delay, in seconds, up to two decimal places. Default: 2.\n",
 			extra,
@@ -236,7 +240,7 @@ func handleDrip(ex *ex.Exchange) response.Response {
 		return response.BadRequest("%s", err.Error())
 	}
 
-	numbytes, err := ex.QueryInt("numbytes", 10, 0, 10*1024*1024)
+	numbytes, err := ex.QueryInt("numbytes", 10, 0, maxDripBytes)
 	if err != nil {
 		return response.BadRequest("%s", err.Error())
 	}
@@ -249,6 +253,10 @@ func handleDrip(ex *ex.Exchange) response.Response {
 	delay, err := querySeconds(ex, "delay", 2*time.Second, maxDripSeconds)
 	if err != nil {
 		return response.BadRequest("%s", err.Error())
+	}
+
+	if !ex.HoldLongSlot() {
+		return response.LongBusy()
 	}
 
 	if delay > 0 && !util.Sleep(ex.Request.Context(), delay) {
@@ -294,6 +302,9 @@ var secondsPattern = regexp.MustCompile(`^(\d+(\.\d{1,2})?|\.\d{1,2})$`)
 
 // The most a drip's delay, or its duration, can be, like `/delay`.
 const maxDripSeconds = 300
+
+// The most bytes a drip can stream. Each byte is a write and a flush, so this bounds the work, not just the size.
+const maxDripBytes = 10000
 
 // querySeconds reads a query param as a non-negative number of seconds, with up to two decimal places, up to max.
 func querySeconds(ex *ex.Exchange, name string, value time.Duration, max int) (time.Duration, error) {

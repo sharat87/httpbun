@@ -32,6 +32,23 @@ func BadRequest(message string, vars ...any) Response {
 	}
 }
 
+// How long clients are asked to wait before retrying, when the server is busy.
+const RetryAfterSeconds = "5"
+
+// Busy is a 503 for a request that can't be handled now because the server is busy, with the given message.
+func Busy(message string) Response {
+	return Response{
+		Status: http.StatusServiceUnavailable,
+		Header: http.Header{"Retry-After": {RetryAfterSeconds}},
+		Body:   message,
+	}
+}
+
+// LongBusy is a 503 for a request that can take long, when the server is handling as many of those as it can.
+func LongBusy() Response {
+	return Busy("Server is busy with too many long-running requests, like /delay, /drip and streams, please try again later.")
+}
+
 type BodyWriter struct {
 	w   http.ResponseWriter
 	ctx context.Context

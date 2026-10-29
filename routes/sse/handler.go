@@ -26,6 +26,10 @@ func handleServerSentEvents(ex *ex.Exchange) response.Response {
 		return response.BadRequest("%s", err.Error())
 	}
 
+	if !ex.HoldLongSlot() {
+		return response.LongBusy()
+	}
+
 	return response.Response{
 		Header: map[string][]string{
 			"Cache-Control": {"no-store"},

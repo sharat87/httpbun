@@ -9,7 +9,6 @@
 <ol>
 	<li>The <code>/mix</code> endpoint, and the <a href="{{.pathPrefix}}/mixer">Mixer</a>, with powerful ingredients like:
 	<ul>
-		<li>A RequestBin-like functionality with the <code>slack</code> directive.
 		<li>Build response body by writing a Golang template, with the <code>t</code> directive.
 		<li>Learn more at the <a href="{{.pathPrefix}}/help/mixer">Mixer guide</a>.
 	</ul>
@@ -333,7 +332,7 @@ Hosted versions:
 		<ul>
 			<li><code>duration</code>: Total number of seconds over which to stream the data, up to two decimal places,
 				like <code>1.5</code>, up to 300. <em>Default: 2</em>.
-			<li><code>numbytes</code>: Total number of bytes to stream, up to 10 MB. <em>Default: 10</em>.
+			<li><code>numbytes</code>: Total number of bytes to stream, up to 10000. <em>Default: 10</em>.
 			<li><code>code</code>: The HTTP status code to be used in their response. <em>Default: 200</em>.
 			<li><code>delay</code>: An initial delay, in seconds, up to two decimal places, up to 300.
 				<em>Default: 2</em>.
@@ -550,7 +549,9 @@ print(response.content[0].text)
 	workflow.</p>
 
 <p>Httpbun isn't built for high load, hosted or self-hosted, so it always limits how many requests it handles at once,
-	and how large request bodies can be. See <a href="#configuration-max-concurrent-requests"><code>--max-concurrent-requests</code></a>
+	how many of those can be ones that take long, like <code>/delay</code>, and how large request bodies can be. See
+	<a href="#configuration-max-concurrent-requests"><code>--max-concurrent-requests</code></a>,
+	<a href="#configuration-max-long-requests"><code>--max-long-requests</code></a>
 	and <a href="#configuration-max-body-size"><code>--max-body-size</code></a>.</p>
 
 <h2 id=configuration>Configuration <a href="#configuration">&para;</a></h2>
@@ -594,6 +595,15 @@ print(response.content[0].text)
 		<code>/delay</code>. When this many are being handled, more get a <code>503</code> right away, with a
 		<code>Retry-After</code> header. <code>/health</code> isn't limited. Default <code>256</code>. Also
 		<code>HTTPBUN_MAX_CONCURRENT_REQUESTS</code>.
+	</dd>
+
+	<dt id=configuration-max-long-requests>--max-long-requests</dt>
+	<dd>Most requests handled at the same time on endpoints that can hold a connection for long: <code>/delay</code>,
+		<code>/drip</code>, <code>/drip-lines</code>, <code>/sse</code>, <code>/mix</code> with a <code>d</code>
+		directive, and <code>/llm</code> responses with <code>"stream": true</code>. It's smaller than
+		<code>--max-concurrent-requests</code>, so these can't take up all of the server's slots. When this many are
+		being handled, more of them get a <code>503</code> right away, with a <code>Retry-After</code> header. Default
+		<code>64</code>. Also <code>HTTPBUN_MAX_LONG_REQUESTS</code>.
 	</dd>
 
 	<dt id=configuration-max-body-size>--max-body-size</dt>

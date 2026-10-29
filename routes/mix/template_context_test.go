@@ -7,7 +7,7 @@ import (
 )
 
 func seqNumbers(t *testing.T, args ...int) []int {
-	seq, err := tplFuncSeq(args...)
+	seq, err := tplFuncSeq(&workBudget{}, args...)
 	assert.NoError(t, err)
 	ns := []int{}
 	for _, item := range seq {
@@ -27,14 +27,23 @@ func TestSeq(t *testing.T) {
 
 func TestSeqFirstAndLast(t *testing.T) {
 	s := assert.New(t)
-	seq, err := tplFuncSeq(3)
+	seq, err := tplFuncSeq(&workBudget{}, 3)
 	s.NoError(err)
 	s.Equal([]SeqItem{{N: 0, IsFirst: true}, {N: 1}, {N: 2, IsLast: true}}, seq)
 }
 
 func TestSeqInvalid(t *testing.T) {
 	for _, args := range [][]int{{}, {1, 2, 3, 4}, {0, 5, 0}, {maxSeqLength + 1}} {
-		_, err := tplFuncSeq(args...)
+		_, err := tplFuncSeq(&workBudget{}, args...)
 		assert.Error(t, err, "args: %v", args)
 	}
+}
+
+func TestSeqSpendsBudget(t *testing.T) {
+	s := assert.New(t)
+	budget := &workBudget{spent: maxTemplateWork - 3}
+	_, err := tplFuncSeq(budget, 3)
+	s.NoError(err)
+	_, err = tplFuncSeq(budget, 1)
+	s.ErrorIs(err, errTooMuchWork)
 }

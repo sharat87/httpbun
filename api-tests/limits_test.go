@@ -51,6 +51,68 @@ func TestConcurrencyLimit(t *testing.T) {
 	s.Equal(http.StatusOK, resp.StatusCode)
 }
 
+func TestLongRequestsLimit(t *testing.T) {
+	s := assert.New(t)
+	srv := NewServer(t, spec.Spec{MaxLongRequests: 1})
+
+	// Hold the only long slot with a slow request, like in TestConcurrencyLimit.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, BaseURL+"delay/10", nil)
+	s.NoError(err)
+	go func() {
+		for {
+			resp, err := srv.client.Do(req)
+			if err != nil {
+				return
+			}
+			resp.Body.Close()
+			if resp.StatusCode != http.StatusServiceUnavailable {
+				return
+			}
+		}
+	}()
+
+	const probe = "drip?delay=0&duration=0&numbytes=1"
+	resp, body := waitForStatus(t, srv, probe, http.StatusServiceUnavailable)
+	s.Equal(http.StatusServiceUnavailable, resp.StatusCode)
+	s.Equal("5", resp.Header.Get("Retry-After"))
+	s.Equal("Server is busy with too many long-running requests, like /delay, /drip and streams, please try again later.", body)
+
+	for _, r := range []R{
+		{Path: "delay/1"},
+		{Path: "drip-lines?delay=0&duration=0&numbytes=1"},
+		{Path: "sse?count=1"},
+		{Path: "mix/s=201/d=0.1"},
+		{Method: http.MethodPost, Path: "llm/v1/chat/completions", Body: `{"stream": true, "messages": [{"role": "user", "content": "Hi"}]}`},
+		{Method: http.MethodPost, Path: "llm/v1/completions", Body: `{"stream": true, "prompt": "Hi"}`},
+		{Method: http.MethodPost, Path: "llm/v1/responses", Body: `{"stream": true, "input": "Hi"}`},
+		{Method: http.MethodPost, Path: "llm/v1/messages", Body: `{"stream": true, "max_tokens": 10, "messages": [{"role": "user", "content": "Hi"}]}`},
+	} {
+		resp, body := srv.Exec(t, r)
+		s.Equal(http.StatusServiceUnavailable, resp.StatusCode, r.Path)
+		s.Equal("5", resp.Header.Get("Retry-After"), r.Path)
+		s.Contains(body, "too many long-running requests", r.Path)
+	}
+
+	// Other requests, including ones on the same endpoints that don't take long, still work.
+	for _, r := range []R{
+		{Path: "get"},
+		{Path: "delay/0"},
+		{Path: "mix/s=201"},
+		{Method: http.MethodPost, Path: "llm/v1/chat/completions", Body: `{"messages": [{"role": "user", "content": "Hi"}]}`},
+	} {
+		resp, _ := srv.Exec(t, r)
+		s.Less(resp.StatusCode, 300, r.Path)
+	}
+
+	// When the slow request's client goes away, its slot is freed.
+	cancel()
+	resp, body = waitForStatus(t, srv, probe, http.StatusOK)
+	s.Equal(http.StatusOK, resp.StatusCode)
+	s.Equal("*", body)
+}
+
 // waitForStatus sends requests to the path until one gets the given status, or a few seconds pass, and returns the last
 // response.
 func waitForStatus(t *testing.T, srv *TestServer, path string, status int) (http.Response, string) {

@@ -27,6 +27,10 @@ type Server struct {
 
 	// A semaphore with a slot for each request being handled, up to the spec's limit.
 	inFlight chan struct{}
+
+	// A semaphore with a slot for each request that can take long, like `/delay`, up to the spec's limit. Handlers take
+	// a slot with ex.HoldLongSlot.
+	longInFlight chan struct{}
 }
 
 // How long to wait for a client to send a request's headers, so slow clients can't hold connections open.
@@ -46,9 +50,10 @@ func New(spec spec.Spec) *Server {
 			ReadHeaderTimeout: readHeaderTimeout,
 			IdleTimeout:       idleTimeout,
 		},
-		spec:     spec,
-		closeCh:  make(chan error, 1),
-		inFlight: make(chan struct{}, spec.MaxConcurrentRequestsLimit()),
+		spec:         spec,
+		closeCh:      make(chan error, 1),
+		inFlight:     make(chan struct{}, spec.MaxConcurrentRequestsLimit()),
+		longInFlight: make(chan struct{}, spec.MaxLongRequestsLimit()),
 	}
 	server.Handler = server
 
@@ -122,7 +127,7 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		default:
 			// Don't queue, since queued requests would use up memory too.
 			log.Printf("Busy, rejecting %s %s", req.Method, req.URL)
-			w.Header().Set("Retry-After", "5")
+			w.Header().Set("Retry-After", response.RetryAfterSeconds)
 			http.Error(w, "Server is busy, please try again later.", http.StatusServiceUnavailable)
 			return
 		}
@@ -137,6 +142,10 @@ func (s Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	req.Body = body
 
 	ex := ex.New(w, req, s.spec)
+	ex.SetLongSlots(s.longInFlight)
+	// Handlers stop when the client goes away, so this also frees the slot then. It runs after Finish, which is where
+	// streaming responses are written.
+	defer ex.ReleaseLongSlot()
 
 	// A bug in a handler shouldn't look like a network error to the client, so respond with a 500 that says what
 	// went wrong. If the handler already started the response, this can only log.
