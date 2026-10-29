@@ -19,7 +19,7 @@ import (
 type endpoint struct {
 	// An example path, with an optional query string, without the leading slash.
 	path string
-	// Where it's documented: `#anchor` on the homepage, or the path of a page like `/runner`.
+	// Where it's documented: `#anchor` on the homepage, or the path of a page like `/help/mixer`.
 	docs string
 	// Why it's not documented, if docs is empty.
 	undocumented string
@@ -47,8 +47,6 @@ var endpoints = []endpoint{
 	{path: "mix/s=201/h=x-a:b", docs: "#mix-endpoint"},
 	{path: "mixer", docs: "/help/mixer"},
 	{path: "help/mixer", docs: "/help/mixer"},
-	{path: "runner", docs: "/runner"},
-	{path: "run/cmV0dXJuIHt9", docs: "/runner"},
 
 	{path: "basic-auth/user/pass", docs: "#basic-auth"},
 	{path: "bearer", docs: "#bearer-token", notFound: true},
@@ -190,7 +188,7 @@ var linkPattern = regexp.MustCompile(`(?:href|src)=["']?([^"' >]+)`)
 func TestPageLinksWithPathPrefix(t *testing.T) {
 	prefixed := NewServer(t, spec.Spec{PathPrefix: "/mount"})
 
-	for _, page := range []string{"mount", "mount/", "mount/mixer", "mount/runner", "mount/help/mixer"} {
+	for _, page := range []string{"mount", "mount/", "mount/mixer", "mount/help/mixer"} {
 		t.Run(page, func(t *testing.T) {
 			_, html := prefixed.Exec(t, R{Path: page})
 			pageURL, _ := url.Parse(BaseURL + page)
