@@ -608,8 +608,22 @@ func estimateTokens(text string) int {
 
 var chunkPattern = regexp.MustCompile(`^\s+|\S+\s*`)
 
+// maxStreamChunks is the most chunks a streamed response has. Chunks are sent 50ms apart, so this keeps a stream of
+// client supplied content, which can be up to 1 MiB, to about 30 seconds.
+const maxStreamChunks = 600
+
 // splitIntoChunks splits text into word-sized chunks for streaming, keeping all whitespace so the chunks join back
-// into exactly the original text.
+// into exactly the original text. If there are more than maxStreamChunks words, each chunk has several words, so the
+// whole text still streams in at most maxStreamChunks chunks.
 func splitIntoChunks(text string) []string {
-	return chunkPattern.FindAllString(text, -1)
+	words := chunkPattern.FindAllString(text, -1)
+	if len(words) <= maxStreamChunks {
+		return words
+	}
+	wordsPerChunk := (len(words) + maxStreamChunks - 1) / maxStreamChunks
+	chunks := make([]string, 0, maxStreamChunks)
+	for i := 0; i < len(words); i += wordsPerChunk {
+		chunks = append(chunks, strings.Join(words[i:min(i+wordsPerChunk, len(words))], ""))
+	}
+	return chunks
 }

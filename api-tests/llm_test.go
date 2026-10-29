@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -91,4 +92,102 @@ func TestLLMLargeRequestBody(t *testing.T) {
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 		assert.Contains(t, body, `"type": "request_too_large"`)
 	})
+}
+
+func TestLLMStreamLargeContent(t *testing.T) {
+	// Streams are at most `maxStreamChunks` deltas in the llm package, 50ms apart, so even the largest content finishes
+	// in about 30 seconds.
+	const maxStreamChunks = 600
+	const bound = 60 * time.Second
+
+	content := strings.Repeat("word ", 200_000)
+	contentJSON, _ := json.Marshal(content)
+
+	for _, tc := range []struct {
+		path string
+		body string
+		// delta returns the text in a streamed event, and whether the event is a delta.
+		delta func(event map[string]any) (string, bool)
+		last  string
+	}{
+		{
+			path: "llm/v1/chat/completions",
+			body: `{"stream": true, "messages": [], "httpbun": {"content": ` + string(contentJSON) + `}}`,
+			delta: func(event map[string]any) (string, bool) {
+				choice := event["choices"].([]any)[0].(map[string]any)
+				text, ok := choice["delta"].(map[string]any)["content"].(string)
+				return text, ok
+			},
+			last: "[DONE]",
+		},
+		{
+			path: "llm/v1/completions",
+			body: `{"stream": true, "prompt": "hi", "httpbun": {"content": ` + string(contentJSON) + `}}`,
+			delta: func(event map[string]any) (string, bool) {
+				choice := event["choices"].([]any)[0].(map[string]any)
+				text := choice["text"].(string)
+				return text, choice["finish_reason"] == nil
+			},
+			last: "[DONE]",
+		},
+		{
+			path: "llm/v1/responses",
+			body: `{"stream": true, "input": "hi", "httpbun": {"output_text": ` + string(contentJSON) + `}}`,
+			delta: func(event map[string]any) (string, bool) {
+				text, _ := event["delta"].(string)
+				return text, event["type"] == "response.output_text.delta"
+			},
+			last: "response.completed",
+		},
+		{
+			path: "llm/v1/messages",
+			body: `{"stream": true, "messages": [], "httpbun": {"content": ` + string(contentJSON) + `}}`,
+			delta: func(event map[string]any) (string, bool) {
+				if event["type"] != "content_block_delta" {
+					return "", false
+				}
+				return event["delta"].(map[string]any)["text"].(string), true
+			},
+			last: "message_stop",
+		},
+	} {
+		t.Run(tc.path, func(t *testing.T) {
+			t.Parallel()
+			s := assert.New(t)
+
+			start := time.Now()
+			resp, body := ExecRequest(t, R{Method: http.MethodPost, Path: tc.path, Body: tc.body, Timeout: bound})
+			s.Equal(http.StatusOK, resp.StatusCode)
+
+			var text strings.Builder
+			deltas := 0
+			lastEvent := ""
+			for _, line := range strings.Split(body, "\n") {
+				data, ok := strings.CutPrefix(line, "data: ")
+				if !ok {
+					continue
+				}
+				lastEvent = data
+				if data == "[DONE]" {
+					continue
+				}
+				var event map[string]any
+				if !s.NoError(json.Unmarshal([]byte(data), &event)) {
+					return
+				}
+				if eventType, ok := event["type"].(string); ok {
+					lastEvent = eventType
+				}
+				if delta, ok := tc.delta(event); ok {
+					text.WriteString(delta)
+					deltas++
+				}
+			}
+
+			s.Less(time.Since(start), bound, "finished within the bound")
+			s.Equal(tc.last, lastEvent, "stream finished")
+			s.LessOrEqual(deltas, maxStreamChunks)
+			s.Equal(content, text.String(), "whole content streamed")
+		})
+	}
 }
